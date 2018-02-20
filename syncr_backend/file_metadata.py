@@ -12,8 +12,8 @@ class FileMetadata(object):
 
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
-            self, hashes: List[bytes], file_length: int,
-            chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
+        self, hashes: List[bytes], file_length: int,
+        chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ):
         self.hashes = hashes
         self.file_length = file_length
@@ -21,7 +21,7 @@ class FileMetadata(object):
         self._protocol_version = protocol_version
 
     
-    def make_file(self) -> bytes:
+    def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
 
         returns: bytes that is the file
@@ -34,8 +34,16 @@ class FileMetadata(object):
         }
         return bencode.encode(d)
 
+    @staticmethod
+    def decode(data: bytes) -> FileMetadata:
+        d = bencode.decode(data)
+        return FileMetadata(
+            hashes=d['chunks'], file_length=d['file_length'],
+            chunk_size=d['chunk_size'], protocol_version=d['protocol_version'],
+        )
 
-def hash_file(f: io.IOBase, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes]:
+
+def hash_file(f: io.RawIOBase, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes]:
     """Given an open file in mode 'rb', hash its chunks and return a list of
     the hashes
 
