@@ -1,13 +1,13 @@
-import os
 import tempfile
 
 from Crypto.Hash import SHA256
 
 from syncr_backend.file_metadata import hash_file
 
+
 def test_hash_file():
     with tempfile.TemporaryFile() as f:
-        f.write(b'x\11'* 1001)
+        f.write(b'x\11' * 1001)
         f.seek(0)
 
         h_out = hash_file(f)
