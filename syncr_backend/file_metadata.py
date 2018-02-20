@@ -35,7 +35,7 @@ class FileMetadata(object):
         return bencode.encode(d)
 
     @staticmethod
-    def decode(data: bytes) -> FileMetadata:
+    def decode(data: bytes) -> 'FileMetadata':
         d = bencode.decode(data)
         return FileMetadata(
             hashes=d['chunks'], file_length=d['file_length'],
@@ -51,15 +51,10 @@ def hash_file(f: io.RawIOBase, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes
     chunk_size: the chunk size to use, probably don't change this
     returns: list of hashes
     """
-    if f.mode != 'rb':
-        raise Exception("Must open file as 'rb'")
-
     hashes: List[bytes] = []
 
     b = f.read(chunk_size)
     while len(b) > 0:
-        if len(b) < chunk_size:
-            b += b'\x00' * (chunk_size - len(b))
         h = SHA256.new()
         h.update(b)
         hashes.append(h.digest())

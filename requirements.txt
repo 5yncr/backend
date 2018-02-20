@@ -1,7 +1,9 @@
+attrs==17.4.0
 bencode.py==2.0.0
 pluggy==0.6.0
 py==1.5.2
 pycrypto==2.6.1
+pytest==3.4.1
 six==1.11.0
 tox==2.9.1
 virtualenv==15.1.0
