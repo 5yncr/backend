@@ -24,7 +24,7 @@ def test_hash_file():
 
 def test_file_metadata_decode():
     i = b"d10:chunk_sizei8388608e6:chunksl4:01234:1234e11:"\
-            b"file_lengthi100e16:protocol_versioni1ee"
+        b"file_lengthi100e16:protocol_versioni1ee"
 
     f = FileMetadata.decode(i)
 
@@ -35,7 +35,7 @@ def test_file_metadata_decode():
 
 def test_file_metadata_encode():
     i = b"d10:chunk_sizei8388608e6:chunksl4:01234:1234e11:"\
-            b"file_lengthi100e16:protocol_versioni1ee"
+        b"file_lengthi100e16:protocol_versioni1ee"
 
     f = FileMetadata([b'0123', b'1234'], 100)
 

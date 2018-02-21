@@ -1,10 +1,9 @@
 import os
-import bencode  # type: ignore
-
-from Crypto.Hash import SHA256
-
-from typing import List
 from typing import BinaryIO
+from typing import List
+
+import bencode  # type: ignore
+from Crypto.Hash import SHA256
 
 DEFAULT_CHUNK_SIZE = 2**23
 
