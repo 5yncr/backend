@@ -1,3 +1,4 @@
+import hashlib
 import os
 from typing import BinaryIO
 from typing import List
@@ -13,10 +14,11 @@ class FileMetadata(object):
 
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
-        self, hashes: List[bytes], file_length: int,
+        self, hashes: List[bytes], file_hash: bytes, file_length: int,
         chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ) -> None:
         self.hashes = hashes
+        self.file_hash = file_hash
         self.file_length = file_length
         self.chunk_size = chunk_size
         self._protocol_version = protocol_version
@@ -30,6 +32,7 @@ class FileMetadata(object):
             "protocol_version": self._protocol_version,
             "chunk_size": self.chunk_size,
             "file_length": self.file_length,
+            "file_hash": self.file_hash,
             "chunks": self.hashes,
         }
         return bencode.encode(d)
@@ -38,12 +41,15 @@ class FileMetadata(object):
     def decode(data: bytes) -> 'FileMetadata':
         d = bencode.decode(data)
         return FileMetadata(
-            hashes=d['chunks'], file_length=d['file_length'],
-            chunk_size=d['chunk_size'], protocol_version=d['protocol_version'],
+            hashes=d['chunks'], file_hash=d['file_hash'],
+            file_length=d['file_length'], chunk_size=d['chunk_size'],
+            protocol_version=d['protocol_version'],
         )
 
 
-def hash_file(f: BinaryIO, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes]:
+def file_hashes(
+    f: BinaryIO, chunk_size: int=DEFAULT_CHUNK_SIZE,
+) -> List[bytes]:
     """Given an open file in mode 'rb', hash its chunks and return a list of
     the hashes
 
@@ -62,11 +68,23 @@ def hash_file(f: BinaryIO, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes]:
     return hashes
 
 
+def hash_file(f: BinaryIO) -> bytes:
+    sha = hashlib.sha256()
+    while True:
+        data = f.read(65536)
+        if not data:
+            break
+        sha.update(data)
+    return sha.digest()
+
+
 def make_file_metadata(filename: str) -> FileMetadata:
     """Given a file name, return a FileMetadata object"""
     f = open(filename, 'rb')
     size = os.path.getsize(f.name)
 
-    hashes = hash_file(f)
+    hashes = file_hashes(f)
+    f.seek(0)
+    file_hash = hash_file(f)
 
-    return FileMetadata(hashes, size)
+    return FileMetadata(hashes, file_hash, size)
