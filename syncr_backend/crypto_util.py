@@ -55,13 +55,9 @@ def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
 
 def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     """Generate a node id from a public key
-    This dumps the public key to DER format (which is binary), and then
-    hashes the result
+    It uses the default dump, and hashes that
     """
-    key_serial = key.public_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
+    key_serial = dump_public_key(key)
     return hash(key_serial)
 
 
