@@ -1,9 +1,9 @@
+import hashlib
 import os
 from typing import BinaryIO
 from typing import List
 
 import bencode  # type: ignore
-from Crypto.Hash import SHA256
 
 DEFAULT_CHUNK_SIZE = 2**23
 
@@ -54,9 +54,7 @@ def hash_file(f: BinaryIO, chunk_size: int=DEFAULT_CHUNK_SIZE) -> List[bytes]:
 
     b = f.read(chunk_size)
     while len(b) > 0:
-        h = SHA256.new()
-        h.update(b)
-        hashes.append(h.digest())
+        hashes.append(hashlib.sha256(b).digest())
 
         b = f.read(chunk_size)
 

@@ -1,6 +1,5 @@
+import hashlib
 import tempfile
-
-from Crypto.Hash import SHA256
 
 from syncr_backend.file_metadata import DEFAULT_CHUNK_SIZE
 from syncr_backend.file_metadata import FileMetadata
@@ -13,10 +12,8 @@ def test_hash_file():
         f.seek(0)
 
         h_out = hash_file(f)
-        h_expected_builder = SHA256.new()
         expected_data = b'x\11' * 1001
-        h_expected_builder.update(expected_data)
-        h_expected = h_expected_builder.digest()
+        h_expected = hashlib.sha256(expected_data).digest()
 
         assert len(h_out) == 1
         assert h_out[0] == h_expected
