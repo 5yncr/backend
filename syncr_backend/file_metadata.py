@@ -26,7 +26,7 @@ class FileMetadata(object):
     def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
 
-        returns: bytes that is the file
+        :return: bytes that is the file
         """
         d = {
             "protocol_version": self._protocol_version,
@@ -39,6 +39,11 @@ class FileMetadata(object):
 
     @staticmethod
     def decode(data: bytes) -> 'FileMetadata':
+        """Decode a bencoded byte array into a FileMetadata object
+
+        :param data: bencoded byte array of file metadata
+        :return: FileMetadata object
+        """
         d = bencode.decode(data)
         return FileMetadata(
             hashes=d['chunks'], file_hash=d['file_hash'],
@@ -53,9 +58,9 @@ def file_hashes(
     """Given an open file in mode 'rb', hash its chunks and return a list of
     the hashes
 
-    f: open file
-    chunk_size: the chunk size to use, probably don't change this
-    returns: list of hashes
+    :param f: open file
+    :param chunk_size: the chunk size to use, probably don't change this
+    :return: list of hashes
     """
     hashes = []
 
@@ -69,6 +74,11 @@ def file_hashes(
 
 
 def hash_file(f: BinaryIO) -> bytes:
+    """Hash a file
+
+    :param f: An open file, seeked to 0
+    :return: The hash bytes
+    """
     sha = hashlib.sha256()
     while True:
         data = f.read(65536)
@@ -79,7 +89,11 @@ def hash_file(f: BinaryIO) -> bytes:
 
 
 def make_file_metadata(filename: str) -> FileMetadata:
-    """Given a file name, return a FileMetadata object"""
+    """Given a file name, return a FileMetadata object
+
+    :param filename: The name of the file to open and read
+    :return: FileMetadata object
+    """
     f = open(filename, 'rb')
     size = os.path.getsize(f.name)
 
