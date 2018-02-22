@@ -5,5 +5,5 @@ env:
     - TOXENV=py36,coverage,mypy
 script:
     - flake8 syncr_backend tests
-    - pep8 syncr_backend tests
+    - pycodestyle syncr_backend tests
     - tox
