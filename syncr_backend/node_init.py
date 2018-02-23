@@ -21,31 +21,22 @@ def is_node_initialized() -> bool:
 def initialize_node() -> None:
     """Initialize new node in .node directory
     Create the private key file"""
-    try:
-        if os.path.exists(".node"):
-            raise FileExistsError
+    if os.path.exists(".node"):
+        raise FileExistsError
 
-        os.mkdir(".node")
-        private_key = crypto_util.generate_private_key()
-        write_private_key_to_disk(private_key)
-
-    except (FileExistsError):
-        print("Error: node already initiated")
+    os.mkdir(".node")
+    private_key = crypto_util.generate_private_key()
+    write_private_key_to_disk(private_key)
 
 
 def write_private_key_to_disk(key: crypto_util.rsa.RSAPrivateKey) -> None:
     """Write Private Key (and public key attached) to file"""
-    try:
-        if os.path.exists(".node/private_key.pem"):
-            raise FileExistsError
+    if os.path.exists(".node/private_key.pem"):
+        raise FileExistsError
 
-        with open(".node/private_key.pem", "wb") as keyfile:
-            keyfile.write(crypto_util.dump_private_key(key))
-            keyfile.close()
-    except (FileNotFoundError):
-        print("Error: File could not be opened")
-    except (FileExistsError):
-        print("Error: File already exists")
+    with open(".node/private_key.pem", "wb") as keyfile:
+        keyfile.write(crypto_util.dump_private_key(key))
+        keyfile.close()
 
 
 def load_private_key_from_disk() -> crypto_util.rsa.RSAPrivateKey:
