@@ -61,6 +61,17 @@ def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     return hash(key_serial)
 
 
+def generate_rsa_private_key() -> rsa.RSAPrivateKey:
+    """Generate a public and private key """
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=4048,
+        backend=default_backend(),
+    )
+
+    return private_key
+
+
 def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
     """Wrapper to get the node id from the private key"""
     return node_id_from_public_key(key.public_key())
