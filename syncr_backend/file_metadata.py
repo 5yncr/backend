@@ -9,6 +9,7 @@ import bencode  # type: ignore
 from syncr_backend import crypto_util
 
 DEFAULT_CHUNK_SIZE = 2**23
+DEFAULT_FILE_METADATA_LOCATION = b".files/"
 
 
 class FileMetadata(object):
@@ -38,27 +39,30 @@ class FileMetadata(object):
         }
         return bencode.encode(d)
 
-    def write(self) -> None:
+    def write(self, metadata_location: bytes=DEFAULT_CHUNK_SIZE) -> None:
         """Write this file metadata to a file
         """
         file_name = crypto_util.b64encode(self.file_hash)
-        if not os.path.exists(b'.files/'):
-            os.makedirs(b'.files/')
-        with open(os.path.join(b'.files/', file_name), 'wb') as f:
+        if not os.path.exists(metadata_location):
+            os.makedirs(metadata_location)
+        with open(os.path.join(metadata_location, file_name), 'wb') as f:
             f.write(self.encode())
 
     @staticmethod
-    def read(file_hash: bytes) -> Optional['FileMetadata']:
+    def read(
+        file_hash: bytes,
+        metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
+    ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
         :param file_hash: The hash of the file to read
         :return: a FileMetadata object or None if it does not exist
         """
         file_name = crypto_util.b64encode(file_hash)
-        if not os.path.exists(os.path.join(b'.files/', file_name)):
+        if not os.path.exists(os.path.join(metadata_location, file_name)):
             return None
 
-        with open(os.path.join(b'.files/', file_name), 'rb') as f:
+        with open(os.path.join(metadata_location, file_name), 'rb') as f:
             b = b''
             while True:
                 data = f.read(65536)
