@@ -39,7 +39,7 @@ class FileMetadata(object):
         }
         return bencode.encode(d)
 
-    def write(
+    def write_file(
         self, metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
     ) -> None:
         """Write this file metadata to a file
@@ -51,7 +51,7 @@ class FileMetadata(object):
             f.write(self.encode())
 
     @staticmethod
-    def read(
+    def read_file(
         file_hash: bytes,
         metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
     ) -> Optional['FileMetadata']:
