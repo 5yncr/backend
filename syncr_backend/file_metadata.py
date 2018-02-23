@@ -39,7 +39,9 @@ class FileMetadata(object):
         }
         return bencode.encode(d)
 
-    def write(self, metadata_location: bytes=DEFAULT_CHUNK_SIZE) -> None:
+    def write(
+        self, metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
+    ) -> None:
         """Write this file metadata to a file
         """
         file_name = crypto_util.b64encode(self.file_hash)
