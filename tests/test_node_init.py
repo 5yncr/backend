@@ -10,7 +10,6 @@ def test_node_init():
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         node_init.initialize_node()
-        assert True
 
 
 def test_rsa_loading_and_saving():

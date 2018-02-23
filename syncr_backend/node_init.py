@@ -50,13 +50,8 @@ def load_private_key_from_disk(
     init_directory: str,
 ) -> crypto_util.rsa.RSAPrivateKey:
     """Load Private Key (and public key) from file"""
-    try:
-
-        with open(
-            os.path.join(init_directory, "private_key.pem"),
-            "rb",
-        ) as keyfile:
-            return crypto_util.load_private_key(keyfile.read())
-
-    except (FileNotFoundError):
-        print("Error: File could not be opened")
+    with open(
+        os.path.join(init_directory, "private_key.pem"),
+        "rb",
+    ) as keyfile:
+        return crypto_util.load_private_key(keyfile.read())
