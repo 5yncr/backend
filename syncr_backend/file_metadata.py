@@ -2,6 +2,7 @@ import hashlib
 import os
 from typing import BinaryIO
 from typing import List
+from typing import Optional
 
 import bencode  # type: ignore
 
@@ -36,6 +37,35 @@ class FileMetadata(object):
             "chunks": self.hashes,
         }
         return bencode.encode(d)
+
+    def write(self) -> None:
+        """Write this file metadata to a file
+        """
+        file_name = crypto_util.b64encode(self.file_hash)
+        if not os.path.exists(b'.files/'):
+            os.makedirs(b'.files/')
+        with open(os.path.join(b'.files/', file_name), 'wb') as f:
+            f.write(self.encode())
+
+    @staticmethod
+    def read(file_hash: bytes) -> Optional['FileMetadata']:
+        """Read a file metadata file and return FileMetadata
+
+        :param file_hash: The hash of the file to read
+        :return: a FileMetadata object or None if it does not exist
+        """
+        file_name = crypto_util.b64encode(file_hash)
+        if not os.path.exists(os.path.join(b'.files/', file_name)):
+            return None
+
+        with open(os.path.join(b'.files/', file_name), 'rb') as f:
+            b = b''
+            while True:
+                data = f.read(65536)
+                if not data:
+                    break
+                b += data
+            return FileMetadata.decode(b)
 
     @staticmethod
     def decode(data: bytes) -> 'FileMetadata':
