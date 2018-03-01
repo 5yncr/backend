@@ -210,6 +210,8 @@ def make_drop_metadata(
                 # yikes! is there a better way to do this?
                 continue
             full_name = os.path.join(dirpath, name)
+            if any([fnmatch.fnmatch(full_name, i) for i in ignore]):
+                continue
             files[full_name] = make_file_metadata(full_name)
 
     file_hashes = {name: m.file_hash for (name, m) in files.items()}
