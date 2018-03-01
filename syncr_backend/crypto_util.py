@@ -2,8 +2,11 @@
 import base64
 import hashlib
 
+import bencode  # type: ignore
 from cryptography.hazmat.backends import default_backend  # type: ignore
+from cryptography.hazmat.primitives import hashes  # type: ignore
 from cryptography.hazmat.primitives import serialization  # type: ignore
+from cryptography.hazmat.primitives.asymmetric import padding  # type: ignore
 from cryptography.hazmat.primitives.asymmetric import rsa  # type: ignore
 
 B64_ALT_CHARS = b'+-'
@@ -72,6 +75,39 @@ def generate_private_key() -> rsa.RSAPrivateKey:
     )
 
     return private_key
+
+
+def sign_dictionary(private_key: rsa.RSAPrivateKey, dictionary: dict) -> bytes:
+    """Takes a dict and returns a rsa signature of the hash of the dict"""
+    signature_interface = private_key.signer(
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        hashes.SHA256(),
+    )
+
+    signature_interface.update(hash(bencode.encode(dictionary)))
+    return signature_interface.finalize()
+
+
+def verify_signed_dictionary(
+    public_key: rsa.RSAPublicKey,
+    signature: bytes,
+    dictionary: dict,
+) -> None:
+    '''Returns None if success,
+     else throws cryptography.exceptions.InvalidSignature'''
+    verifier = public_key.verifier(
+        signature,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        hashes.SHA256(),
+    )
+    verifier.update(hash(bencode.encode(dictionary)))
+    verifier.verify()
 
 
 def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
