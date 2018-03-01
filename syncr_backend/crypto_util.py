@@ -1,6 +1,7 @@
 # Functions for dealing with hashes/keys/ids in a consistant manner
 import base64
 import hashlib
+import os
 from typing import Any
 from typing import Dict
 
@@ -48,6 +49,22 @@ def b64decode(b: bytes) -> bytes:
     :return: The decoded bytes
     """
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
+
+
+def random_bytes() -> bytes:
+    """Generate 32 random bytes
+
+    :returns: 32 random bytes
+    """
+    return os.urandom(32)
+
+
+def random_int() -> int:
+    """Generate a random integer
+
+    :returns: a random 64 bit int
+    """
+    return int.from_bytes(os.urandom(8), 'big')
 
 
 def load_public_key(key: bytes) -> rsa.RSAPublicKey:

@@ -14,7 +14,7 @@ from syncr_backend.file_metadata import make_file_metadata
 
 class DropVersion(object):
 
-    def __init__(self, version: bytes, nonce: bytes) -> None:
+    def __init__(self, version: int, nonce: int) -> None:
         self.version = version
         self.nonce = nonce
 
@@ -181,10 +181,13 @@ def get_priv_key(nodeid: bytes) -> crypto_util.rsa.RSAPrivateKey:
     raise NotImplementedError()
 
 
+def gen_drop_id(first_owner: bytes) -> bytes:
+    return first_owner + crypto_util.random_bytes()
+
+
 def make_drop_metadata(
     path: str,
     drop_name: str,
-    drop_id: bytes,
     owner: bytes,
     other_owners: Dict[bytes, int],
 ) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
@@ -205,10 +208,11 @@ def make_drop_metadata(
             files[full_name] = make_file_metadata(full_name)
 
     file_hashes = {name: m.file_hash for (name, m) in files.items()}
+    drop_id = gen_drop_id(owner)
     dm = DropMetadata(
         drop_id=drop_id,
         name=drop_name,
-        version=DropVersion(b"1", b"0"),  # TODO: BUG: generate the nonce
+        version=DropVersion(1, crypto_util.random_int()),
         previous_versions=[],
         primary_owner=owner,
         other_owners=other_owners,
