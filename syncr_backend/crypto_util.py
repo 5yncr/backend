@@ -1,6 +1,8 @@
 # Functions for dealing with hashes/keys/ids in a consistant manner
 import base64
 import hashlib
+from typing import Any
+from typing import Dict
 
 import bencode  # type: ignore
 from cryptography.hazmat.backends import default_backend  # type: ignore
@@ -77,7 +79,10 @@ def generate_private_key() -> rsa.RSAPrivateKey:
     return private_key
 
 
-def sign_dictionary(private_key: rsa.RSAPrivateKey, dictionary: dict) -> bytes:
+def sign_dictionary(
+    private_key: rsa.RSAPrivateKey,
+    dictionary: Dict[str, Any],
+) -> bytes:
     """Takes a dict and returns a rsa signature of the hash of the dict"""
     signature_interface = private_key.signer(
         padding.PSS(
@@ -94,10 +99,10 @@ def sign_dictionary(private_key: rsa.RSAPrivateKey, dictionary: dict) -> bytes:
 def verify_signed_dictionary(
     public_key: rsa.RSAPublicKey,
     signature: bytes,
-    dictionary: dict,
+    dictionary: Dict[str, Any],
 ) -> None:
-    '''Returns None if success,
-     else throws cryptography.exceptions.InvalidSignature'''
+    """Returns None if success,
+     else throws cryptography.exceptions.InvalidSignature"""
     verifier = public_key.verifier(
         signature,
         padding.PSS(
