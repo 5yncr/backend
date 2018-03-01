@@ -1,3 +1,4 @@
+import fnmatch
 import os
 from typing import Any
 from typing import Dict
@@ -189,7 +190,8 @@ def make_drop_metadata(
     path: str,
     drop_name: str,
     owner: bytes,
-    other_owners: Dict[bytes, int],
+    other_owners: Dict[bytes, int]={},
+    ignore: List[str]=[],
 ) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
     """Makes drop metadata and file metadatas from a directory
 
@@ -204,6 +206,9 @@ def make_drop_metadata(
     files = {}
     for (dirpath, dirnames, filenames) in os.walk(path):
         for name in filenames:
+            if any([fnmatch.fnmatch(name, i) for i in ignore]):
+                # yikes! is there a better way to do this?
+                continue
             full_name = os.path.join(dirpath, name)
             files[full_name] = make_file_metadata(full_name)
 
