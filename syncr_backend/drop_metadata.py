@@ -1,11 +1,15 @@
+import os
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import bencode  # type: ignore
 
 from syncr_backend import crypto_util
+from syncr_backend.file_metadata import FileMetadata
+from syncr_backend.file_metadata import make_file_metadata
 
 
 class DropVersion(object):
@@ -49,7 +53,9 @@ class DropMetadata(object):
         if self._files_hash is not None:
             return self._files_hash
         else:
-            return self._gen_files_hash()
+            h = self._gen_files_hash()
+            self._files_hash = h
+            return h
 
     def _gen_files_hash(self) -> bytes:
         return crypto_util.hash_dict(self.files)
@@ -159,6 +165,13 @@ class DropMetadata(object):
         dm.verify_header()
         return dm
 
+    def write_file(self, metadata_location: bytes):
+        file_name = crypto_util.b64encode(self.id)
+        if not os.path.exists(metadata_location):
+            os.makedirs(metadata_location)
+        with open(os.path.join(metadata_location, file_name), 'wb') as f:
+            f.write(self.encode())
+
 
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
     raise NotImplementedError()
@@ -166,3 +179,41 @@ def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 def get_priv_key(nodeid: bytes) -> crypto_util.rsa.RSAPrivateKey:
     raise NotImplementedError()
+
+
+def make_drop_metadata(
+    path: str,
+    drop_name: str,
+    drop_id: bytes,
+    owner: bytes,
+    other_owners: Dict[bytes, int],
+) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
+    """Makes drop metadata and file metadatas from a directory
+
+    :param path: The directory to make metadata from
+    :param name: The name of the drop to create
+    :param drop_id: The drop id of the drop metadata, must match the owner
+    :param owner: The owner, must match the drop id
+    :param other_owners: Other owners, may be empty
+    :return: A tuple of the drop metadata, and a dict from file names to file
+    metadata
+    """
+    files = {}
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        for name in filenames:
+            full_name = os.path.join(dirpath, name)
+            files[full_name] = make_file_metadata(full_name)
+
+    file_hashes = {name: m.file_hash for (name, m) in files.items()}
+    dm = DropMetadata(
+        drop_id=drop_id,
+        name=drop_name,
+        version=DropVersion(b"1", b"0"),  # TODO: BUG: generate the nonce
+        previous_versions=[],
+        primary_owner=owner,
+        other_owners=other_owners,
+        signed_by=owner,
+        files=file_hashes,
+    )
+
+    return (dm, files)
