@@ -83,7 +83,13 @@ def sign_dictionary(
     private_key: rsa.RSAPrivateKey,
     dictionary: Dict[str, Any],
 ) -> bytes:
-    """Takes a dict and returns a rsa signature of the hash of the dict"""
+    """
+    Takes a dict and returns a rsa signature of the hash of the dict
+
+    :param private_key: RSA private_key
+    :param dictionary: the dictionary to sign
+    :return: None
+    """
     signature_interface = private_key.signer(
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
@@ -101,8 +107,15 @@ def verify_signed_dictionary(
     signature: bytes,
     dictionary: Dict[str, Any],
 ) -> None:
-    """Returns None if success,
-     else throws cryptography.exceptions.InvalidSignature"""
+    """
+    Returns None if success,
+    else throws cryptography.exceptions.InvalidSignature
+
+    :param public_key: RSA public_key
+    :param signature: the signature of the dictionary
+    :param dictionary: the actual dictionary
+    :return: None
+    """
     verifier = public_key.verifier(
         signature,
         padding.PSS(
