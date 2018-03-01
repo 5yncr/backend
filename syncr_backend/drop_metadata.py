@@ -39,8 +39,6 @@ class DropMetadata(object):
         self.sig = sig
         self._protocol_version = protocol_version
         self._files_hash = files_hash
-        self._priv_key: crypto_util.rsa.RSAPrivateKey = None
-        self._pub_key: crypto_util.rsa.RSAPublicKey = None
 
     def add_key(self, key: crypto_util.rsa.RSAPrivateKey) -> None:
         self._priv_key = key
@@ -68,20 +66,6 @@ class DropMetadata(object):
             raise Exception("Invalid files hash")
 
     @property
-    def priv_key(self) -> crypto_util.rsa.RSAPrivateKey:
-        if self._priv_key is None:
-            raise Exception("No private key")
-        return self._priv_key
-
-    @property
-    def pub_key(self) -> crypto_util.rsa.RSAPublicKey:
-        if self._priv_key is not None:
-            return self._priv_key.pub_key()
-        if self._pub_key is not None:
-            return self._pub_key
-        raise Exception("No public key")
-
-    @property
     def unsigned_header(self) -> Dict[str, Any]:  # TODO: type this better?
         h = {
             "protocol_version": self._protocol_version,
@@ -102,15 +86,17 @@ class DropMetadata(object):
     @property
     def header(self) -> Dict[str, Any]:
         h = self.unsigned_header
-        h_sig = crypto_util.sign_dictionary(h, self._priv_key)
+        key = get_priv_key(self.signed_by)
+        h_sig = crypto_util.sign_dictionary(key, h)
         h["header_signature"] = h_sig
         return h
 
     def verify_header(self) -> None:
         if self.sig is None:
             raise Exception("Invalid signature")
+        key = get_priv_key(self.signed_by)
         crypto_util.verify_signed_dictionary(
-            self.unsigned_header, self.sig, self.pub_key,
+            key, self.sig, self.unsigned_header,
         )
 
     def encode(self) -> bytes:
@@ -146,4 +132,8 @@ class DropMetadata(object):
 
 
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
+    raise NotImplementedError()
+
+
+def get_priv_key(nodeid: bytes) -> crypto_util.rsa.RSAPrivateKey:
     raise NotImplementedError()
