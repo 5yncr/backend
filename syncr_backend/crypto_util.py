@@ -88,7 +88,7 @@ def sign_dictionary(
 
     :param private_key: RSA private_key
     :param dictionary: the dictionary to sign
-    :return: None
+    :return: signature of the dictionary
     """
     signature_interface = private_key.signer(
         padding.PSS(
