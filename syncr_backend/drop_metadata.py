@@ -40,33 +40,40 @@ class DropMetadata(object):
         self._protocol_version = protocol_version
         self._files_hash = files_hash
 
-    def add_key(self, key: crypto_util.rsa.RSAPrivateKey) -> None:
-        self._priv_key = key
-        self._pub_key = key.public_key()
-
-    def add_pub_key(self, key: crypto_util.rsa.RSAPrivateKey) -> None:
-        self._pub_key = key
-
     @property
     def files_hash(self) -> bytes:
+        """Generate the hash of the files dictionary
+
+        :return: The hash of the bencoded files dict
+        """
         if self._files_hash is not None:
             return self._files_hash
         else:
-            return self.gen_files_hash()
+            return self._gen_files_hash()
 
-    def gen_files_hash(self) -> bytes:
-        return crypto_util.hash(bencode.encoded(self.files))
+    def _gen_files_hash(self) -> bytes:
+        return crypto_util.hash_dict(self.files)
 
     def verify_files_hash(self) -> None:
+        """Verify the file hash in this object
+
+        Returns None if the hash is OK, throwns an exception if the hash is not
+        good or has not been set
+        """
         if self._files_hash is None:
             raise Exception("Invalid files hash")
         given = self._files_hash
-        expected = self.gen_files_hash()
+        expected = self._gen_files_hash()
         if given != expected:
             raise Exception("Invalid files hash")
 
     @property
     def unsigned_header(self) -> Dict[str, Any]:  # TODO: type this better?
+        """Get the unsigned version of the header
+        The signature is set to b"", and the files list is {}
+
+        :retunrs: A dict that is the drop metadata header, without a signature
+        """
         h = {
             "protocol_version": self._protocol_version,
             "drop_id": self.id,
@@ -79,19 +86,31 @@ class DropMetadata(object):
             "header_signature": b"",
             "signed_by": self.signed_by,
             "files_hash": self.files_hash,
-            "files": [],
+            "files": {},
         }
         return h
 
     @property
     def header(self) -> Dict[str, Any]:
+        """Get the full header, including signature
+        If there is not signature already, will generate it, which requires
+        to the private key of signed_by
+
+        :return: The full drop metadata header in dict form
+        """
         h = self.unsigned_header
-        key = get_priv_key(self.signed_by)
-        h_sig = crypto_util.sign_dictionary(key, h)
-        h["header_signature"] = h_sig
+        if self.sig is None:
+            key = get_priv_key(self.signed_by)
+            self.sig = crypto_util.sign_dictionary(key, h)
+        h["header_signature"] = self.sig
         return h
 
     def verify_header(self) -> None:
+        """Verify the signature in the header
+
+        If the signature is OK, returns none, if the signature is None or is
+        invalid throws an exception
+        """
         if self.sig is None:
             raise Exception("Invalid signature")
         key = get_priv_key(self.signed_by)
@@ -100,12 +119,23 @@ class DropMetadata(object):
         )
 
     def encode(self) -> bytes:
+        """Encode the full drop metadata file, including files, to bytes
+
+        :return: The bencoded full metadata file
+        """
         h = self.header
         h["files"] = self.files
         return bencode.encode(h)
 
     @staticmethod
     def decode(b: bytes) -> 'DropMetadata':
+        """Decodes a bencoded drop metadata file to a DropMetadata object
+        Also verifies the files hash and header signature, and throws an
+        exception if they're not OK
+
+        :param b: The bencoded file
+        :return: A DropMetadata object from b
+        """
         # Note: assumes signed header
         decoded = bencode.decode(b)
         dm = DropMetadata(
@@ -126,7 +156,6 @@ class DropMetadata(object):
             sig=decoded["header_signature"],
         )
         dm.verify_files_hash()
-        dm.add_pub_key(get_pub_key(dm.signed_by))
         dm.verify_header()
         return dm
 
