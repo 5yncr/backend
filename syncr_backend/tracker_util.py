@@ -1,6 +1,6 @@
 import socket
 
-import bencode
+import bencode  # type: ignore
 
 from syncr_backend.constants import TRACKER_BUFFER_SIZE
 from syncr_backend.constants import TRACKER_ERROR_RESULT
