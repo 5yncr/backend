@@ -80,7 +80,7 @@ class DropMetadata(object):
         """Get the unsigned version of the header
         The signature is set to b"", and the files list is {}
 
-        :retunrs: A dict that is the drop metadata header, without a signature
+        :return: A dict that is the drop metadata header, without a signature
         """
         h = {
             "protocol_version": self._protocol_version,
