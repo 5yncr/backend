@@ -1,13 +1,13 @@
 from typing import Tuple
 
-import PublicKeyStore
-from constants import TRACKER_OK_RESULT
-from tracker_util import send_request_to_tracker
+from syncr_backend.constants import TRACKER_OK_RESULT
+from syncr_backend.PublicKeyStore import PublicKeyStore
+from syncr_backend.tracker_util import send_request_to_tracker
 
 
 class TrackerKeyStore(PublicKeyStore):
 
-    def __init__(self, node_id: bytes, ip: str, port: int):
+    def __init__(self, node_id: bytes, ip: str, port: int) -> None:
         """
         Sets up a TrackerKeyStore with the trackers ip and port and the id of
         the given node

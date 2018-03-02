@@ -1,8 +1,9 @@
 import socket
 
 import bencode
-from constants import TRACKER_BUFFER_SIZE
-from constants import TRACKER_ERROR_RESULT
+
+from syncr_backend.constants import TRACKER_BUFFER_SIZE
+from syncr_backend.constants import TRACKER_ERROR_RESULT
 
 
 def send_request_to_tracker(request: list, ip: str, port: int) -> dict:
