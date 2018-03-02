@@ -15,14 +15,12 @@ def force_initialize_node(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    full_directory = init_directory
-    if full_directory is None:
-        full_directory = get_full_init_directory(DEFAULT_INIT_DIR)
+    full_directory = get_full_init_directory(init_directory)
 
-    if os.path.exists(init_directory):
-        shutil.rmtree(init_directory)
+    if os.path.exists(full_directory):
+        shutil.rmtree(full_directory)
 
-    initialize_node(init_directory)
+    initialize_node(full_directory)
 
 
 def delete_node_directory(init_directory: Optional[str]=None) -> None:
@@ -32,9 +30,7 @@ def delete_node_directory(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    full_directory = init_directory
-    if full_directory is None:
-        full_directory = get_full_init_directory(DEFAULT_INIT_DIR)
+    full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(full_directory):
         shutil.rmtree(full_directory)
@@ -48,7 +44,6 @@ def is_node_initialized(init_directory: Optional[str]=None) -> bool:
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :return: whether a node directory exists
     """
-
     full_directory = get_full_init_directory(init_directory)
     return os.path.exists(full_directory)
 
@@ -61,9 +56,7 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    full_directory = init_directory
-    if full_directory is None:
-        full_directory = get_full_init_directory(DEFAULT_INIT_DIR)
+    full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(full_directory):
         raise FileExistsError
@@ -73,13 +66,16 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     write_private_key_to_disk(private_key, full_directory)
 
 
-def get_full_init_directory(init_directory: str):
+def get_full_init_directory(init_directory: Optional[str]=None) -> str:
     """
-    Joins the init_directory with the default home directory
+    Joins the init_directory with the default home directory if init_directory
+    is None, else just returns
 
     :return: The joined directory
     """
-    return os.path.join(str(Path.home()), init_directory)
+    if init_directory is None:
+        return os.path.join(str(Path.home()), DEFAULT_INIT_DIR)
+    return init_directory
 
 
 def write_private_key_to_disk(
@@ -91,9 +87,7 @@ def write_private_key_to_disk(
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    full_directory = init_directory
-    if full_directory is None:
-        full_directory = get_full_init_directory(DEFAULT_INIT_DIR)
+    full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(os.path.join(full_directory, "private_key.pem")):
         raise FileExistsError
@@ -115,9 +109,7 @@ def load_private_key_from_disk(
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    full_directory = init_directory
-    if full_directory is None:
-        full_directory = get_full_init_directory(DEFAULT_INIT_DIR)
+    full_directory = get_full_init_directory(init_directory)
 
     with open(
         os.path.join(full_directory, "private_key.pem"),
