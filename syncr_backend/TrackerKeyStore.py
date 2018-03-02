@@ -38,7 +38,7 @@ class TrackerKeyStore(PublicKeyStore):
             print(response.get('message'))
             return False
 
-    def request_key(self, request_node_id: bytes) -> Tuple[bool, bytes]:
+    def request_key(self, request_node_id: bytes) -> Tuple[bool, str]:
         """
         Asks tracker for the public key of a given node for sake of signature
         verification
