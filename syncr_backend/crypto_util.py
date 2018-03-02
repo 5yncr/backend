@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 
 import bencode  # type: ignore
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend  # type: ignore
 from cryptography.hazmat.primitives import hashes  # type: ignore
 from cryptography.hazmat.primitives import serialization  # type: ignore
@@ -13,6 +14,10 @@ from cryptography.hazmat.primitives.asymmetric import padding  # type: ignore
 from cryptography.hazmat.primitives.asymmetric import rsa  # type: ignore
 
 B64_ALT_CHARS = b'+-'
+
+
+class VerificationException(Exception):
+    pass
 
 
 def hash(b: bytes) -> bytes:
@@ -185,7 +190,10 @@ def verify_signed_dictionary(
         hashes.SHA256(),
     )
     verifier.update(hash(bencode.encode(dictionary)))
-    verifier.verify()
+    try:
+        verifier.verify()
+    except InvalidSignature:
+        raise VerificationException()
 
 
 def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:

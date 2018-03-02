@@ -10,6 +10,7 @@ import bencode  # type: ignore
 
 from syncr_backend import crypto_util
 from syncr_backend import node_init
+from syncr_backend.crypto_util import VerificationException
 from syncr_backend.file_metadata import FileMetadata
 from syncr_backend.file_metadata import make_file_metadata
 
@@ -69,11 +70,11 @@ class DropMetadata(object):
         good or has not been set
         """
         if self._files_hash is None:
-            raise Exception("Invalid files hash")
+            raise VerificationException()
         given = self._files_hash
         expected = self._gen_files_hash()
         if given != expected:
-            raise Exception("Invalid files hash")
+            raise VerificationException()
 
     @property
     def unsigned_header(self) -> Dict[str, Any]:  # TODO: type this better?
@@ -120,7 +121,7 @@ class DropMetadata(object):
         invalid throws an exception
         """
         if self.sig is None:
-            raise Exception("Invalid signature")
+            raise VerificationException()
         key = get_pub_key(self.signed_by)
         crypto_util.verify_signed_dictionary(
             key, self.sig, self.unsigned_header,
