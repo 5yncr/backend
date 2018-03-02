@@ -28,8 +28,8 @@ class TrackerPeerStore(DropPeerStore):
         :param port: port for the tracker connection
         """
         self.node_id = node_id
-        self.TRACKER_IP = ip
-        self.TRACKER_PORT = port
+        self.tracker_ip = ip
+        self.tracker_port = port
 
     def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
@@ -38,13 +38,13 @@ class TrackerPeerStore(DropPeerStore):
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
         :param ip: string of ipv4 or ipv6
         :param port: port where drop is being hosted
-        :return:
+        :return: boolean on success of adding drop peer
         """
         request = ['POST', drop_id, [self.node_id, ip, port]]
 
         response = send_request_to_tracker(
-            request, self.TRACKER_IP,
-            self.TRACKER_PORT,
+            request, self.tracker_ip,
+            self.tracker_port,
         )
         if response.get('result') == TRACKER_OK_RESULT:
             print(response.get('message'))
@@ -57,13 +57,14 @@ class TrackerPeerStore(DropPeerStore):
         """
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
-        :return: boolean, list of [node_id, ip, port]
+        :return: boolean (success on receiving peers),
+                list of [node_id, ip, port]
         """
         request = ['GET', drop_id]
 
         response = send_request_to_tracker(
-            request, self.TRACKER_IP,
-            self.TRACKER_PORT,
+            request, self.tracker_ip,
+            self.tracker_port,
         )
         if response.get('result') == TRACKER_OK_RESULT:
             print(response.get('message'))

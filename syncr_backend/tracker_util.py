@@ -12,7 +12,7 @@ def send_request_to_tracker(request: list, ip: str, port: int) -> dict:
     tracker and returns the response
     :param port: port where tracker is serving
     :param ip: ip of tracker
-    :param request: ['POST'/'GET', node_id, public key if 'POST']
+    :param request: ['POST'/'GET', node_id|drop_id, data]
     :return: tracker response or an artificial response in case of timeout
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -28,20 +28,20 @@ class TrackerKeyStore(PublicKeyStore):
         :param port: port for the tracker connection
         """
         self.node_id = node_id
-        self.TRACKER_IP = ip
-        self.TRACKER_PORT = port
+        self.tracker_ip = ip
+        self.tracker_port = port
 
     def set_key(self, key: bytes) -> bool:
         """
         Sets the public key of the this node on the tracker
-        :param key: 2048 RSA public key
-        :return: boolean dependant on the tracker response
+        :param key: 4096 RSA public key
+        :return: boolean on success of setting key
         """
         request = ['POST', self.node_id, key]
 
         response = send_request_to_tracker(
-            request, self.TRACKER_IP,
-            self.TRACKER_PORT,
+            request, self.tracker_ip,
+            self.tracker_port,
         )
         if response.get('result') == TRACKER_OK_RESULT:
             print(response.get('message'))
@@ -55,13 +55,14 @@ class TrackerKeyStore(PublicKeyStore):
         Asks tracker for the public key of a given node for sake of signature
         verification
         :param request_node_id: SHA256 hash
-        :return: boolean, 2048 RSA public key (if boolean is True)
+        :return: boolean (success of getting key),
+                2048 RSA public key (if boolean is True)
         """
         request = ['GET', request_node_id]
 
         response = send_request_to_tracker(
-            request, self.TRACKER_IP,
-            self.TRACKER_PORT,
+            request, self.tracker_ip,
+            self.tracker_port,
         )
         if response.get('result') == TRACKER_OK_RESULT:
             print(response.get('message'))

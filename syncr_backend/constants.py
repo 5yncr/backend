@@ -1,7 +1,7 @@
 NODE_ID_BYTE_SIZE = 32
 DROP_ID_BYTE_SIZE = 64
 
-TRACKER_BUFFER_SIZE = 1024
+TRACKER_BUFFER_SIZE = 4096
 
 # Request structure indices for Tracker calls
 TRACKER_TYPE_INDEX = 0
