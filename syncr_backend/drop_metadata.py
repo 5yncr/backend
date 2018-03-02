@@ -1,4 +1,3 @@
-import fnmatch
 import os
 from typing import Any
 from typing import Dict
@@ -10,6 +9,7 @@ import bencode  # type: ignore
 
 from syncr_backend import crypto_util
 from syncr_backend import node_init
+from syncr_backend import util
 from syncr_backend.crypto_util import VerificationException
 from syncr_backend.file_metadata import FileMetadata
 from syncr_backend.file_metadata import make_file_metadata
@@ -202,15 +202,9 @@ def make_drop_metadata(
     metadata
     """
     files = {}
-    for (dirpath, dirnames, filenames) in os.walk(path):
-        for name in filenames:
-            if any([fnmatch.fnmatch(name, i) for i in ignore]):
-                # yikes! is there a better way to do this?
-                continue
-            full_name = os.path.join(dirpath, name)
-            if any([fnmatch.fnmatch(full_name, i) for i in ignore]):
-                continue
-            files[full_name] = make_file_metadata(full_name)
+    for (dirpath, filename) in util.walk_with_ignore(path, ignore):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = make_file_metadata(full_name)
 
     file_hashes = {name: m.file_hash for (name, m) in files.items()}
     drop_id = gen_drop_id(owner)
