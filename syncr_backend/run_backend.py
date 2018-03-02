@@ -18,28 +18,32 @@ def execute_node_function(function_name: str, args: List[str]):
         "node_force_init": node_init.force_initialize_node,
         "delete_node": node_init.delete_node_directory,
     }
-
     if function_name in init_function_map:
         # handles up to one argument
         init_function_map[function_name](*args[:1])
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "function",
-    type=str,
-    nargs=1,
-    help="string name of the function to be ran",
-)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "function",
+        type=str,
+        nargs=1,
+        help="string name of the function to be ran",
+    )
 
-parser.add_argument(
-    "--args",
-    type=str,
-    nargs='*',
-    help='arguments for the function to be ran',
-)
-args = parser.parse_args()
-if args.args is not None:
-    execute_node_function(args.function[0], args.args)
-else:
-    execute_node_function(args.function[0], [])
+    parser.add_argument(
+        "--args",
+        type=str,
+        nargs='*',
+        help='arguments for the function to be ran',
+    )
+    args = parser.parse_args()
+    if args.args is not None:
+        execute_node_function(args.function[0], args.args)
+    else:
+        execute_node_function(args.function[0], [])
+
+
+if __name__ == '__main__':
+    main()
