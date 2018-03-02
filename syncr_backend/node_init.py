@@ -31,7 +31,7 @@ def initialize_node(init_directory: str=DEFAULT_INIT_DIR) -> None:
 
 
 def write_private_key_to_disk(
-    key: crypto_util.rsa.RSAPrivateKey, init_directory: str,
+    key: crypto_util.rsa.RSAPrivateKey, init_directory: str=DEFAULT_INIT_DIR,
 ) -> None:
     """Write Private Key (and public key attached) to file"""
     if os.path.exists(os.path.join(init_directory, "private_key.pem")):
@@ -46,7 +46,7 @@ def write_private_key_to_disk(
 
 
 def load_private_key_from_disk(
-    init_directory: str,
+    init_directory: str=DEFAULT_INIT_DIR,
 ) -> crypto_util.rsa.RSAPrivateKey:
     """Load Private Key (and public key) from file"""
     with open(

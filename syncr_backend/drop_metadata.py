@@ -9,6 +9,7 @@ from typing import Tuple
 import bencode  # type: ignore
 
 from syncr_backend import crypto_util
+from syncr_backend import node_init
 from syncr_backend.file_metadata import FileMetadata
 from syncr_backend.file_metadata import make_file_metadata
 
@@ -107,7 +108,7 @@ class DropMetadata(object):
         """
         h = self.unsigned_header
         if self.sig is None:
-            key = get_priv_key(self.signed_by)
+            key = node_init.load_private_key_from_disk()
             self.sig = crypto_util.sign_dictionary(key, h)
         h["header_signature"] = self.sig
         return h
@@ -120,7 +121,7 @@ class DropMetadata(object):
         """
         if self.sig is None:
             raise Exception("Invalid signature")
-        key = get_priv_key(self.signed_by)
+        key = node_init.load_private_key_from_disk()
         crypto_util.verify_signed_dictionary(
             key, self.sig, self.unsigned_header,
         )
@@ -175,10 +176,6 @@ class DropMetadata(object):
 
 
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
-    raise NotImplementedError()
-
-
-def get_priv_key(nodeid: bytes) -> crypto_util.rsa.RSAPrivateKey:
     raise NotImplementedError()
 
 
