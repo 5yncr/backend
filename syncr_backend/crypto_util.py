@@ -6,7 +6,7 @@ from typing import Any
 from typing import Dict
 
 import bencode  # type: ignore
-from cryptography.exceptions import InvalidSignature
+from cryptography.exceptions import InvalidSignature  # type: ignore
 from cryptography.hazmat.backends import default_backend  # type: ignore
 from cryptography.hazmat.primitives import hashes  # type: ignore
 from cryptography.hazmat.primitives import serialization  # type: ignore
