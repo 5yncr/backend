@@ -88,7 +88,7 @@ class DropMetadata(object):
             "name": self.name,
             "version": self.version.version,
             "version_nonce": self.version.nonce,
-            "previous_version": [dict(v) for v in self.previous_versions],
+            "previous_versions": [dict(v) for v in self.previous_versions],
             "primary_owner": self.owner,
             "other_owners": self.other_owners,
             "header_signature": b"",
@@ -121,7 +121,7 @@ class DropMetadata(object):
         """
         if self.sig is None:
             raise Exception("Invalid signature")
-        key = node_init.load_private_key_from_disk()
+        key = get_pub_key(self.signed_by)
         crypto_util.verify_signed_dictionary(
             key, self.sig, self.unsigned_header,
         )
