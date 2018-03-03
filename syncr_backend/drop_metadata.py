@@ -10,6 +10,7 @@ import bencode  # type: ignore
 from syncr_backend import crypto_util
 from syncr_backend import node_init
 from syncr_backend import util
+from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.crypto_util import VerificationException
 from syncr_backend.file_metadata import FileMetadata
 from syncr_backend.file_metadata import make_file_metadata
@@ -24,6 +25,9 @@ class DropVersion(object):
     def __iter__(self):
         yield 'version', self.version
         yield 'nonce', self.nonce
+
+    def __str__(self):
+        return "%s-%s" % (self.version, self.nonce)
 
 
 class DropMetadata(object):
@@ -127,6 +131,37 @@ class DropMetadata(object):
             key, self.sig, self.unsigned_header,
         )
 
+    def write_file(
+        self, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+    ) -> None:
+        file_name = "%s-%s" % (
+            crypto_util.b64encode(self.id).decode("utf-8"), str(self.version),
+        )
+        if not os.path.exists(metadata_location):
+            os.makedirs(metadata_location)
+        with open(os.path.join(metadata_location, file_name), 'wb') as f:
+            f.write(self.encode())
+
+    @staticmethod
+    def read_file(
+        id: bytes, version: DropVersion,
+        metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+    ) -> Optional['DropMetadata']:
+        file_name = "%s-%s" % (
+            crypto_util.b64encode(id).decode("utf-8"), str(version),
+        )
+        if not os.path.exists(os.path.join(metadata_location, file_name)):
+            return None
+
+        with open(os.path.join(metadata_location, file_name), 'rb') as f:
+            b = b''
+            while True:
+                data = f.read(65536)
+                if not data:
+                    break
+                b += data
+            return DropMetadata.decode(b)
+
     def encode(self) -> bytes:
         """Encode the full drop metadata file, including files, to bytes
 
@@ -167,13 +202,6 @@ class DropMetadata(object):
         dm.verify_files_hash()
         dm.verify_header()
         return dm
-
-    def write_file(self, metadata_location: bytes):
-        file_name = crypto_util.b64encode(self.id)
-        if not os.path.exists(metadata_location):
-            os.makedirs(metadata_location)
-        with open(os.path.join(metadata_location, file_name), 'wb') as f:
-            f.write(self.encode())
 
 
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
