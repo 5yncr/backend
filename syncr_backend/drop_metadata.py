@@ -27,7 +27,7 @@ class DropVersion(object):
         yield 'nonce', self.nonce
 
     def __str__(self):
-        return "%s-%s" % (self.version, self.nonce)
+        return "%s_%s" % (self.version, self.nonce)
 
 
 class DropMetadata(object):
@@ -134,7 +134,7 @@ class DropMetadata(object):
     def write_file(
         self, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> None:
-        file_name = "%s-%s" % (
+        file_name = "%s_%s" % (
             crypto_util.b64encode(self.id).decode("utf-8"), str(self.version),
         )
         if not os.path.exists(metadata_location):
@@ -147,7 +147,7 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> Optional['DropMetadata']:
-        file_name = "%s-%s" % (
+        file_name = "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
         if not os.path.exists(os.path.join(metadata_location, file_name)):
@@ -234,7 +234,9 @@ def make_drop_metadata(
         full_name = os.path.join(dirpath, filename)
         files[full_name] = make_file_metadata(full_name)
 
-    file_hashes = {name: m.file_hash for (name, m) in files.items()}
+    file_hashes = {
+        os.path.relpath(name, path): m.file_hash for (name, m) in files.items()
+    }
     drop_id = gen_drop_id(owner)
     dm = DropMetadata(
         drop_id=drop_id,
