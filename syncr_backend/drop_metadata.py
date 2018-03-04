@@ -134,6 +134,11 @@ class DropMetadata(object):
     def write_file(
         self, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> None:
+        """Write the representation of this objec to disk
+
+        :param metadata_location: where to write to disk
+        :return: None
+        """
         file_name = "%s_%s" % (
             crypto_util.b64encode(self.id).decode("utf-8"), str(self.version),
         )
@@ -147,6 +152,13 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> Optional['DropMetadata']:
+        """Read a drop metadata file from disk
+
+        :param id: the drop id
+        :param version: the drop version
+        :param metadata_location: where to look for the file
+        :return: A DropMetadata object, or maybe None
+        """
         file_name = "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
