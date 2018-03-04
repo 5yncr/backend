@@ -20,6 +20,8 @@ def walk_with_ignore(
     """
     ignore += DEFAULT_IGNORE
     for (dirpath, _, filenames) in os.walk(path):
+        if any([fnmatch.fnmatch(dirpath, i) for i in ignore]):
+            continue
         for name in filenames:
             if any([fnmatch.fnmatch(name, i) for i in ignore]):
                 continue

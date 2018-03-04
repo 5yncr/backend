@@ -25,7 +25,7 @@ TRACKER_OK_RESULT = 'OK'
 TRACKER_ERROR_RESULT = 'ERROR'
 
 # Node init constants
-DEFAULT_INIT_DIR = ".5nycr/"
+DEFAULT_INIT_DIR = ".5yncr"
 
 # file_metadata constants
 DEFAULT_CHUNK_SIZE = 2**23
