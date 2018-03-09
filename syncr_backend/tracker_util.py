@@ -4,7 +4,7 @@ from typing import Dict
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import TRACKER_BUFFER_SIZE
+from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 
 
 def send_request_to_tracker(
@@ -22,7 +22,7 @@ def send_request_to_tracker(
     try:
         s.connect((ip, port))
         s.send(bencode.encode(request))
-        data = s.recv(TRACKER_BUFFER_SIZE)
+        data = s.recv(DEFAULT_BUFFER_SIZE)
         s.close()
 
         response = bencode.decode(data)

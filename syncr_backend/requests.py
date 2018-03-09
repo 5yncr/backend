@@ -1,9 +1,8 @@
 from typing import List
 from typing import Optional
 
-from syncr_backend import drop_metadata
-from syncr_backend import file_metadata
 from syncr_backend import network_util
+from syncr_backend.constants import PROTOCOL_VERSION
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
@@ -17,7 +16,7 @@ def send_drop_metadata_request(
     ip: str,
     port: int,
     drop_id: str,
-    protocol_version: Optional[int]=1,
+    protocol_version: Optional[int]=PROTOCOL_VERSION,
     drop_version: Optional[DropVersion]=None,
 ) -> DropMetadata:
     """
@@ -42,15 +41,15 @@ def send_drop_metadata_request(
         request_dict,
         ip,
         port,
-    )
-    return drop_metadata.decode(drop_metadata_bytes)
+    )['response']
+    return DropMetadata.decode(drop_metadata_bytes)
 
 
 def send_file_metadata_request(
     ip: str,
     port: int,
     file_id: str,
-    protocol_version: Optional[int]=1,
+    protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> FileMetadata:
     """
     Sends file metadata request to node at ip and port
@@ -70,15 +69,15 @@ def send_file_metadata_request(
         request_dict,
         ip,
         port,
-    )
-    return file_metadata.decode(file_metadata_bytes)
+    )['response']
+    return FileMetadata.decode(file_metadata_bytes)
 
 
 def send_chunk_list_request(
     ip: str,
     port: int,
     file_id: str,
-    protocol_version: Optional[int]=1,
+    protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> List[int]:
     """
     Sends chunk list request to node at ip and port
@@ -98,7 +97,7 @@ def send_chunk_list_request(
         request_dict,
         ip,
         port,
-    )
+    )['response']
     return chunk_index_list
 
 
@@ -107,7 +106,7 @@ def send_chunk_request(
     port: int,
     file_id: str,
     file_index, int,
-    protocol_version: Optional[int]=1,
+    protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> bytes:
     """
     Sends chunk request to node at ip and port
@@ -129,5 +128,5 @@ def send_chunk_request(
         request_dict,
         ip,
         port,
-    )
+    )['response']
     return chunk

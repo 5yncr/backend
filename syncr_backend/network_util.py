@@ -22,7 +22,7 @@ class IncompatibleProtocolVersionException(Exception):
 
 def send_request_to_node(
     request: Dict[str, Any], ip: str, port: int,
-) -> bytes:
+) -> Any:
     """
     Creates a connection a node and sends a given request to the
     node and returns the response
@@ -46,7 +46,7 @@ def send_request_to_node(
 
         response = bencode.decode(data)
         if (response['status'] == 'ok'):
-            return bencode.decode(response['response'])
+            return response['response']
         else:
             exceptionmap = {
                 ERR_NEXIST: NotExistException,
