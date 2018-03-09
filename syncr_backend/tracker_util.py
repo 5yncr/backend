@@ -1,4 +1,6 @@
 import socket
+from socket import SHUT_RD
+from socket import SHUT_WR
 from typing import Any
 from typing import Dict
 
@@ -22,11 +24,21 @@ def send_request_to_tracker(
     try:
         s.connect((ip, port))
         s.send(bencode.encode(request))
-        data = s.recv(DEFAULT_BUFFER_SIZE)
+        s.shutdown(SHUT_WR)
+
+        response = None
+        while 1:
+            data = s.recv(DEFAULT_BUFFER_SIZE)
+            if not data:
+                break
+            if response is None:
+                response = data
+            else:
+                response += data
+        s.shutdown(SHUT_RD)
         s.close()
 
-        response = bencode.decode(data)
-        return response
+        return bencode.decode(response)
     except socket.timeout:
         s.close()
         raise TimeoutError('ERROR: Tracker server timeout')
