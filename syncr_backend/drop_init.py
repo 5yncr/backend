@@ -9,6 +9,11 @@ from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 
 
 def initialize_drop(directory: str) -> None:
+    """Initialize a drop from a directory. Generates the necesssary drop and
+    file metadata files and writes the drop location to the central config dif
+
+    :param directory: The directory to initialize a drop from
+    """
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
     (drop_m, files_m) = drop_metadata.make_drop_metadata(
@@ -27,6 +32,11 @@ def initialize_drop(directory: str) -> None:
 
 
 def save_drop_location(drop_id: bytes, location: str) -> None:
+    """Save a drops location in the central data dir
+
+    :param drop_id: The unencoded drop id
+    :param location: Where the drop is located on disk
+    """
     save_path = _get_save_path()
 
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
@@ -36,6 +46,11 @@ def save_drop_location(drop_id: bytes, location: str) -> None:
 
 
 def get_drop_location(drop_id: bytes) -> str:
+    """Get a drops location on disk, from the drop id
+
+    :param drop_id: The unencoded drop id
+    :return: The directory the drop is in
+    """
     save_path = _get_save_path()
 
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
