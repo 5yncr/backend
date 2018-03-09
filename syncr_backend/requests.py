@@ -41,7 +41,7 @@ def send_drop_metadata_request(
         request_dict,
         ip,
         port,
-    )['response']
+    )
     return DropMetadata.decode(drop_metadata_bytes)
 
 
@@ -69,7 +69,7 @@ def send_file_metadata_request(
         request_dict,
         ip,
         port,
-    )['response']
+    )
     return FileMetadata.decode(file_metadata_bytes)
 
 
@@ -97,7 +97,7 @@ def send_chunk_list_request(
         request_dict,
         ip,
         port,
-    )['response']
+    )
     return chunk_index_list
 
 
@@ -128,5 +128,5 @@ def send_chunk_request(
         request_dict,
         ip,
         port,
-    )['response']
+    )
     return chunk
