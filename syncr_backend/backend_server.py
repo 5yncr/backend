@@ -5,6 +5,7 @@ from socket import SHUT_RD
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
+from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
@@ -56,10 +57,16 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
         request['drop_id'], drop_version, file_location,
     )
 
-    response = {
-        'status': 'ok',
-        'response': drop_metadata.encode(),
-    }
+    if drop_metadata is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        response = {
+            'status': 'ok',
+            'response': drop_metadata.encode(),
+        }
 
     send_response(conn, response)
 
