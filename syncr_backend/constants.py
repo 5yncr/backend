@@ -26,6 +26,7 @@ TRACKER_ERROR_RESULT = 'ERROR'
 
 # Node init constants
 DEFAULT_INIT_DIR = ".5yncr"
+DEFAULT_METADATA_LOOKUP_LOCATION = "drops"
 
 # file_metadata constants
 DEFAULT_CHUNK_SIZE = 2**23

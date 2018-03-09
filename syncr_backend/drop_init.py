@@ -5,10 +5,10 @@ from syncr_backend import drop_metadata
 from syncr_backend import node_init
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 
 
 def initialize_drop(directory: str) -> None:
-    os.chdir(directory)
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
     (drop_m, files_m) = drop_metadata.make_drop_metadata(
@@ -23,3 +23,28 @@ def initialize_drop(directory: str) -> None:
         f_m.write_file(
             os.path.join(directory, DEFAULT_FILE_METADATA_LOCATION),
         )
+    save_drop_location(drop_m.id, directory)
+
+
+def save_drop_location(drop_id: bytes, location: str) -> None:
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
+        f.write(location)
+
+
+def get_drop_location(drop_id: bytes) -> str:
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
+        return f.read()
+
+
+def _get_save_path() -> str:
+    node_info_path = node_init.get_full_init_directory()
+    save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
+    return save_path
