@@ -105,7 +105,7 @@ def send_chunk_request(
     ip: str,
     port: int,
     file_id: str,
-    file_index, int,
+    file_index: int,
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> bytes:
     """

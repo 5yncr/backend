@@ -20,6 +20,17 @@ class IncompatibleProtocolVersionException(Exception):
     pass
 
 
+def raise_network_error(
+    errno: int,
+) -> None:
+    """Raises an error based on the errno"""
+    exceptionmap = {
+        ERR_NEXIST: NotExistException,
+        ERR_INCOMPAT: IncompatibleProtocolVersionException,
+    }
+    raise exceptionmap[errno]
+
+
 def send_request_to_node(
     request: Dict[str, Any], ip: str, port: int,
 ) -> Any:
@@ -48,11 +59,7 @@ def send_request_to_node(
         if (response['status'] == 'ok'):
             return response['response']
         else:
-            exceptionmap = {
-                ERR_NEXIST: NotExistException,
-                ERR_INCOMPAT: IncompatibleProtocolVersionException,
-            }
-            raise exceptionmap[response['error']]
+            raise_network_error(response['error'])
 
     except socket.timeout:
         s.close()
