@@ -139,13 +139,11 @@ def main() -> None:
         conn, addr = s.accept()
         print(type(conn))
         print('Connection address:', addr)
-        request = None
+        request = b''
         while 1:
             data = conn.recv(DEFAULT_BUFFER_SIZE)
             if not data:
                 break
-            if request is None:
-                request = data
             else:
                 request += data
             print('Data received')
