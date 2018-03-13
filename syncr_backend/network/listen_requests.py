@@ -130,14 +130,11 @@ def handle_request_new_drop_metadata(request: dict, conn: socket.socket) \
     pass
 
 
-def listen_requests() -> None:
+def listen_requests(tcp_ip: str, tcp_port: str) -> None:
     """
 
     :return:
     """
-    tcp_ip = sys.argv[1]
-    tcp_port = sys.argv[2]
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((tcp_ip, int(tcp_port)))
     s.listen(5)
@@ -160,4 +157,4 @@ def listen_requests() -> None:
 
 
 if __name__ == '__main__':
-    listen_requests()
+    listen_requests(sys.argv[1], sys.argv[0])

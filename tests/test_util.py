@@ -3,7 +3,7 @@ from unittest import mock
 from syncr_backend.util.fileio_util import walk_with_ignore
 
 
-@mock.patch('syncr_backend.util.os.walk', autospec=True)
+@mock.patch('syncr_backend.util.fileio_util.os.walk', autospec=True)
 def test_walk_with_ignore(mock_os_walk):
     mock_os_walk.side_effect = [[]]
     assert list(walk_with_ignore('foo', ignore=[])) == []

@@ -14,7 +14,25 @@ def run_backend() -> None:
     """
     Runs the backend
     """
-    request_listen_thread = threading.Thread(target=listen_requests, args=[])
+    input_args_parser = argparse.ArgumentParser()
+    input_args_parser.add_argument(
+        "ip",
+        type=str,
+        nargs=1,
+        help='ip to bind listening server',
+    )
+    input_args_parser.add_argument(
+        "port",
+        type=str,
+        nargs=1,
+        help='ip to bind listening server',
+    )
+    arguments = input_args_parser.parse_args()
+
+    request_listen_thread = threading.Thread(
+        target=listen_requests,
+        args=[arguments.ip[0], arguments.port[0]],
+    )
     request_listen_thread.start()
 
 
@@ -73,24 +91,41 @@ def execute_function(function_name: str, args: List[str]):
     if function_name == "node_init":
         node_init.initialize_node(*args)
     elif function_name == "node_force_init":
-        node_init.force_initialize_node(*args)
+        node_init.force_initialize_node(args[0])
     elif function_name == "delete_node":
-        node_init.delete_node_directory(*args)
+        node_init.delete_node_directory(args[0])
 
     # drop functions
     if function_name == "drop_init":
-        drop_init.initialize_drop(*args)
+        drop_init.initialize_drop(args[0])
 
     # request functions, only for debug
     try:
         if function_name == "send_drop_metadata_request":
-            print(send_requests.send_drop_metadata_request(*args))
+            print(send_requests.send_drop_metadata_request(
+                args[0],
+                int(args[1]),
+                args[2],
+            ))
         elif function_name == "send_file_metadata_request":
-            print(send_requests.send_file_metadata_request(*args))
+            print(send_requests.send_file_metadata_request(
+                args[0],
+                int(args[1]),
+                args[2],
+            ))
         elif function_name == "send_chunk_list_request":
-            send_requests.send_chunk_list_request(*args)
+            print(send_requests.send_chunk_list_request(
+                args[0],
+                int(args[1]),
+                args[2],
+            ))
         elif function_name == "send_chunk_request":
-            send_requests.send_chunk_request(*args)
+            print(send_requests.send_chunk_request(
+                args[0],
+                int(args[1]),
+                args[2],
+                int(args[4]),
+            ))
     # placeholder only for debugging
     except Exception:
         print("Error in handling request function")

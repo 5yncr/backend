@@ -242,7 +242,7 @@ def make_drop_metadata(
     metadata
     """
     files = {}
-    for (dirpath, filename) in util.walk_with_ignore(path, ignore):
+    for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)
         files[full_name] = make_file_metadata(full_name)
 

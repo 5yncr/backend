@@ -6,6 +6,7 @@ from typing import Tuple
 
 from syncr_backend.util import crypto_util
 from syncr_backend.constants import DEFAULT_IGNORE
+from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 
 
 def write_chunk(
