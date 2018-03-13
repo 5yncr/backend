@@ -1,6 +1,6 @@
 from unittest import mock
 
-from syncr_backend.util import walk_with_ignore
+from syncr_backend.util.fileio_util import walk_with_ignore
 
 
 @mock.patch('syncr_backend.util.os.walk', autospec=True)
