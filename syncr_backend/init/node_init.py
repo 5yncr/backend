@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from syncr_backend import crypto_util
+from syncr_backend.util import crypto_util
 from syncr_backend.constants import DEFAULT_INIT_DIR
 
 

@@ -11,10 +11,10 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.drop_init import get_drop_location
-from syncr_backend.drop_metadata import DropMetadata
-from syncr_backend.drop_metadata import DropVersion
-from syncr_backend.network_util import send_response
+from syncr_backend.init.drop_init import get_drop_location
+from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.metadata.drop_metadata import DropVersion
+from syncr_backend.util.network_util import send_response
 
 
 def request_dispatcher(request: dict, conn: socket.socket) -> None:
@@ -130,7 +130,7 @@ def handle_request_new_drop_metadata(request: dict, conn: socket.socket) \
     pass
 
 
-def main() -> None:
+def listen_requests() -> None:
     """
 
     :return:
@@ -160,4 +160,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    listen_requests()
