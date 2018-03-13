@@ -4,9 +4,9 @@ from typing import Iterator
 from typing import List
 from typing import Tuple
 
-from syncr_backend.util import crypto_util
-from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
+from syncr_backend.constants import DEFAULT_IGNORE
+from syncr_backend.util import crypto_util
 
 
 def write_chunk(

@@ -1,7 +1,6 @@
 from typing import List
 from typing import Optional
 
-from syncr_backend.util import network_util
 from syncr_backend.constants import PROTOCOL_VERSION
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
@@ -10,6 +9,7 @@ from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.util import network_util
 
 
 def send_drop_metadata_request(
