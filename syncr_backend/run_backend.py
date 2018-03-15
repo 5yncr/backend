@@ -26,25 +26,34 @@ def run_backend() -> None:
         "port",
         type=str,
         nargs=1,
-        help='ip to bind listening server',
+        help='port to bind listening server',
+    )
+    input_args_parser.add_argument(
+        "--backendonly",
+        action="store_true",
+        help='runs only the backend if added as an option',
     )
     arguments = input_args_parser.parse_args()
 
+    shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
         target=listen_requests,
-        args=[arguments.ip[0], arguments.port[0]],
+        args=[arguments.ip[0], arguments.port[0], shutdown_flag],
     )
     request_listen_thread.start()
-    read_cmds_from_cmdline()
-    request_listen_thread.join()
+
+    if not arguments.backendonly:
+        read_cmds_from_cmdline()
+        shutdown_flag.set()
+        request_listen_thread.join()
 
 
 def read_cmds_from_cmdline() -> None:
     """
     Read and execute commands given as cmdline input
     """
-    exit = False
-    while not exit:
+    exit_flag = False
+    while not exit_flag:
         command = input("5yncr >>> ").split(' ')
         return_list = ["", []]
         parse_cmd_thread = threading.Thread(
@@ -61,7 +70,7 @@ def read_cmds_from_cmdline() -> None:
         if function_name != 'exit':
             execute_function(function_name, args)
         else:
-            exit = True
+            exit_flag = True
 
 
 def parse_cmd(

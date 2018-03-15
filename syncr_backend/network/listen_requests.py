@@ -1,5 +1,6 @@
 import socket
 import sys
+import threading
 from socket import SHUT_RD
 
 import bencode  # type: ignore
@@ -130,16 +131,23 @@ def handle_request_new_drop_metadata(request: dict, conn: socket.socket) \
     pass
 
 
-def listen_requests(tcp_ip: str, tcp_port: str) -> None:
+def listen_requests(
+    tcp_ip: str,
+    tcp_port: str,
+    shutdown_flag: threading.Event,
+) -> None:
     """
-
+    runs the main tcp requests loop
+    :param tcp_ip: ip to bind to
+    :param tcp_port: port to bind to
+    :param shutdown_flag: flag to be set to shutdown the thread
     :return:
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((tcp_ip, int(tcp_port)))
     s.listen(5)
 
-    while 1:
+    while not shutdown_flag.is_set():
         conn, addr = s.accept()
         print(type(conn))
         print('Connection address:', addr)
@@ -157,4 +165,4 @@ def listen_requests(tcp_ip: str, tcp_port: str) -> None:
 
 
 if __name__ == '__main__':
-    listen_requests(sys.argv[1], sys.argv[0])
+    listen_requests(sys.argv[1], sys.argv[0], threading.Event())
