@@ -17,6 +17,9 @@ from syncr_backend.util import fileio_util
 from syncr_backend.util.crypto_util import VerificationException
 
 
+LATEST = "LATEST"
+
+
 class DropVersion(object):
 
     def __init__(self, version: int, nonce: int) -> None:
@@ -162,7 +165,7 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> None:
-        file_name = DropMetadata.make_filename(id, "LATEST")
+        file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'w') as f:
             to_write = DropMetadata.make_filename(id, version)
             f.write(to_write)
@@ -171,7 +174,7 @@ class DropMetadata(object):
     def read_latest(
             id: bytes, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> str:
-        file_name = DropMetadata.make_filename(id, "LATEST")
+        file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'r') as f:
             return f.readline()
 
