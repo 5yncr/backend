@@ -172,7 +172,7 @@ class DropMetadata(object):
 
     @staticmethod
     def read_latest(
-            id: bytes, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+        id: bytes, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> str:
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'r') as f:
