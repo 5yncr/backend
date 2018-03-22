@@ -8,7 +8,6 @@ from typing import Union
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.init import node_init
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.metadata.file_metadata import make_file_metadata
@@ -144,8 +143,7 @@ class DropMetadata(object):
         )
 
     def write_file(
-        self, is_latest: bool=True,
-        metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+        self, metadata_location: str, is_latest: bool=True,
     ) -> None:
         """Write the representation of this objec to disk
 
@@ -163,7 +161,7 @@ class DropMetadata(object):
     @staticmethod
     def write_latest(
         id: bytes, version: DropVersion,
-        metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+        metadata_location: str,
     ) -> None:
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'w') as f:
@@ -172,7 +170,7 @@ class DropMetadata(object):
 
     @staticmethod
     def read_latest(
-        id: bytes, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+        id: bytes, metadata_location: str,
     ) -> str:
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'r') as f:
@@ -180,8 +178,7 @@ class DropMetadata(object):
 
     @staticmethod
     def read_file(
-        id: bytes, version: Optional[DropVersion]=None,
-        metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
+        id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
     ) -> Optional['DropMetadata']:
         """Read a drop metadata file from disk
 
@@ -191,7 +188,7 @@ class DropMetadata(object):
         :return: A DropMetadata object, or maybe None
         """
         if version is None:
-            file_name = DropMetadata.read_latest(id)
+            file_name = DropMetadata.read_latest(id, metadata_location)
         else:
             file_name = DropMetadata.make_filename(id, version)
 
