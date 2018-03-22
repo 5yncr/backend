@@ -4,6 +4,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import bencode  # type: ignore
 
@@ -131,6 +132,14 @@ class DropMetadata(object):
             key, self.sig, self.unsigned_header,
         )
 
+    @staticmethod
+    def make_filename(
+        id: bytes, version: Union[str, DropVersion],
+    ) -> str:
+        return "%s_%s" % (
+            crypto_util.b64encode(id).decode("utf-8"), str(version),
+        )
+
     def write_file(
         self, is_latest: bool=True,
         metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
@@ -140,9 +149,7 @@ class DropMetadata(object):
         :param metadata_location: where to write to disk
         :return: None
         """
-        file_name = "%s_%s" % (
-            crypto_util.b64encode(self.id).decode("utf-8"), str(self.version),
-        )
+        file_name = DropMetadata.make_filename(self.id, self.version)
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
         with open(os.path.join(metadata_location, file_name), 'wb') as f:
@@ -155,22 +162,16 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> None:
-        file_name = "%s_%s" % (
-            crypto_util.b64encode(id).decode("utf-8"), "LATEST",
-        )
+        file_name = DropMetadata.make_filename(id, "LATEST")
         with open(os.path.join(metadata_location, file_name), 'w') as f:
-            to_write = "%s_%s" % (
-                crypto_util.b64encode(id).decode("utf-8"), str(version),
-            )
+            to_write = DropMetadata.make_filename(id, version)
             f.write(to_write)
 
     @staticmethod
     def read_latest(
             id: bytes, metadata_location: str=DEFAULT_DROP_METADATA_LOCATION,
     ) -> str:
-        file_name = "%s_%s" % (
-            crypto_util.b64encode(id).decode("utf-8"), "LATEST",
-        )
+        file_name = DropMetadata.make_filename(id, "LATEST")
         with open(os.path.join(metadata_location, file_name), 'r') as f:
             return f.readline()
 
@@ -189,9 +190,7 @@ class DropMetadata(object):
         if version is None:
             file_name = DropMetadata.read_latest(id)
         else:
-            file_name = "%s_%s" % (
-                crypto_util.b64encode(id).decode("utf-8"), str(version),
-            )
+            file_name = DropMetadata.make_filename(id, version)
 
         if not os.path.exists(os.path.join(metadata_location, file_name)):
             return None
