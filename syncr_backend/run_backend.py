@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import sys
 import threading
 from typing import Any
 from typing import List
@@ -115,64 +114,19 @@ def execute_function(function_name: str, args: List[str]):
     :param function_name: string name of the function to run
     :param args: arguments for the function to run
     """
-    found_function = False
     # for functions that create or destroy the init directory
     if function_name == "node_init":
         node_init.initialize_node(*args)
-        found_function = True
     elif function_name == "node_force_init":
         node_init.force_initialize_node(*args)
-        found_function = True
     elif function_name == "delete_node":
         node_init.delete_node_directory(*args)
-        found_function = True
 
     # drop functions
-    if function_name == "drop_init":
+    elif function_name == "drop_init":
         drop_init.initialize_drop(args[0])
-        found_function = True
 
-    # request functions, only for debug
-    try:
-        pass
-        #  Hack to get type checking to not complain
-        #  Also, assume we enter a b64 encoded id
-        # id_arg = crypto_util.b64decode(args[2].encode('utf-8'))
-        #  if function_name == "send_drop_metadata_request":
-        #     print(send_requests.send_drop_metadata_request(
-        #         args[0],
-        #         int(args[1]),
-        #         id_arg,
-        #     ))
-        #     found_function = True
-        #  elif function_name == "send_file_metadata_request":
-        #     print(send_requests.send_file_metadata_request(
-        #         args[0],
-        #         int(args[1]),
-        #         id_arg,
-        #     ))
-        #     found_function = True
-        #  elif function_name == "send_chunk_list_request":
-        #     print(send_requests.send_chunk_list_request(
-        #         args[0],
-        #         int(args[1]),
-        #         id_arg,
-        #     ))
-        #     found_function = True
-        #  elif function_name == "send_chunk_request":
-        #     print(send_requests.send_chunk_request(
-        #         args[0],
-        #         int(args[1]),
-        #         id_arg,
-        #         int(args[4]),
-        #     ))
-        #     found_function = True
-    # placeholder only for debugging
-    except Exception:
-        print("Error in handling request function")
-        print(str(sys.exc_info()))
-
-    if not found_function:
+    else:
         print("Function [%s] not found" % (function_name))
 
 
