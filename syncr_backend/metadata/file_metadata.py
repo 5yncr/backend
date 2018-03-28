@@ -1,14 +1,19 @@
 import hashlib
 import os
+from math import ceil
 from typing import BinaryIO
 from typing import List
 from typing import Optional
+from typing import Set  # noqa
 
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
-from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
+from syncr_backend.init import drop_init
+from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
+from syncr_backend.util import fileio_util
 
 
 class FileMetadata(object):
@@ -16,6 +21,7 @@ class FileMetadata(object):
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
         self, hashes: List[bytes], file_hash: bytes, file_length: int,
+        drop_id: bytes,
         chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ) -> None:
         self.hashes = hashes
@@ -23,6 +29,10 @@ class FileMetadata(object):
         self.file_length = file_length
         self.chunk_size = chunk_size
         self._protocol_version = protocol_version
+        self._downloaded_chunks = None  # type: Optional[Set[int]]
+        self.num_chunks = ceil(file_length / chunk_size)
+        self.drop_id = drop_id
+        self._save_dir = None  # type: Optional[str]
 
     def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
@@ -35,11 +45,12 @@ class FileMetadata(object):
             "file_length": self.file_length,
             "file_hash": self.file_hash,
             "chunks": self.hashes,
+            "drop_id": self.drop_id,
         }
         return bencode.encode(d)
 
     def write_file(
-        self, metadata_location: str=DEFAULT_FILE_METADATA_LOCATION,
+        self, metadata_location: str,
     ) -> None:
         """Write this file metadata to a file
 
@@ -54,7 +65,7 @@ class FileMetadata(object):
     @staticmethod
     def read_file(
         file_hash: bytes,
-        metadata_location: str=DEFAULT_FILE_METADATA_LOCATION,
+        metadata_location: str,
     ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
@@ -85,8 +96,52 @@ class FileMetadata(object):
         return FileMetadata(
             hashes=d['chunks'], file_hash=d['file_hash'],
             file_length=d['file_length'], chunk_size=d['chunk_size'],
+            drop_id=d['drop_id'],
             protocol_version=d['protocol_version'],
         )
+
+    @property
+    def save_dir(self) -> str:
+        if self._save_dir is None:
+            self._save_dir = drop_init.get_drop_location(self.drop_id)
+        return self._save_dir
+
+    def _calculate_downloaded_chunks(self) -> Set[int]:
+        dm = DropMetadata.read_file(
+            id=self.drop_id,
+            metadata_location=os.path.join(
+                self.save_dir, DEFAULT_DROP_METADATA_LOCATION,
+            ),
+        )
+        if dm is None:
+            return set()
+        file_name = dm.get_file_name_from_id(self.file_hash)
+        full_name = os.path.join(self.save_dir, file_name)
+        downloaded_chunks = set()  # type: Set[int]
+        for chunk_idx in range(self.num_chunks):
+            _, h = fileio_util.read_chunk(
+                filepath=full_name,
+                position=chunk_idx,
+                file_hash=self.hashes[chunk_idx],
+                chunk_size=self.chunk_size,
+            )
+            if h == self.hashes[chunk_idx]:
+                downloaded_chunks.add(chunk_idx)
+        return downloaded_chunks
+
+    @property
+    def downloaded_chunks(self) -> Set[int]:
+        if self._downloaded_chunks is None:
+            self._downloaded_chunks = self._calculate_downloaded_chunks()
+        return self._downloaded_chunks
+
+    @property
+    def needed_chunks(self) -> Set[int]:
+        all_chunks = {x for x in range(self.num_chunks)}
+        return all_chunks - self.downloaded_chunks
+
+    def finish_chunk(self, chunk_id: int) -> None:
+        self.downloaded_chunks.add(chunk_id)
 
 
 def file_hashes(
@@ -125,7 +180,7 @@ def hash_file(f: BinaryIO) -> bytes:
     return sha.digest()
 
 
-def make_file_metadata(filename: str) -> FileMetadata:
+def make_file_metadata(filename: str, drop_id: bytes) -> FileMetadata:
     """Given a file name, return a FileMetadata object
 
     :param filename: The name of the file to open and read
@@ -138,4 +193,6 @@ def make_file_metadata(filename: str) -> FileMetadata:
     f.seek(0)
     file_hash = hash_file(f)
 
-    return FileMetadata(hashes, file_hash, size)
+    f.close()
+
+    return FileMetadata(hashes, file_hash, size, drop_id)

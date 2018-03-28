@@ -88,18 +88,17 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 def get_drop_metadata(
     drop_id: bytes, save_dir: str, peers: List[Tuple[str, int]],
 ) -> DropMetadata:
-    metadata = send_requests.do_request(
-        request_fun=send_requests.send_drop_metadata_request,
-        peers=peers,
-        fun_args={'drop_id': drop_id},
-    )
+    metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
+    metadata = DropMetadata.read_file(drop_id, metadata_dir)
 
-    metadata.write_file(
-        is_latest=True,
-        metadata_location=os.path.join(
-            save_dir, DEFAULT_DROP_METADATA_LOCATION,
-        ),
-    )
+    if metadata is None:
+        metadata = send_requests.do_request(
+            request_fun=send_requests.send_drop_metadata_request,
+            peers=peers,
+            fun_args={'drop_id': drop_id},
+        )
+
+        metadata.write_file(is_latest=True, metadata_location=metadata_dir)
 
     return metadata
 
@@ -108,15 +107,16 @@ def get_file_metadata(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
-    metadata = send_requests.do_request(
-        request_fun=send_requests.send_file_metadata_request,
-        peers=peers,
-        fun_args={'drop_id': drop_id, 'file_id': file_id},
-    )
+    metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
+    metadata = FileMetadata.read_file(file_id, metadata_dir)
+    if metadata is None:
+        metadata = send_requests.do_request(
+            request_fun=send_requests.send_file_metadata_request,
+            peers=peers,
+            fun_args={'drop_id': drop_id, 'file_id': file_id},
+        )
 
-    metadata.write_file(
-        os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION),
-    )
+        metadata.write_file(metadata_dir)
 
     return metadata
 
@@ -125,6 +125,7 @@ def sync_drop_contents(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> None:
+    # file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
     # TODO implement me
     pass
 

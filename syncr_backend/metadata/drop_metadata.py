@@ -39,8 +39,9 @@ class DropMetadata(object):
         self, drop_id: bytes, name: str, version: DropVersion,
         previous_versions: List[DropVersion], primary_owner: bytes,
         other_owners: Dict[bytes, int], signed_by: bytes,
-        files: Dict[str, bytes], files_hash: Optional[bytes]=None,
-        sig: Optional[bytes]=None, protocol_version: int=1,
+        files: Dict[str, bytes],
+        files_hash: Optional[bytes]=None, sig: Optional[bytes]=None,
+        protocol_version: int=1,
     ) -> None:
         self.id = drop_id
         self.name = name
@@ -133,6 +134,12 @@ class DropMetadata(object):
         crypto_util.verify_signed_dictionary(
             key, self.sig, self.unsigned_header,
         )
+
+    def get_file_name_from_id(self, file_hash) -> str:
+        for (fname, fhash) in self.files.items():
+            if fhash == file_hash:
+                return fname
+        raise FileNotFoundError
 
     @staticmethod
     def make_filename(
@@ -271,15 +278,15 @@ def make_drop_metadata(
     :return: A tuple of the drop metadata, and a dict from file names to file
     metadata
     """
+    drop_id = gen_drop_id(owner)
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = make_file_metadata(full_name)
+        files[full_name] = make_file_metadata(full_name, drop_id)
 
     file_hashes = {
         os.path.relpath(name, path): m.file_hash for (name, m) in files.items()
     }
-    drop_id = gen_drop_id(owner)
     dm = DropMetadata(
         drop_id=drop_id,
         name=drop_name,
