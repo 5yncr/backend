@@ -145,7 +145,7 @@ def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
         chunks = request_file_metadata.downloaded_chunks
         response = {
             'status': 'ok',
-            'response': chunks,
+            'response': list(chunks),
         }
 
     send_response(conn, response)
