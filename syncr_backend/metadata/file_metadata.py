@@ -20,12 +20,12 @@ class FileMetadata(object):
 
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
-        self, hashes: List[bytes], file_hash: bytes, file_length: int,
+        self, hashes: List[bytes], file_id: bytes, file_length: int,
         drop_id: bytes,
         chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ) -> None:
         self.hashes = hashes
-        self.file_hash = file_hash
+        self.file_id = file_id
         self.file_length = file_length
         self.chunk_size = chunk_size
         self._protocol_version = protocol_version
@@ -43,7 +43,7 @@ class FileMetadata(object):
             "protocol_version": self._protocol_version,
             "chunk_size": self.chunk_size,
             "file_length": self.file_length,
-            "file_hash": self.file_hash,
+            "file_id": self.file_id,
             "chunks": self.hashes,
             "drop_id": self.drop_id,
         }
@@ -56,7 +56,7 @@ class FileMetadata(object):
 
         :param metadata_location: where to save it
         """
-        file_name = crypto_util.b64encode(self.file_hash).decode("utf-8")
+        file_name = crypto_util.b64encode(self.file_id).decode("utf-8")
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
         with open(os.path.join(metadata_location, file_name), 'wb') as f:
@@ -64,15 +64,15 @@ class FileMetadata(object):
 
     @staticmethod
     def read_file(
-        file_hash: bytes,
+        file_id: bytes,
         metadata_location: str,
     ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
-        :param file_hash: The hash of the file to read
+        :param file_id: The hash of the file to read
         :return: a FileMetadata object or None if it does not exist
         """
-        file_name = crypto_util.b64encode(file_hash).decode("utf-8")
+        file_name = crypto_util.b64encode(file_id).decode("utf-8")
         if not os.path.exists(os.path.join(metadata_location, file_name)):
             return None
 
@@ -94,7 +94,7 @@ class FileMetadata(object):
         """
         d = bencode.decode(data)
         return FileMetadata(
-            hashes=d['chunks'], file_hash=d['file_hash'],
+            hashes=d['chunks'], file_id=d['file_id'],
             file_length=d['file_length'], chunk_size=d['chunk_size'],
             drop_id=d['drop_id'],
             protocol_version=d['protocol_version'],
@@ -115,14 +115,14 @@ class FileMetadata(object):
         )
         if dm is None:
             return set()
-        file_name = dm.get_file_name_from_id(self.file_hash)
+        file_name = dm.get_file_name_from_id(self.file_id)
         full_name = os.path.join(self.save_dir, file_name)
         downloaded_chunks = set()  # type: Set[int]
         for chunk_idx in range(self.num_chunks):
             _, h = fileio_util.read_chunk(
                 filepath=full_name,
                 position=chunk_idx,
-                file_hash=self.hashes[chunk_idx],
+                file_id=self.hashes[chunk_idx],
                 chunk_size=self.chunk_size,
             )
             if h == self.hashes[chunk_idx]:
@@ -191,8 +191,8 @@ def make_file_metadata(filename: str, drop_id: bytes) -> FileMetadata:
 
     hashes = file_hashes(f)
     f.seek(0)
-    file_hash = hash_file(f)
+    file_id = hash_file(f)
 
     f.close()
 
-    return FileMetadata(hashes, file_hash, size, drop_id)
+    return FileMetadata(hashes, file_id, size, drop_id)

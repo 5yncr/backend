@@ -129,7 +129,7 @@ def sync_drop_contents(
 ) -> Set[int]:
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
     drop_metadata = get_drop_metadata(drop_id, save_dir, peers)
-    file_name = drop_metadata.get_file_name_from_id(file_metadata.file_hash)
+    file_name = drop_metadata.get_file_name_from_id(file_metadata.file_id)
     full_path = os.path.join(save_dir, file_name)
 
     fileio_util.create_file(full_path, file_metadata.file_length)
