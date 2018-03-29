@@ -144,6 +144,7 @@ def sync_drop_contents(
         )
         avail_set = set(avail_chunks)
         can_get_from_peer = avail_set - needed_chunks
+        print("can get: %s" % can_get_from_peer)
         if not can_get_from_peer:
             continue
         for cid in can_get_from_peer:
@@ -154,6 +155,7 @@ def sync_drop_contents(
                 file_id=file_id,
                 file_index=cid,
             )
+            print("chunk: %s" % chunk)
             try:
                 fileio_util.write_chunk(
                     filepath=full_path,
@@ -164,6 +166,7 @@ def sync_drop_contents(
                 file_metadata.finish_chunk(cid)
                 needed_chunks -= {cid}
             except crypto_util.VerificationException:
+                print("verification exception")
                 break
 
     return needed_chunks
