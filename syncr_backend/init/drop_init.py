@@ -1,6 +1,7 @@
 import os
 from typing import List
 from typing import Optional  # noqa
+from typing import Set
 from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
@@ -12,6 +13,7 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import crypto_util
+from syncr_backend.util import fileio_util
 
 
 def initialize_drop(directory: str) -> None:
@@ -124,10 +126,47 @@ def get_file_metadata(
 def sync_drop_contents(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
-) -> None:
-    # file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
-    # TODO implement me
-    pass
+) -> Set[int]:
+    file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
+    drop_metadata = get_drop_metadata(drop_id, save_dir, peers)
+    file_name = drop_metadata.get_file_name_from_id(file_metadata.file_hash)
+    full_path = os.path.join(save_dir, file_name)
+
+    fileio_util.create_file(full_path, file_metadata.file_length)
+
+    for ip, port in peers:
+        needed_chunks = file_metadata.needed_chunks
+        avail_chunks = send_requests.send_chunk_list_request(
+            ip=ip,
+            port=port,
+            drop_id=drop_id,
+            file_id=file_id,
+        )
+        avail_set = set(avail_chunks)
+        can_get_from_peer = avail_set - needed_chunks
+        if not can_get_from_peer:
+            continue
+        for cid in can_get_from_peer:
+            chunk = send_requests.send_chunk_request(
+                ip=ip,
+                port=port,
+                drop_id=drop_id,
+                file_id=file_id,
+                file_index=cid,
+            )
+            try:
+                fileio_util.write_chunk(
+                    filepath=full_path,
+                    position=cid,
+                    contents=chunk,
+                    chunk_hash=file_metadata.hashes[cid],
+                )
+                file_metadata.finish_chunk(cid)
+                needed_chunks -= {cid}
+            except crypto_util.VerificationException:
+                break
+
+    return needed_chunks
 
 
 def _get_save_path() -> str:

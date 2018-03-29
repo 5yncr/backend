@@ -8,13 +8,11 @@ from typing import Tuple
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
-from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import crypto_util
 
 
 def write_chunk(
     filepath: str, position: int, contents: bytes, chunk_hash: bytes,
-    file_metadata: Optional[FileMetadata]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
     """Takes a filepath, position, contents, and contents hash and writes it to
@@ -24,13 +22,10 @@ def write_chunk(
 
     If the file extension indicates the file is complete, does nothing.
 
-    If the file_metadata object is provided, marks the chunk as finished there.
-
     :param filepath: the path of the file to write to
     :param position: the posiiton in the file to write to
     :param contents: the contents to write
     :param chunk_hash: the expected hash of contents
-    :param file_metadata: the file metadata object to mark the chunk done
     :param chunk_size: (optional) override the chunk size, used to calculate
     the position in the file
     :return: None
@@ -46,8 +41,6 @@ def write_chunk(
         pos_bytes = position * chunk_size
         f.seek(pos_bytes)
         f.write(contents)
-    if file_metadata is not None:
-        file_metadata.finish_chunk(position)
 
 
 def read_chunk(
