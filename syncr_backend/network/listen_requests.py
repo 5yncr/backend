@@ -1,3 +1,4 @@
+"""The recieve side of network communication"""
 import socket
 import sys
 import threading

@@ -1,3 +1,4 @@
+"The dorp metadata object and related functions"""
 import os
 from typing import Any
 from typing import Dict
@@ -17,12 +18,16 @@ LATEST = "LATEST"
 
 
 class DropVersion(object):
+    """A drop version"""
 
     def __init__(self, version: int, nonce: int) -> None:
         self.version = version
         self.nonce = nonce
 
     def __iter__(self):
+        """Used for calling dict() on this object, so it becomes
+        {'version': version, 'nonce': nonce}
+        """
         yield 'version', self.version
         yield 'nonce', self.nonce
 
@@ -133,6 +138,11 @@ class DropMetadata(object):
         )
 
     def get_file_name_from_id(self, file_hash) -> str:
+        """Get the file name of a file id
+
+        :param file_hash: the file id
+        :return: the file name string
+        """
         for (fname, fhash) in self.files.items():
             if fhash == file_hash:
                 return fname
@@ -167,6 +177,12 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str,
     ) -> None:
+        """Write the latest version to disk
+
+        :param id: the drop id
+        :param version: the latest version
+        :para metadata_location: where to write it
+        """
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'w') as f:
             to_write = DropMetadata.make_filename(id, version)
@@ -176,6 +192,11 @@ class DropMetadata(object):
     def read_latest(
         id: bytes, metadata_location: str,
     ) -> str:
+        """Read the latest drop version
+
+        :param id: the drop id
+        :param metadata_location: where to find it
+        """
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'r') as f:
             return f.readline()
@@ -292,4 +313,5 @@ def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:
+    """Geterate a drop id"""
     return first_owner + crypto_util.random_bytes()

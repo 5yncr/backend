@@ -1,3 +1,4 @@
+"""The file metadata object and related functions"""
 import hashlib
 import os
 from math import ceil
@@ -17,6 +18,7 @@ from syncr_backend.util import fileio_util
 
 
 class FileMetadata(object):
+    """A representation of a file metadata file"""
 
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
@@ -102,11 +104,20 @@ class FileMetadata(object):
 
     @property
     def save_dir(self) -> str:
+        """Get the save dir
+
+        :return: Where the drop is saved
+        """
         if self._save_dir is None:
             self._save_dir = drop_metadata.get_drop_location(self.drop_id)
         return self._save_dir
 
     def _calculate_downloaded_chunks(self) -> Set[int]:
+        """Figure out what chunks are complete, similar to "hashing" in some
+        bittorrent clients
+
+        :return: A set of chunk ids already downloaded
+        """
         dm = DropMetadata.read_file(
             id=self.drop_id,
             metadata_location=os.path.join(
@@ -131,12 +142,21 @@ class FileMetadata(object):
 
     @property
     def downloaded_chunks(self) -> Set[int]:
+        """Property of which chunks are downloaded
+        Note: does not automatically update, call `finish_chunk` to do that
+
+        :return: A set of chunk ids that are downloaded
+        """
         if self._downloaded_chunks is None:
             self._downloaded_chunks = self._calculate_downloaded_chunks()
         return self._downloaded_chunks
 
     @property
     def needed_chunks(self) -> Set[int]:
+        """The oposite of downloaded chunks, what chunks are needed
+
+        :return: A set of chunk ids that are needed
+        """
         all_chunks = {x for x in range(self.num_chunks)}
         return all_chunks - self.downloaded_chunks
 

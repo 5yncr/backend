@@ -1,3 +1,4 @@
+"""Helper functions for reading from and writing to the filesystem"""
 import fnmatch
 import os
 from typing import Iterator

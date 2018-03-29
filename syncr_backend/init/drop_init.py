@@ -1,3 +1,4 @@
+"""Functions for initializing or adding a new drop"""
 import os
 from typing import Dict
 from typing import List
@@ -64,6 +65,14 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 def get_drop_metadata(
     drop_id: bytes, save_dir: str, peers: List[Tuple[str, int]],
 ) -> DropMetadata:
+    """Get drop metadata, given a drop id and save dir.  If the drop metadata
+    is not on disk already, attempt to download from peers.
+
+    :param drop_id: the drop id
+    :param save_dir: where the drop is saved
+    :param peers: where to look on the network for data
+    :return: A drop metadata object
+    """
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
     metadata = DropMetadata.read_file(drop_id, metadata_dir)
 
@@ -83,6 +92,15 @@ def get_file_metadata(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
+    """Get file metadata, given a file id, drop id and save dir.  If the file
+    metadata is not on disk already, attempt to download from peers.
+
+    :param drop_id: the drop id
+    :param file_id: the file id
+    :param save_dir: where the drop is saved
+    :param peers: where to look on the network for data
+    :return: A file metadata object
+    """
     metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
     metadata = FileMetadata.read_file(file_id, metadata_dir)
     if metadata is None:
@@ -101,6 +119,14 @@ def sync_drop_contents(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> Set[int]:
+    """Download as much of a file as possible
+
+    :param drop_id: the drop the file is in
+    :param file_id: the file to download
+    :param save_dir: where the drop is saved
+    :param peers: where to look for chunks
+    :return: A set of chunk ids NOT downloaded
+    """
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
     drop_metadata = get_drop_metadata(drop_id, save_dir, peers)
     file_name = drop_metadata.get_file_name_from_id(file_metadata.file_id)
