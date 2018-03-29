@@ -122,7 +122,7 @@ class FileMetadata(object):
             _, h = fileio_util.read_chunk(
                 filepath=full_name,
                 position=chunk_idx,
-                file_id=self.hashes[chunk_idx],
+                file_hash=self.hashes[chunk_idx],
                 chunk_size=self.chunk_size,
             )
             if h == self.hashes[chunk_idx]:

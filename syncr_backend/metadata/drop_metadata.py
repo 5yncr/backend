@@ -3,16 +3,12 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import bencode  # type: ignore
 
 from syncr_backend.init import node_init
-from syncr_backend.metadata.file_metadata import FileMetadata
-from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.util import crypto_util
-from syncr_backend.util import fileio_util
 from syncr_backend.util.crypto_util import VerificationException
 
 
@@ -259,43 +255,3 @@ def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 def gen_drop_id(first_owner: bytes) -> bytes:
     return first_owner + crypto_util.random_bytes()
-
-
-def make_drop_metadata(
-    path: str,
-    drop_name: str,
-    owner: bytes,
-    other_owners: Dict[bytes, int]={},
-    ignore: List[str]=[],
-) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
-    """Makes drop metadata and file metadatas from a directory
-
-    :param path: The directory to make metadata from
-    :param name: The name of the drop to create
-    :param drop_id: The drop id of the drop metadata, must match the owner
-    :param owner: The owner, must match the drop id
-    :param other_owners: Other owners, may be empty
-    :return: A tuple of the drop metadata, and a dict from file names to file
-    metadata
-    """
-    drop_id = gen_drop_id(owner)
-    files = {}
-    for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
-        full_name = os.path.join(dirpath, filename)
-        files[full_name] = make_file_metadata(full_name, drop_id)
-
-    file_hashes = {
-        os.path.relpath(name, path): m.file_hash for (name, m) in files.items()
-    }
-    dm = DropMetadata(
-        drop_id=drop_id,
-        name=drop_name,
-        version=DropVersion(1, crypto_util.random_int()),
-        previous_versions=[],
-        primary_owner=owner,
-        other_owners=other_owners,
-        signed_by=owner,
-        files=file_hashes,
-    )
-
-    return (dm, files)

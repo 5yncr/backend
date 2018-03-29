@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 from typing import List
 from typing import Optional  # noqa
 from typing import Set
@@ -9,6 +10,7 @@ from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
+from syncr_backend.metadata import file_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
@@ -24,7 +26,7 @@ def initialize_drop(directory: str) -> None:
     """
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
-    (drop_m, files_m) = drop_metadata.make_drop_metadata(
+    (drop_m, files_m) = make_drop_metadata(
         path=directory,
         drop_name=os.path.basename(directory),
         owner=node_id,
@@ -51,6 +53,9 @@ def save_drop_location(drop_id: bytes, location: str) -> None:
     save_path = _get_save_path()
 
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
 
     with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
         f.write(location)
@@ -167,6 +172,46 @@ def sync_drop_contents(
                 break
 
     return needed_chunks
+
+
+def make_drop_metadata(
+    path: str,
+    drop_name: str,
+    owner: bytes,
+    other_owners: Dict[bytes, int]={},
+    ignore: List[str]=[],
+) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
+    """Makes drop metadata and file metadatas from a directory
+
+    :param path: The directory to make metadata from
+    :param name: The name of the drop to create
+    :param drop_id: The drop id of the drop metadata, must match the owner
+    :param owner: The owner, must match the drop id
+    :param other_owners: Other owners, may be empty
+    :return: A tuple of the drop metadata, and a dict from file names to file
+    metadata
+    """
+    drop_id = drop_metadata.gen_drop_id(owner)
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = file_metadata.make_file_metadata(full_name, drop_id)
+
+    file_hashes = {
+        os.path.relpath(name, path): m.file_id for (name, m) in files.items()
+    }
+    dm = DropMetadata(
+        drop_id=drop_id,
+        name=drop_name,
+        version=drop_metadata.DropVersion(1, crypto_util.random_int()),
+        previous_versions=[],
+        primary_owner=owner,
+        other_owners=other_owners,
+        signed_by=owner,
+        files=file_hashes,
+    )
+
+    return (dm, files)
 
 
 def _get_save_path() -> str:
