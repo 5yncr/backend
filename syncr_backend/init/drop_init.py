@@ -145,7 +145,7 @@ def sync_drop_contents(
         avail_set = set(avail_chunks)
         print(avail_set)
         print(needed_chunks)
-        can_get_from_peer = avail_set - needed_chunks
+        can_get_from_peer = avail_set & needed_chunks
         print("can get: %s" % can_get_from_peer)
         if not can_get_from_peer:
             continue
