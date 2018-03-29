@@ -245,9 +245,9 @@ def listen_requests(
             else:
                 request += data
             print('Data received')
-        s.shutdown(SHUT_RD)
+        conn.shutdown(SHUT_RD)
         request_dispatcher(bencode.decode(request), conn)
-        s.close()
+        conn.close()
 
 
 if __name__ == '__main__':

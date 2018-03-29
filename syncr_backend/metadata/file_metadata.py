@@ -120,6 +120,7 @@ class FileMetadata(object):
 
         :return: A set of chunk ids already downloaded
         """
+        # TODO: what if not exist
         dm = DropMetadata.read_file(
             id=self.drop_id,
             metadata_location=os.path.join(
