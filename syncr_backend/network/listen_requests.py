@@ -170,21 +170,33 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
         request['file_id'],
     )
     drop_location = drop_metadata.get_drop_location(request['drop_id'])
-    file_name = drop_metadata.get_file_name_from_id(request['file_id'])
+    drop_metadata_location = os.path.join(
+        drop_location, DEFAULT_DROP_METADATA_LOCATION,
+    )
+    request_drop_metadata = DropMetadata.read_file(
+        request['drop_id'], drop_metadata_location,
+    )
 
-    if request_file_metadata is None:
+    if request_file_metadata is None or request_drop_metadata is None:
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
         }
     else:
-        chunk = read_chunk(os.join(drop_location, file_name), request['index'])
-        request = {
+        file_name = request_drop_metadata.get_file_name_from_id(
+            request['file_id'],
+        )
+        chunk = read_chunk(
+            os.path.join(
+                drop_location, file_name,
+            ), request['index'],
+        )
+        response = {
             'status': 'ok',
             'response': chunk,
         }
 
-        send_response(conn, response)
+    send_response(conn, response)
 
 
 def handle_request_new_drop_metadata(

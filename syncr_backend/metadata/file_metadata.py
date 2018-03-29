@@ -230,7 +230,7 @@ def get_file_metadata_from_drop_id(
     :return Optional[FileMetadata] of the given file
     """
     drop_location = drop_metadata.get_drop_location(drop_id)
-    file_metadata_location = os.join(
+    file_metadata_location = os.path.join(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
     request_file_metadata = FileMetadata.read_file(
