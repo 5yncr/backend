@@ -149,6 +149,7 @@ def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
             'response': list(chunks),
         }
 
+    print(response)
     send_response(conn, response)
 
 
@@ -197,6 +198,7 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
             'response': chunk,
         }
 
+    print(response)
     send_response(conn, response)
 
 
