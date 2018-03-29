@@ -7,11 +7,11 @@ from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
-from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata import file_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import crypto_util
@@ -42,37 +42,6 @@ def initialize_drop(directory: str) -> None:
             os.path.join(directory, DEFAULT_FILE_METADATA_LOCATION),
         )
     save_drop_location(drop_m.id, directory)
-
-
-def save_drop_location(drop_id: bytes, location: str) -> None:
-    """Save a drops location in the central data dir
-
-    :param drop_id: The unencoded drop id
-    :param location: Where the drop is located on disk
-    """
-    save_path = _get_save_path()
-
-    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
-
-    if not os.path.exists(save_path):
-        os.mkdir(save_path)
-
-    with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
-        f.write(location)
-
-
-def get_drop_location(drop_id: bytes) -> str:
-    """Get a drops location on disk, from the drop id
-
-    :param drop_id: The unencoded drop id
-    :return: The directory the drop is in
-    """
-    save_path = _get_save_path()
-
-    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
-
-    with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
-        return f.read()
 
 
 def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
@@ -212,9 +181,3 @@ def make_drop_metadata(
     )
 
     return (dm, files)
-
-
-def _get_save_path() -> str:
-    node_info_path = node_init.get_full_init_directory()
-    save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
-    return save_path

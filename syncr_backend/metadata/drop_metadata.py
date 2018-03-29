@@ -7,6 +7,7 @@ from typing import Union
 
 import bencode  # type: ignore
 
+from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 from syncr_backend.init import node_init
 from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import VerificationException
@@ -247,6 +248,43 @@ class DropMetadata(object):
         dm.verify_files_hash()
         dm.verify_header()
         return dm
+
+
+def save_drop_location(drop_id: bytes, location: str) -> None:
+    """Save a drops location in the central data dir
+
+    :param drop_id: The unencoded drop id
+    :param location: Where the drop is located on disk
+    """
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
+        f.write(location)
+
+
+def get_drop_location(drop_id: bytes) -> str:
+    """Get a drops location on disk, from the drop id
+
+    :param drop_id: The unencoded drop id
+    :return: The directory the drop is in
+    """
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
+        return f.read()
+
+
+def _get_save_path() -> str:
+    node_info_path = node_init.get_full_init_directory()
+    save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
+    return save_path
 
 
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:

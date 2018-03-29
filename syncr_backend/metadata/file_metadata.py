@@ -10,7 +10,7 @@ import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
-from syncr_backend.init import drop_init
+from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
@@ -103,7 +103,7 @@ class FileMetadata(object):
     @property
     def save_dir(self) -> str:
         if self._save_dir is None:
-            self._save_dir = drop_init.get_drop_location(self.drop_id)
+            self._save_dir = drop_metadata.get_drop_location(self.drop_id)
         return self._save_dir
 
     def _calculate_downloaded_chunks(self) -> Set[int]:
