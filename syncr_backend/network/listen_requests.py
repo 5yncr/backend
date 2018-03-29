@@ -192,7 +192,7 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
             os.path.join(
                 drop_location, file_name,
             ), request['index'],
-        )
+        )[0]
         response = {
             'status': 'ok',
             'response': chunk,
