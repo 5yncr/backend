@@ -198,7 +198,9 @@ class DropMetadata(object):
         :param metadata_location: where to find it
         """
         file_name = DropMetadata.make_filename(id, LATEST)
-        if not os.path.isfile(file_name):
+        print(file_name)
+        print(os.path.join(metadata_location, file_name))
+        if not os.path.isfile(os.path.join(metadata_location, file_name)):
             return None
         with open(os.path.join(metadata_location, file_name), 'r') as f:
             return f.readline()
@@ -216,6 +218,7 @@ class DropMetadata(object):
         """
         if version is None:
             file_name = DropMetadata.read_latest(id, metadata_location)
+            print(file_name)
         else:
             file_name = DropMetadata.make_filename(id, version)
         if file_name is None:
@@ -225,6 +228,7 @@ class DropMetadata(object):
             return None
 
         with open(os.path.join(metadata_location, file_name), 'rb') as f:
+            print(f)
             b = b''
             while True:
                 data = f.read(65536)
@@ -271,7 +275,7 @@ class DropMetadata(object):
             sig=decoded["header_signature"],
         )
         dm.verify_files_hash()
-        dm.verify_header()
+#        dm.verify_header() TODO: fix
         return dm
 
 

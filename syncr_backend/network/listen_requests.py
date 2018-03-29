@@ -1,4 +1,5 @@
 """The recieve side of network communication"""
+import os
 import socket
 import sys
 import threading
@@ -8,6 +9,7 @@ from typing import Optional  # noqa
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
+from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
@@ -55,6 +57,7 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     :return: None
     """
     file_location = get_drop_location(request['drop_id'])
+    file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
     if request.get('version') is not None and request.get('nonce') is not None:
         drop_version = DropVersion(
             int(request['version']), int(request['nonce']),
