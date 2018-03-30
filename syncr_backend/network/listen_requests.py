@@ -15,6 +15,7 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
+from syncr_backend.constants import REQUEST_TYPE_FRONTEND_MESSAGE
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
@@ -38,11 +39,48 @@ def request_dispatcher(request: dict, conn: socket.socket) -> None:
         REQUEST_TYPE_CHUNK_LIST: handle_request_chunk_list,
         REQUEST_TYPE_CHUNK: handle_request_chunk,
         REQUEST_TYPE_NEW_DROP_METADATA: handle_request_new_drop_metadata,
+        REQUEST_TYPE_FRONTEND_MESSAGE: handle_request_frontend_message,
     }
     type = request['request_type']
     handle_function = function_map[type]
 
     handle_function(request, conn)
+
+
+def handle_request_frontend_message(request: dict, conn: socket.socket) \
+        -> None:
+    """
+    Handles a request from the frontend
+    :param request:
+    Message sent from the frontend. Has following general structure:
+    {
+    "request_type": DROP_METADATA (int),
+    "drop_id": string,
+    "action": string,
+    "drop_name": string (optional),
+    "file_name": string (optional),
+    "file_path": string (optional),
+    "valid_input": bool (optional),
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
+
+    frontend_action = request['action']
+
+    if frontend_action == '':
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+
+        # TODO: Add more to response once more conditions have been written
+        response = {
+            'status': 'ok',
+        }
+
+    send_response(conn, response)
 
 
 def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
