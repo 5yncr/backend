@@ -26,7 +26,7 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     """
     Provides a DropPeerStore either by means of DHT or tracker depending
     on config file
-    :return DropPeerStore
+    :return: DropPeerStore
     """
     init_directory = get_full_init_directory(None)
     dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)

@@ -29,7 +29,7 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     """
     Provides a PublicKeyStore either by means of DHT or tracker depending
     on config file
-    :return PublicKeyStore
+    :return: PublicKeyStore
     """
     init_directory = get_full_init_directory(None)
     pks_config_path = os.path.join(init_directory, DEFAULT_PKS_CONFIG_FILE)

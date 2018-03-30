@@ -278,7 +278,7 @@ class DropMetadata(object):
             sig=decoded["header_signature"],
         )
         dm.verify_files_hash()
-#        dm.verify_header() TODO: fix
+        dm.verify_header()
         return dm
 
 
@@ -323,8 +323,8 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     """
     Gets the public key from disk if possible otherwise request it from
     PublicKeyStore
-    :param node_id bytes for the node you want public key of
-    :return PublicKey
+    :param node_id: bytes for the node you want public key of
+    :return: PublicKey
     """
     init_directory = get_full_init_directory(None)
     pub_key_directory = os.path.join(
@@ -357,8 +357,8 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
 def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     Saves the public key to the specified location
-    :param key_path absolute path to location of public key
-    :param pub_key bytes to be saved
+    :param key_path: absolute path to location of public key
+    :param pub_key: bytes to be saved
     """
     with open(key_path, 'wb') as pub_file:
         pub_file.write(pub_key)
