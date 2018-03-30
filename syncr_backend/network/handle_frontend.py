@@ -74,7 +74,22 @@ def handle_accept_changes(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to apply changes to current file.
+        # TODO: Test if given drop_ids and file_paths are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'changes accepted',
+        }
+
+    send_response(conn, response)
 
 
 def handle_accept_conflict_file(request: dict, conn: socket.socket) -> None:
@@ -89,7 +104,21 @@ def handle_accept_conflict_file(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to accept a conflict file and decline others.
+        # TODO: Test if given drop_id and file_path are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'file accepted',
+        }
+
+    send_response(conn, response)
 
 
 def handle_add_file(request: dict, conn: socket.socket) -> None:
@@ -104,7 +133,21 @@ def handle_add_file(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to add file to drop.
+        # TODO: Test if given drop_id and file_path are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'file added to drop',
+        }
+
+    send_response(conn, response)
 
 
 def handle_add_owner(request: dict, conn: socket.socket) -> None:
@@ -119,7 +162,21 @@ def handle_add_owner(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['owner_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to add owner to owner list.
+        # TODO: Test if given drop_id and owner_id are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'owner successfully added',
+        }
+
+    send_response(conn, response)
 
 
 def handle_decline_changes(request: dict, conn: socket.socket) -> None:
@@ -134,7 +191,21 @@ def handle_decline_changes(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to decline a change - leaving drop unchanged
+        # TODO: Test if given drop_id and file_path are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'changes declined',
+        }
+
+    send_response(conn, response)
 
 
 def handle_decline_conflict_file(request: dict, conn: socket.socket) -> None:
@@ -149,7 +220,21 @@ def handle_decline_conflict_file(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to decline a file in conflict with others
+        # TODO: Test if given drop_id and file_path are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'conflicting file declined',
+        }
+
+    send_response(conn, response)
 
 
 def handle_delete_drop(request: dict, conn: socket.socket) -> None:
@@ -163,7 +248,21 @@ def handle_delete_drop(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to delete a drop
+        # TODO: Test if given drop_id is valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'drop successfully deleted',
+        }
+
+    send_response(conn, response)
 
 
 def handle_get_conflicting_files(request: dict, conn: socket.socket) -> None:
@@ -178,7 +277,21 @@ def handle_get_conflicting_files(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_path'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to retrieve list of conflicting files.
+        # TODO: Test if given drop_id and file_path are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'conflicting files retrieved',
+        }
+
+    send_response(conn, response)
 
 
 def handle_get_owned_drops(request: dict, conn: socket.socket) -> None:
@@ -191,7 +304,15 @@ def handle_get_owned_drops(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    # TODO: backend logic to retrieve owned drops.
+    response = {
+        'status': 'ok',
+        'result': 'success',
+        'message': 'owned drops retrieved',
+    }
+
+    send_response(conn, response)
 
 
 def handle_get_selected_drops(request: dict, conn: socket.socket) -> None:
@@ -205,7 +326,22 @@ def handle_get_selected_drops(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to retrieve info on selected drop.
+        # TODO: Test if given drop_id is valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'selected files retrieved',
+        }
+
+    send_response(conn, response)
 
 
 def handle_get_subscribed_drops(request: dict, conn: socket.socket) -> None:
@@ -218,7 +354,15 @@ def handle_get_subscribed_drops(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    # TODO: backend logic to retrieve subscribed drops.
+    response = {
+        'status': 'ok',
+        'result': 'success',
+        'message': 'subscribed drops retrieved',
+    }
+
+    send_response(conn, response)
 
 
 def handle_input_subscribe_drop(request: dict, conn: socket.socket) -> None:
@@ -228,12 +372,25 @@ def handle_input_subscribe_drop(request: dict, conn: socket.socket) -> None:
     {
     "action": string
     "drop_name": string
-    "valid_input": bool
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_name'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to subscribe to drop.
+        # TODO: Test if given drop_name is valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'subscribed to drop ' + request['drop_name'],
+        }
+
+    send_response(conn, response)
 
 
 def handle_input_name(request: dict, conn: socket.socket) -> None:
@@ -243,12 +400,25 @@ def handle_input_name(request: dict, conn: socket.socket) -> None:
     {
     "action": string
     "drop_name": string
-    "valid_input": bool
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_name'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to create a drop.
+        # TODO: Test if given drop_name is valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'Drop ' + request['drop_name'] + ' created',
+        }
+
+    send_response(conn, response)
 
 
 def handle_remove_file(request: dict, conn: socket.socket) -> None:
@@ -263,7 +433,21 @@ def handle_remove_file(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None or request['file_name'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: backend logic to remove file from drop.
+        # TODO: Test if given drop_id and file_name are valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'file successfully removed',
+        }
+
+    send_response(conn, response)
 
 
 def handle_remove_owner(request: dict, conn: socket.socket) -> None:
@@ -278,7 +462,22 @@ def handle_remove_owner(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    if request['drop_id'] is None or request['owner_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Backend logic to remove owner.
+        # TODO: Handle if drop_id or owner_id is not valid.
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'owner successfully removed',
+        }
+
+    send_response(conn, response)
 
 
 def handle_request_change(request: dict, conn: socket.socket) -> None:
@@ -292,7 +491,22 @@ def handle_request_change(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Add given changes to list of requested changes.
+        # TODO: Handle if given drop_id is not valid
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'pending changes submitted',
+        }
+
+    send_response(conn, response)
 
 
 def handle_share_drop(request: dict, conn: socket.socket) -> None:
@@ -306,7 +520,21 @@ def handle_share_drop(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Backend logic to get drop info to share to others.
+        # TODO: Handle if given drop_id is not valid
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'drop information retrieved',
+        }
+
+    send_response(conn, response)
 
 
 def handle_unsubscribe(request: dict, conn: socket.socket) -> None:
@@ -320,7 +548,21 @@ def handle_unsubscribe(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Backend logic to unsubscribe from drop.
+        # TODO: Handle if given drop_id is not valid
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'unsubscribed from drop ' + request['drop_id'],
+        }
+
+    send_response(conn, response)
 
 
 def handle_view_conflicts(request: dict, conn: socket.socket) -> None:
@@ -334,7 +576,21 @@ def handle_view_conflicts(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Backend logic to retrieve conflicting files in drop.
+        # TODO: Handle if given drop_id is not valid
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'conflicting files retrieved',
+        }
+
+    send_response(conn, response)
 
 
 def handle_view_pending_changes(request: dict, conn: socket.socket) -> None:
@@ -348,4 +604,18 @@ def handle_view_pending_changes(request: dict, conn: socket.socket) -> None:
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        # TODO: Backend logic to retrieve pending changes of drop.
+        # TODO: Handle if given drop_id is not valid
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'pending changes retrieved',
+        }
+
+    send_response(conn, response)
