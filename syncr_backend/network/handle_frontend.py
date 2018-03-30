@@ -20,6 +20,7 @@ from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
 from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
+from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.util.network_util import send_response
 
 
@@ -48,94 +49,303 @@ def handle_frontend_request(request: dict, conn: socket.socket) -> None:
         ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
     }
 
-    if request['action'] is None:
+    action = request['action']
+    handle_function = function_map[action]
+
+    if handle_function is None:
         response = {
             'status': 'error',
+            'error': ERR_NEXIST,
         }
         send_response(conn, response)
     else:
-        action = function_map['action']
-        if action is None:
-            pass
-
-    pass
+        handle_function(request, conn)
 
 
 def handle_accept_changes(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to accept changes in a file.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_accept_conflict_file(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to accept a file that is in conflict with another.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_add_file(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to add a file to a drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_add_owner(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to an owner to a drop
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "owner_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_decline_changes(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to decline changes in a file.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_decline_conflict_file(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to decline a file that is in conflict with another.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_delete_drop(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to delete a drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_get_conflicting_files(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to view files in drop that conflict each other.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_path": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_get_owned_drops(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to retrieve drops owned by individual.
+    :param request:
+    {
+    "action": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_get_selected_drops(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to a drop selected by user.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_get_subscribed_drops(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to retrieve drops that user is subscribed to.
+    :param request:
+    {
+    "action": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_input_subscribe_drop(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to subscribe to drop that user specifies.
+    :param request:
+    {
+    "action": string
+    "drop_name": string
+    "valid_input": bool
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_input_name(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to create drop whose name is specified by user.
+    :param request:
+    {
+    "action": string
+    "drop_name": string
+    "valid_input": bool
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_remove_file(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to remove file from drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "file_name": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_remove_owner(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to remove an owner from a drop
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    "owner_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_request_change(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to request a change in the drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_share_drop(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to retrieve id that can be shared with other nodes.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_unsubscribe(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to unsubscribe from a subscribed drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_view_conflicts(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to view conflicting files in drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
 
 
 def handle_view_pending_changes(request: dict, conn: socket.socket) -> None:
+    """
+    Handling function to view pending changes in the drop.
+    :param request:
+    {
+    "action": string
+    "drop_id": string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
     pass
