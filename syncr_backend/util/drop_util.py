@@ -25,6 +25,8 @@ def sync_drop(drop_id: bytes, save_dir: str):
     """
     drop_peers = [("127.0.0.1", 1234)]
     # TODO: get drop peers
+    raise Exception("Not Implemented")
+
     add_drop_from_id(drop_id, save_dir)
     drop_metadata = get_drop_metadata(drop_id, drop_peers)
     for file_name, file_id in drop_metadata.files.items():
@@ -42,7 +44,7 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(drop_id: bytes, peers: List[Tuple[str, int]]) -> None:
+def update_drop(drop_id: bytes) -> None:
     """
     Update a drop from a directory.
 
@@ -50,6 +52,9 @@ def update_drop(drop_id: bytes, peers: List[Tuple[str, int]]) -> None:
     :param peers: list of peers to get drop metadata from if missing
 
     """
+    peers = [("127.0.0.1", 1234)]
+    # TODO: get drop peers
+    raise Exception("Not Implemented")
 
     old_drop_metadata = get_drop_metadata(drop_id, peers)
     priv_key = node_init.load_private_key_from_disk()
