@@ -22,22 +22,19 @@ from syncr_backend.util import fileio_util
 def sync_drop(drop_id: bytes, save_dir: str):
     """
     Syncs a drop id
-
-    :param drop_id: id of the drop to sync
-    :param save_dir: save directory to save the drop
     """
     drop_peers = [("127.0.0.1", 1234)]
     # TODO: get drop peers
-    raise NotImplementedError("Need to get Peers")
+    raise Exception("Not Implemented")
 
     add_drop_from_id(drop_id, save_dir)
-    drop_metadata = get_drop_metadata(drop_id, drop_peers)
+    drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
     for file_name, file_id in drop_metadata.files.items():
         remaining_chunks = sync_drop_contents(
-            drop_id,
-            file_id,
-            drop_peers,
-            save_dir,
+            drop_id=drop_id,
+            file_id=file_id,
+            peers=drop_peers,
+            save_dir=save_dir,
         )
         if not remaining_chunks:
             fileio_util.mark_file_complete(file_name)
@@ -57,16 +54,13 @@ def update_drop(drop_id: bytes) -> None:
     """
     peers = [("127.0.0.1", 1234)]
     # TODO: get drop peers
-    raise NotImplementedError("Need to get Peers")
+    raise Exception("Not Implemented")
 
     old_drop_metadata = get_drop_metadata(drop_id, peers)
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
-    if (
-        old_drop_metadata.owner != node_id and
-        node_id not in old_drop_metadata.other_owners
-    ):
+    if old_drop_metadata.owner != node_id:
         raise PermissionError("You are not the owner of this drop")
 
     drop_directory = get_drop_location(drop_id)
@@ -83,7 +77,7 @@ def update_drop(drop_id: bytes) -> None:
     # deletes the existing metadata files
     shutil.rmtree(
         os.path.join(
-            drop_directory, DEFAULT_FILE_METADATA_LOCATION,
+            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
         ),
     )
 
@@ -107,7 +101,7 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     each file, and `sync_drop_contents`
 
     :param drop_id: The drop id to add
-    :save_dir: where to download the drop to
+    :param save_dir: where to download the drop to
     """
 
     os.makedirs(
