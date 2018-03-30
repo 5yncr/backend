@@ -61,7 +61,6 @@ def handle_request_frontend_message(request: dict, conn: socket.socket) \
     "drop_name": string (optional),
     "file_name": string (optional),
     "file_path": string (optional),
-    "valid_input": bool (optional),
     }
     :param conn: socket.accept() connection
     :return: None
