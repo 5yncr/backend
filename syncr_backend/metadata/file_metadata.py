@@ -151,7 +151,6 @@ class FileMetadata(object):
         """
         if self._downloaded_chunks is None:
             self._downloaded_chunks = self._calculate_downloaded_chunks()
-        print(self._downloaded_chunks)
         return self._downloaded_chunks
 
     @property

@@ -35,7 +35,6 @@ def write_chunk(
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
-    print(type(contents))
     if crypto_util.hash(contents) != chunk_hash:
         raise crypto_util.VerificationException()
 
