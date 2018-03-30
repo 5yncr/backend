@@ -1,5 +1,6 @@
 """Functions for initializing or adding a new drop"""
 import os
+import shutil
 from typing import Dict
 from typing import List
 from typing import Optional  # noqa
@@ -12,6 +13,7 @@ from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata import file_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
@@ -45,6 +47,44 @@ def initialize_drop(directory: str) -> None:
     save_drop_location(drop_m.id, directory)
 
 
+def update_drop(drop_id: bytes, peers: List[Tuple[str, int]]) -> None:
+    """Initialize a drop from a directory. Generates the necesssary drop and
+    file metadata files and writes the drop location to the central config dif
+
+    :param directory: The directory to initialize a drop from
+    """
+
+    old_drop_metadata = get_drop_metadata(drop_id, peers)
+    drop_directory = get_drop_location(drop_id)
+    (new_drop_m, new_files_m) = make_drop_metadata(
+        path=drop_directory,
+        drop_name=old_drop_metadata.drop_name,
+        owner=old_drop_metadata.first_owner,
+    )
+    new_drop_m.other_owners = old_drop_metadata.other_owners
+    new_drop_m.version = drop_metadata.DropVersion(
+        old_drop_metadata.version.version + 1,
+        crypto_util.random_int(),
+    )
+    # deletes the existing metadata files
+    shutil.rmtree(
+        os.path.join(
+            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
+
+    new_drop_m.write_file(
+        is_latest=True,
+        metadata_location=os.path.join(
+            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
+    for f_m in new_files_m.values():
+        f_m.write_file(
+            os.path.join(drop_directory, DEFAULT_FILE_METADATA_LOCATION),
+        )
+
+
 def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     """Given a drop_id and save directory, sets up the directory for syncing
     and adds the info to the global dir
@@ -66,7 +106,7 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 
 
 def get_drop_metadata(
-    drop_id: bytes, save_dir: str, peers: List[Tuple[str, int]],
+    drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -119,8 +159,8 @@ def get_file_metadata(
 
 
 def sync_drop_contents(
-    drop_id: bytes, file_id: bytes, save_dir: str,
-    peers: List[Tuple[str, int]],
+    drop_id: bytes, file_id: bytes,
+    peers: List[Tuple[str, int]], save_dir: str,
 ) -> Set[int]:
     """Download as much of a file as possible
 
@@ -131,7 +171,7 @@ def sync_drop_contents(
     :return: A set of chunk ids NOT downloaded
     """
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
-    drop_metadata = get_drop_metadata(drop_id, save_dir, peers)
+    drop_metadata = get_drop_metadata(drop_id, peers)
     file_name = drop_metadata.get_file_name_from_id(file_metadata.file_id)
     full_path = os.path.join(save_dir, file_name)
 
