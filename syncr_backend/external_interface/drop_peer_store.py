@@ -47,7 +47,7 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
         else:
             raise UnsupportedOptionError()
     except KeyError:
-        IncompleteConfigError()
+        raise IncompleteConfigError()
 
 
 class DropPeerStore(ABC):

@@ -13,7 +13,7 @@ from syncr_backend.constants import DEFAULT_PUB_KEY_LOOKUP_LOCATION
 from syncr_backend.external_interface.public_key_store import \
     get_public_key_store
 from syncr_backend.init import node_init
-from syncr_backend.init.drop_init import get_full_init_directory
+from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import load_public_key
@@ -333,12 +333,12 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     )
 
     if not os.path.isdir(pub_key_directory):
-        os.path.makedirs(pub_key_directory)
+        os.makedirs(pub_key_directory)
 
     key_file_name = "{}.pub".format(node_id)
     key_path = os.path.join(pub_key_directory, key_file_name)
 
-    if os.isfile(key_path):
+    if os.path.isfile(key_path):
         with open(key_path, 'rb') as pub_file:
             pub_key = pub_file.read()
             return load_public_key(pub_key)
@@ -361,7 +361,7 @@ def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     :param pub_key bytes to be saved
     """
     with open(key_path, 'wb') as pub_file:
-        pub_file.write(pub_key.encode('utf-8'))
+        pub_file.write(pub_key)
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:

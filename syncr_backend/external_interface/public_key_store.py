@@ -50,7 +50,7 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
         else:
             raise UnsupportedOptionError()
     except KeyError:
-        IncompleteConfigError()
+        raise IncompleteConfigError()
 
 
 class PublicKeyStore(ABC):
