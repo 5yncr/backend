@@ -129,7 +129,6 @@ def execute_function(function_name: str, args: List[str]):
         drop_init.initialize_drop(args[0])
 
     elif function_name == "drop_update":
-        pass
         drop_id = crypto_util.b64decode(args[0].encode())
         drop_util.update_drop(drop_id)
 
