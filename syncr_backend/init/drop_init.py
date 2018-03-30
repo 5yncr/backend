@@ -56,9 +56,12 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     :save_dir: where to download the drop to
     """
 
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
-    os.mkdir(os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION))
+    os.makedirs(
+        os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION), exist_ok=True,
+    )
+    os.makedirs(
+        os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION), exist_ok=True,
+    )
     save_drop_location(drop_id, save_dir)
 
 

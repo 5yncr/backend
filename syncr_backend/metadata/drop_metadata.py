@@ -290,7 +290,7 @@ def save_drop_location(drop_id: bytes, location: str) -> None:
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
 
     if not os.path.exists(save_path):
-        os.mkdir(save_path)
+        os.makedirs(save_path)
 
     with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
         f.write(location)
