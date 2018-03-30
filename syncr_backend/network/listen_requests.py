@@ -22,6 +22,7 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.network.handle_frontend import handle_frontend_request
 from syncr_backend.util.fileio_util import read_chunk
 from syncr_backend.util.network_util import send_response
 
@@ -50,7 +51,7 @@ def request_dispatcher(request: dict, conn: socket.socket) -> None:
 def handle_request_frontend_message(request: dict, conn: socket.socket) \
         -> None:
     """
-    Handles a request from the frontend
+    Passes request to function that handles frontend messages.
     :param request:
     Message sent from the frontend. Has following general structure:
     {
@@ -65,22 +66,7 @@ def handle_request_frontend_message(request: dict, conn: socket.socket) \
     :param conn: socket.accept() connection
     :return: None
     """
-
-    frontend_action = request['action']
-
-    if frontend_action == '':
-        response = {
-            'status': 'error',
-            'error': ERR_NEXIST,
-        }
-    else:
-
-        # TODO: Add more to response once more conditions have been written
-        response = {
-            'status': 'ok',
-        }
-
-    send_response(conn, response)
+    handle_frontend_request(request, conn)
 
 
 def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
