@@ -21,7 +21,10 @@ from syncr_backend.util import fileio_util
 
 def sync_drop(drop_id: bytes, save_dir: str):
     """
-    Syncs a drop id
+    Syncs a drop id from remote peers
+
+    :param drop_id: id of drop to sync
+    :param save_dir: directory to save drop
     """
     drop_peers = [("127.0.0.1", 1234)]
     # TODO: get drop peers
