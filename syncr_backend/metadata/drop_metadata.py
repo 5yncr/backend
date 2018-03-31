@@ -2,6 +2,7 @@
 import logging
 import os
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -17,8 +18,11 @@ from syncr_backend.init import node_init
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.util import crypto_util
+from syncr_backend.util.crypto_util import DropID
+from syncr_backend.util.crypto_util import FileID
 from syncr_backend.util.crypto_util import load_public_key
 from syncr_backend.util.crypto_util import node_id_from_private_key
+from syncr_backend.util.crypto_util import NodeID
 from syncr_backend.util.crypto_util import VerificationException
 from syncr_backend.util.log_util import get_logger
 
@@ -49,10 +53,10 @@ class DropVersion(object):
 class DropMetadata(object):
 
     def __init__(
-        self, drop_id: bytes, name: str, version: DropVersion,
-        previous_versions: List[DropVersion], primary_owner: bytes,
-        other_owners: Dict[bytes, int], signed_by: bytes,
-        files: Dict[str, bytes],
+        self, drop_id: DropID, name: str, version: DropVersion,
+        previous_versions: List[DropVersion], primary_owner: NodeID,
+        other_owners: Dict[NodeID, int], signed_by: NodeID,
+        files: Dict[str, FileID],
         files_hash: Optional[bytes]=None, sig: Optional[bytes]=None,
         protocol_version: int=1,
     ) -> None:
@@ -176,7 +180,7 @@ class DropMetadata(object):
 
     @staticmethod
     def make_filename(
-        id: bytes, version: Union[str, DropVersion],
+        id: DropID, version: Union[str, DropVersion],
     ) -> str:
         return "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
@@ -201,7 +205,7 @@ class DropMetadata(object):
 
     @staticmethod
     def write_latest(
-        id: bytes, version: DropVersion,
+        id: DropID, version: DropVersion,
         metadata_location: str,
     ) -> None:
         """Write the latest version to disk
@@ -217,7 +221,7 @@ class DropMetadata(object):
 
     @staticmethod
     def read_latest(
-        id: bytes, metadata_location: str,
+        id: DropID, metadata_location: str,
     ) -> Optional[str]:
         """Read the latest drop version
 
@@ -232,7 +236,8 @@ class DropMetadata(object):
 
     @staticmethod
     def read_file(
-        id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
+        id: DropID, metadata_location: str,
+        version: Optional[DropVersion]=None,
     ) -> Optional['DropMetadata']:
         """Read a drop metadata file from disk
 
@@ -311,7 +316,7 @@ class DropMetadata(object):
         return dm
 
 
-def save_drop_location(drop_id: bytes, location: str) -> None:
+def save_drop_location(drop_id: DropID, location: str) -> None:
     """Save a drops location in the central data dir
 
     :param drop_id: The unencoded drop id
@@ -328,7 +333,7 @@ def save_drop_location(drop_id: bytes, location: str) -> None:
         f.write(location)
 
 
-def get_drop_location(drop_id: bytes) -> str:
+def get_drop_location(drop_id: DropID) -> str:
     """Get a drops location on disk, from the drop id
 
     :param drop_id: The unencoded drop id
@@ -348,7 +353,7 @@ def _get_save_path() -> str:
     return save_path
 
 
-def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
+def get_pub_key(node_id: NodeID) -> crypto_util.rsa.RSAPublicKey:
     """
     Gets the public key from disk if possible otherwise request it from
     PublicKeyStore
@@ -372,9 +377,9 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
             pub_key = pub_file.read()
             return load_public_key(pub_key)
     else:
-        node_id = node_id_from_private_key(load_private_key_from_disk())
-        public_key_store = get_public_key_store(node_id)
-        key_request = public_key_store.request_key(bytes)
+        my_node_id = node_id_from_private_key(load_private_key_from_disk())
+        public_key_store = get_public_key_store(my_node_id)
+        key_request = public_key_store.request_key(node_id)
         if key_request[0]:
             pub_key = key_request[1]
             _save_key_to_disk(key_path, pub_key)
@@ -393,6 +398,6 @@ def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
         pub_file.write(pub_key)
 
 
-def gen_drop_id(first_owner: bytes) -> bytes:
+def gen_drop_id(first_owner: NodeID) -> DropID:
     """Geterate a drop id"""
-    return first_owner + crypto_util.random_bytes()
+    return cast(DropID, first_owner + crypto_util.random_bytes())

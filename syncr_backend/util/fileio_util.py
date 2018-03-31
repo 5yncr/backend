@@ -1,6 +1,7 @@
 """Helper functions for reading from and writing to the filesystem"""
 import fnmatch
 import os
+from typing import cast
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -10,6 +11,9 @@ from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
 from syncr_backend.util import crypto_util
+from syncr_backend.util.crypto_util import Chunk
+from syncr_backend.util.crypto_util import ChunkID
+from syncr_backend.util.crypto_util import H
 from syncr_backend.util.log_util import get_logger
 
 
@@ -17,7 +21,7 @@ logger = get_logger(__name__)
 
 
 def write_chunk(
-    filepath: str, position: int, contents: bytes, chunk_hash: bytes,
+    filepath: str, position: int, contents: Chunk, chunk_hash: ChunkID,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
     """Takes a filepath, position, contents, and contents hash and writes it to
@@ -40,7 +44,7 @@ def write_chunk(
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
-    if crypto_util.hash(contents) != chunk_hash:
+    if H.hash(contents).val != chunk_hash.val:
         raise crypto_util.VerificationException()
     logger.debug("writing chunk with hash %s", chunk_hash)
 
@@ -51,9 +55,9 @@ def write_chunk(
 
 
 def read_chunk(
-    filepath: str, position: int, file_hash: Optional[bytes]=None,
+    filepath: str, position: int, file_hash: Optional[ChunkID]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
-) -> Tuple[bytes, bytes]:
+) -> Tuple[Chunk, ChunkID]:
     """Reads a chunk for a file, returning the contents and its hash.  May
     raise relevant IO exceptions
 
@@ -74,10 +78,12 @@ def read_chunk(
         f.seek(pos_bytes)
         data = f.read(chunk_size)
 
-    h = crypto_util.hash(data)
+    data = cast(Chunk, data)
+
+    h = H.hash(data)
     if file_hash is not None:
         logger.info("input file_hash is not None, checking")
-        if h != file_hash:
+        if h.val != file_hash.val:
             raise crypto_util.VerificationException()
     return (data, h)
 

@@ -16,6 +16,9 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import network_util
+from syncr_backend.util.crypto_util import Chunk
+from syncr_backend.util.crypto_util import DropID
+from syncr_backend.util.crypto_util import FileID
 from syncr_backend.util.log_util import get_logger
 
 
@@ -63,7 +66,7 @@ def do_request(
 def send_drop_metadata_request(
     ip: str,
     port: int,
-    drop_id: bytes,
+    drop_id: DropID,
     drop_version: Optional[DropVersion]=None,
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> DropMetadata:
@@ -97,8 +100,8 @@ def send_drop_metadata_request(
 def send_file_metadata_request(
     ip: str,
     port: int,
-    drop_id: bytes,
-    file_id: bytes,
+    drop_id: DropID,
+    file_id: FileID,
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> FileMetadata:
     """
@@ -129,8 +132,8 @@ def send_file_metadata_request(
 def send_chunk_list_request(
     ip: str,
     port: int,
-    drop_id: bytes,
-    file_id: bytes,
+    drop_id: DropID,
+    file_id: FileID,
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> List[int]:
     """
@@ -161,11 +164,11 @@ def send_chunk_list_request(
 def send_chunk_request(
     ip: str,
     port: int,
-    drop_id: bytes,
-    file_id: bytes,
+    drop_id: DropID,
+    file_id: FileID,
     file_index: int,
     protocol_version: Optional[int]=PROTOCOL_VERSION,
-) -> bytes:
+) -> Chunk:
     """
     Sends chunk request to node at ip and port
     :param ip: ip address of node

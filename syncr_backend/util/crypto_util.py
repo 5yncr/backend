@@ -3,7 +3,11 @@ import base64
 import hashlib
 import os
 from typing import Any
+from typing import cast
 from typing import Dict
+from typing import Generic
+from typing import NewType
+from typing import TypeVar
 
 import bencode  # type: ignore
 from cryptography.exceptions import InvalidSignature  # type: ignore
@@ -19,6 +23,45 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 B64_ALT_CHARS = b'+-'
+
+ID = NewType('ID', bytes)
+B = TypeVar('B', bound=bytes)
+NodeID = NewType('NodeID', ID)
+DropID = NewType('DropID', ID)
+FileID = NewType('FileID', ID)
+Chunk = NewType('Chunk', bytes)
+
+
+class B64(Generic[B]):
+
+    def __init__(self, value: B) -> None:
+        self.val = value
+
+    def decode(self) -> B:
+        return cast(B, b64decode(self.val))
+
+    @staticmethod
+    def encode(value: B) -> 'B64[B]':
+        return B64(cast(B, b64encode(value)))
+
+    def __bytes__(self) -> bytes:
+        return self.val
+
+
+class H(Generic[B]):
+
+    def __init__(self, value: B) -> None:
+        self.val = value
+
+    @staticmethod
+    def hash(value: B) -> 'H[B]':
+        return H(cast(B, hash(value)))
+
+    def __bytes__(self) -> bytes:
+        return self.val
+
+
+ChunkID = H[Chunk]
 
 
 class VerificationException(Exception):
@@ -127,7 +170,7 @@ def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
     )
 
 
-def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
+def node_id_from_public_key(key: rsa.RSAPublicKey) -> NodeID:
     """Generate a node id from a public key
     It uses the default dump, and hashes that
 
@@ -135,7 +178,7 @@ def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     :return: The nodeid, as bytes
     """
     key_serial = dump_public_key(key)
-    return hash(key_serial)
+    return cast(NodeID, hash(key_serial))
 
 
 def generate_private_key() -> rsa.RSAPrivateKey:
@@ -204,7 +247,7 @@ def verify_signed_dictionary(
         raise VerificationException()
 
 
-def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
+def node_id_from_private_key(key: rsa.RSAPrivateKey) -> NodeID:
     """Wrapper to get the node id from the private key"""
     return node_id_from_public_key(key.public_key())
 

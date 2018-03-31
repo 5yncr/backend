@@ -2,13 +2,15 @@
 import argparse
 import threading
 from typing import Any
+from typing import cast
 from typing import List
 
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.network.listen_requests import listen_requests
-from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
+from syncr_backend.util.crypto_util import B64
+from syncr_backend.util.crypto_util import DropID
 # from syncr_backend.network import send_requests
 
 
@@ -129,11 +131,13 @@ def execute_function(function_name: str, args: List[str]):
         drop_init.initialize_drop(args[0])
 
     elif function_name == "drop_update":
-        drop_id = crypto_util.b64decode(args[0].encode())
+        did = cast(B64[DropID], B64(args[0].encode()))
+        drop_id = did.decode()
         drop_util.update_drop(drop_id)
 
     elif function_name == "sync_drop":
-        drop_id = crypto_util.b64decode(args[0].encode())
+        did = cast(B64[DropID], B64(args[0].encode()))
+        drop_id = did.decode()
         # takes drop_id as b64 and save+directory
         drop_util.sync_drop(drop_id, args[1])
 
