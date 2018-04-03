@@ -23,13 +23,14 @@ from syncr_backend.external_interface.tracker_util import (
     send_request_to_tracker
 )
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.crypto_util import NodeID
 from syncr_backend.util.log_util import get_logger
 
 
 logger = get_logger(__name__)
 
 
-def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
+def get_public_key_store(node_id: NodeID) -> "PublicKeyStore":
     """
     Provides a PublicKeyStore either by means of DHT or tracker depending
     on config file
@@ -72,7 +73,7 @@ class PublicKeyStore(ABC):
 class TrackerKeyStore(PublicKeyStore):
     """Tracker based implementation of the public key store"""
 
-    def __init__(self, node_id: bytes, ip: str, port: int) -> None:
+    def __init__(self, node_id: NodeID, ip: str, port: int) -> None:
         """
         Sets up a TrackerKeyStore with the trackers ip and port and the id of
         the given node
@@ -107,7 +108,7 @@ class TrackerKeyStore(PublicKeyStore):
             return False
 
     def request_key(
-        self, request_node_id: bytes,
+        self, request_node_id: NodeID,
     ) -> Tuple[bool, Optional[str]]:
         """
         Asks tracker for the public key of a given node for sake of signature

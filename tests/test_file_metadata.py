@@ -12,12 +12,12 @@ def test_file_hashes():
         f.write(b'\x11' * 1001)
         f.seek(0)
 
-        h_out = file_hashes(f)
+        h_out = file_hashes(f, 2**23)
         expected_data = b'\x11' * 1001
         h_expected = hashlib.sha256(expected_data).digest()
 
         assert len(h_out) == 1
-        assert h_out[0] == h_expected
+        assert h_out[0].val == h_expected
 
 
 def test_hash_file():

@@ -18,13 +18,15 @@ from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.crypto_util import DropID
+from syncr_backend.util.crypto_util import FileID
 from syncr_backend.util.log_util import get_logger
 
 
 logger = get_logger(__name__)
 
 
-def sync_drop(drop_id: bytes, save_dir: str):
+def sync_drop(drop_id: DropID, save_dir: str):
     """
     Syncs a drop id from remote peers
 
@@ -50,7 +52,7 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(drop_id: bytes) -> None:
+def update_drop(drop_id: DropID) -> None:
     """
     Update a drop from a directory.
 
@@ -97,7 +99,7 @@ def update_drop(drop_id: bytes) -> None:
         )
 
 
-def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
+def add_drop_from_id(drop_id: DropID, save_dir: str) -> None:
     """Given a drop_id and save directory, sets up the directory for syncing
     and adds the info to the global dir
 
@@ -123,7 +125,8 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 
 
 def get_drop_metadata(
-    drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
+    drop_id: DropID, peers: List[Tuple[str, int]],
+    save_dir: Optional[str]=None,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -153,7 +156,7 @@ def get_drop_metadata(
 
 
 def get_file_metadata(
-    drop_id: bytes, file_id: bytes, save_dir: str,
+    drop_id: DropID, file_id: FileID, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
     """Get file metadata, given a file id, drop id and save dir.  If the file
@@ -182,7 +185,7 @@ def get_file_metadata(
 
 
 def sync_drop_contents(
-    drop_id: bytes, file_id: bytes,
+    drop_id: DropID, file_id: FileID,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> Set[int]:
     """Download as much of a file as possible
@@ -247,7 +250,7 @@ class PeerStoreError(Exception):
     pass
 
 
-def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
+def get_drop_peers(drop_id: DropID) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop
     :param drop_id: id of drop

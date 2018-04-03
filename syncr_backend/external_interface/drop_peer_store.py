@@ -19,17 +19,19 @@ from syncr_backend.external_interface.store_exceptions import \
 from syncr_backend.external_interface.tracker_util import \
     send_request_to_tracker
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.crypto_util import DropID
+from syncr_backend.util.crypto_util import NodeID
 from syncr_backend.util.log_util import get_logger
 
 
 logger = get_logger(__name__)
 
 
-def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
+def get_drop_peer_store(node_id: NodeID) -> "DropPeerStore":
     """
     Provides a DropPeerStore either by means of DHT or tracker depending
     on config file
-    :param node_id: bytes of the node id for this node
+    :param node_id: the node id for this node
     :return: DropPeerStore
     """
     init_directory = get_full_init_directory(None)
@@ -58,12 +60,12 @@ class DropPeerStore(ABC):
     """Abstract base class for communication to send/get peer lists"""
 
     @abstractmethod
-    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+    def add_drop_peer(self, drop_id: DropID, ip: str, port: int) -> bool:
         pass
 
     @abstractmethod
     def request_peers(
-        self, drop_id: bytes,
+        self, drop_id: DropID,
     ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         pass
 
@@ -71,7 +73,7 @@ class DropPeerStore(ABC):
 class TrackerPeerStore(DropPeerStore):
     """Implementation of Peer Store communication using a tracker"""
 
-    def __init__(self, node_id: bytes, ip: str, port: int) -> None:
+    def __init__(self, node_id: NodeID, ip: str, port: int) -> None:
         """
         Sets up a TrackerPeerStore with the trackers ip and port and the id of
         the given node
@@ -83,7 +85,7 @@ class TrackerPeerStore(DropPeerStore):
         self.tracker_ip = ip
         self.tracker_port = port
 
-    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+    def add_drop_peer(self, drop_id: DropID, ip: str, port: int) -> bool:
         """
         Adds their node_id, ip, and port to a list of where a given drop is
         available
@@ -109,7 +111,7 @@ class TrackerPeerStore(DropPeerStore):
             return False
 
     def request_peers(
-        self, drop_id: bytes,
+        self, drop_id: DropID,
     ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
