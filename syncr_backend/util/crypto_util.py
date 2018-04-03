@@ -3,9 +3,12 @@ import base64
 import hashlib
 import os
 from typing import Any
+from typing import BinaryIO
 from typing import cast
 from typing import Dict
 from typing import Generic
+from typing import Iterable
+from typing import List
 from typing import NewType
 from typing import TypeVar
 
@@ -257,3 +260,48 @@ def verify_node_id(key: rsa.RSAPublicKey, node_id: bytes) -> bool:
     # TODO: BUG: use something better than == here (something constant time
     #  and secure)
     return node_id_from_public_key(key) == node_id
+
+
+def gen_drop_id(first_owner: NodeID) -> DropID:
+    """Geterate a drop id"""
+    return cast(DropID, first_owner + random_bytes())
+
+
+def hash_file(f: BinaryIO) -> FileID:
+    """Hash a file
+
+    :param f: An open file, seeked to 0
+    :return: The hash bytes
+    """
+    sha = hashlib.sha256()
+    while True:
+        data = f.read(65536)
+        if not data:
+            break
+        sha.update(data)
+    return cast(FileID, sha.digest())
+
+
+def file_hashes(
+    f: BinaryIO, chunk_size: int,
+) -> List[ChunkID]:
+    """Given an open file in mode 'rb', hash its chunks and return a list of
+    the hashes
+
+    :param f: open file
+    :param chunk_size: the chunk size to use, probably don't change this
+    :return: list of hashes
+    """
+    return [H.hash(c) for c in _read_chunks(f, chunk_size)]
+
+
+def _read_chunks(f: BinaryIO, chunk_size: int) -> Iterable[Chunk]:
+    b = cast(Chunk, f.read(chunk_size))
+    while len(b) > 0:
+        yield b
+        b = cast(Chunk, f.read(chunk_size))
+
+
+def read_chunk(f: BinaryIO, pos_bytes: int, size: int) -> Chunk:
+    f.seek(pos_bytes)
+    return cast(Chunk, f.read(size))

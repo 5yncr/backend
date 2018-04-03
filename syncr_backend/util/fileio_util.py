@@ -1,7 +1,6 @@
 """Helper functions for reading from and writing to the filesystem"""
 import fnmatch
 import os
-from typing import cast
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -75,10 +74,7 @@ def read_chunk(
 
     with open(filepath, 'rb') as f:
         pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        data = f.read(chunk_size)
-
-    data = cast(Chunk, data)
+        data = crypto_util.read_chunk(f, pos_bytes, chunk_size)
 
     h = H.hash(data)
     if file_hash is not None:

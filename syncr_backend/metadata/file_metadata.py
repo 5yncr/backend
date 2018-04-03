@@ -1,11 +1,7 @@
 """The file metadata object and related functions"""
-import hashlib
 import logging
 import os
 from math import ceil
-from typing import BinaryIO
-from typing import cast
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Set  # noqa
@@ -19,11 +15,11 @@ from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
-from syncr_backend.util.crypto_util import Chunk
 from syncr_backend.util.crypto_util import ChunkID
 from syncr_backend.util.crypto_util import DropID
+from syncr_backend.util.crypto_util import file_hashes
 from syncr_backend.util.crypto_util import FileID
-from syncr_backend.util.crypto_util import H
+from syncr_backend.util.crypto_util import hash_file
 from syncr_backend.util.log_util import get_logger
 
 
@@ -192,41 +188,6 @@ class FileMetadata(object):
         self.downloaded_chunks.add(chunk_id)
 
 
-def file_hashes(
-    f: BinaryIO, chunk_size: int=DEFAULT_CHUNK_SIZE,
-) -> List[ChunkID]:
-    """Given an open file in mode 'rb', hash its chunks and return a list of
-    the hashes
-
-    :param f: open file
-    :param chunk_size: the chunk size to use, probably don't change this
-    :return: list of hashes
-    """
-    return [H.hash(c) for c in _read_chunks(f, chunk_size)]
-
-
-def _read_chunks(f: BinaryIO, chunk_size: int) -> Iterable[Chunk]:
-    b = cast(Chunk, f.read(chunk_size))
-    while len(b) > 0:
-        yield b
-        b = cast(Chunk, f.read(chunk_size))
-
-
-def hash_file(f: BinaryIO) -> FileID:
-    """Hash a file
-
-    :param f: An open file, seeked to 0
-    :return: The hash bytes
-    """
-    sha = hashlib.sha256()
-    while True:
-        data = f.read(65536)
-        if not data:
-            break
-        sha.update(data)
-    return cast(FileID, sha.digest())
-
-
 def make_file_metadata(filename: str, drop_id: DropID) -> FileMetadata:
     """Given a file name, return a FileMetadata object
 
@@ -236,7 +197,7 @@ def make_file_metadata(filename: str, drop_id: DropID) -> FileMetadata:
     f = open(filename, 'rb')
     size = os.path.getsize(f.name)
 
-    hashes = file_hashes(f)
+    hashes = file_hashes(f, DEFAULT_CHUNK_SIZE)
     f.seek(0)
     file_id = hash_file(f)
 

@@ -2,7 +2,6 @@
 import logging
 import os
 from typing import Any
-from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -396,8 +395,3 @@ def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     with open(key_path, 'wb') as pub_file:
         pub_file.write(pub_key)
-
-
-def gen_drop_id(first_owner: NodeID) -> DropID:
-    """Geterate a drop id"""
-    return cast(DropID, first_owner + crypto_util.random_bytes())

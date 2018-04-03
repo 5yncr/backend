@@ -15,6 +15,7 @@ from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.crypto_util import gen_drop_id
 from syncr_backend.util.crypto_util import NodeID
 from syncr_backend.util.log_util import get_logger
 
@@ -68,7 +69,7 @@ def make_drop_metadata(
     metadata
     """
     logger.info("creating drop metadata for drop name %s", drop_name)
-    drop_id = drop_metadata.gen_drop_id(owner)
+    drop_id = gen_drop_id(owner)
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)
