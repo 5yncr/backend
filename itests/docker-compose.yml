@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+    node1:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/basic_test.sh"

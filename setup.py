@@ -13,5 +13,8 @@ setup(
     license='AGPLv3',
     scripts=[
         'bin/make_tracker_configs',
+        'bin/run_backend',
+        'bin/node_init',
+        'bin/drop_init',
     ],
 )

@@ -4,7 +4,7 @@ python:
     - "3.5"
     - "3.4"
 env:
-    - TOXENV=py3,coverage,mypy
+    - TOXENV=py3,coverage,mypy,itests
 script:
     - flake8 syncr_backend tests
     - pycodestyle syncr_backend tests
