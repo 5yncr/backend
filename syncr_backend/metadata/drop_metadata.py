@@ -342,6 +342,13 @@ def get_drop_location(drop_id: bytes) -> str:
         return f.read()
 
 
+def list_drops() -> List[bytes]:
+    save_path = _get_save_path()
+    names = os.listdir(save_path)
+
+    return [crypto_util.b64decode(os.fsencode(e)) for e in names]
+
+
 def _get_save_path() -> str:
     node_info_path = node_init.get_full_init_directory()
     save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
