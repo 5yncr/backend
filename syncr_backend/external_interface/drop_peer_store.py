@@ -1,4 +1,5 @@
 """Functionality to get peers from a peer store"""
+import asyncio
 import json
 import os
 import threading
@@ -7,6 +8,8 @@ from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Tuple
+
+from kademlia import Server
 
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
@@ -46,7 +49,7 @@ def send_drops_to_dps(
         for drop in drops:
             logger.debug("Sending drop %s", crypto_util.b64encode(drop))
             dps.add_drop_peer(drop, ip, port)
-        sleep_time = TRACKER_DROP_AVAILABILITY_TTL/2 - 1
+        sleep_time = TRACKER_DROP_AVAILABILITY_TTL / 2 - 1
         logger.debug("Sleeping for %s", sleep_time)
         time.sleep(sleep_time)
 
@@ -90,8 +93,46 @@ class DropPeerStore(ABC):
     @abstractmethod
     def request_peers(
         self, drop_id: bytes,
-    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         pass
+
+
+class DHTPeerStore(DropPeerStore):
+    def __init__(
+        self,
+        node_id: bytes,
+        node_instance: Server,
+    ):
+        """
+        Initialize DHT peer store and dht node
+        :param node_id: node_id
+        :param node_instance: instance of dht server node
+        to dht with
+        """
+        self.node_id = node_id
+        self.node_instance = node_instance
+
+    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+        """
+        Add entry to dht
+        :param drop_id: drop_id entry to update
+        :param ip: ip to recieve requests regarging drop on
+        :param port: port to recieve requests regarging drop on
+        """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
+            self.node_instance.set(drop_id, [self.node_id, ip, port]),
+        )
+
+    def request_peers(
+        self, drop_id: bytes,
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.node_instance.get(drop_id))
+        if result is not None:
+            return True, result
+        else:
+            return False, []
 
 
 class TrackerPeerStore(DropPeerStore):
@@ -136,7 +177,7 @@ class TrackerPeerStore(DropPeerStore):
 
     def request_peers(
         self, drop_id: bytes,
-    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash

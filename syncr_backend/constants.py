@@ -78,3 +78,6 @@ ACTION_REMOVE_OWNER = 'remove_owner'
 ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_REQUEST_CHANGE = 'request_change'
+
+# Distrubuted Hash Table constants
+DHT_LISTEN_PORT = 5678
