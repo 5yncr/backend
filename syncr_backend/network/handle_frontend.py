@@ -1,9 +1,10 @@
-import bencode
-import socket
-import platform
 import os
+import platform
+import socket
 from typing import Any
 from typing import Dict
+
+import bencode
 
 from syncr_backend.constants import ACTION_ACCEPT_CHANGES
 from syncr_backend.constants import ACTION_ACCEPT_CONFLICT_FILE
@@ -30,6 +31,7 @@ from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.util.network_util import send_response
+
 
 def handle_frontend_request(
         request: Dict[str, Any], conn: socket.socket,
@@ -726,7 +728,6 @@ def _tcp_handle_request():
     """
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(3)
     s.bind(FRONTEND_TCP_ADDRESS)
     s.listen(1)
     conn, addr = s.accept()
@@ -740,7 +741,7 @@ def _tcp_handle_request():
         else:
             request += data
 
-    request_dispatcher(bencode.decode(request), conn)
+    handle_frontend_request(bencode.decode(request), conn)
 
 
 def _unix_handle_request():
@@ -756,7 +757,6 @@ def _unix_handle_request():
         pass
 
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(TIMEOUT)
     s.bind(FRONTEND_UNIX_ADDRESS)
 
     s.listen(1)
@@ -771,7 +771,8 @@ def _unix_handle_request():
         else:
             request += data
 
-    request_dispatcher(bencode.decode(request), conn)
+    handle_frontend_request(bencode.decode(request), conn)
+
 
 if __name__ == '__main__':
     handle_request()
