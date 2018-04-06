@@ -1,4 +1,5 @@
 import socket
+from typing import Any
 from typing import Dict
 
 from syncr_backend.constants import ACTION_ACCEPT_CHANGES
@@ -27,7 +28,7 @@ from syncr_backend.util.network_util import send_response
 
 
 def handle_frontend_request(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
 
     function_map = {
@@ -68,7 +69,7 @@ def handle_frontend_request(
 
 
 def handle_accept_changes(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to accept changes in a file.
@@ -100,7 +101,7 @@ def handle_accept_changes(
 
 
 def handle_transfer_ownership(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to transfer ownership from one drop to
@@ -132,7 +133,7 @@ def handle_transfer_ownership(
 
 
 def handle_accept_conflict_file(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to accept a file that is in conflict with another.
@@ -163,7 +164,7 @@ def handle_accept_conflict_file(
 
 
 def handle_add_file(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to add a file to a drop.
@@ -194,7 +195,7 @@ def handle_add_file(
 
 
 def handle_add_owner(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to an owner to a drop
@@ -225,7 +226,7 @@ def handle_add_owner(
 
 
 def handle_decline_changes(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to decline changes in a file.
@@ -256,7 +257,7 @@ def handle_decline_changes(
 
 
 def handle_decline_conflict_file(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to decline a file that is in conflict with another.
@@ -287,7 +288,7 @@ def handle_decline_conflict_file(
 
 
 def handle_delete_drop(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to delete a drop.
@@ -317,7 +318,7 @@ def handle_delete_drop(
 
 
 def handle_get_conflicting_files(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to view files in drop that conflict each other.
@@ -348,7 +349,7 @@ def handle_get_conflicting_files(
 
 
 def handle_get_owned_drops(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to retrieve drops owned by individual.
@@ -371,7 +372,7 @@ def handle_get_owned_drops(
 
 
 def handle_get_selected_drops(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to a drop selected by user.
@@ -402,7 +403,7 @@ def handle_get_selected_drops(
 
 
 def handle_get_subscribed_drops(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to retrieve drops that user is subscribed to.
@@ -425,7 +426,7 @@ def handle_get_subscribed_drops(
 
 
 def handle_input_subscribe_drop(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to subscribe to drop that user specifies.
@@ -455,7 +456,7 @@ def handle_input_subscribe_drop(
 
 
 def handle_input_name(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to create drop whose name is specified by user.
@@ -485,7 +486,7 @@ def handle_input_name(
 
 
 def handle_remove_file(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to remove file from drop.
@@ -516,7 +517,7 @@ def handle_remove_file(
 
 
 def handle_remove_owner(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to remove an owner from a drop
@@ -548,7 +549,7 @@ def handle_remove_owner(
 
 
 def handle_request_change(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to request a change in the drop.
@@ -579,7 +580,7 @@ def handle_request_change(
 
 
 def handle_share_drop(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to retrieve id that can be shared with other nodes.
@@ -609,7 +610,7 @@ def handle_share_drop(
 
 
 def handle_unsubscribe(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to unsubscribe from a subscribed drop.
@@ -639,7 +640,7 @@ def handle_unsubscribe(
 
 
 def handle_view_conflicts(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to view conflicting files in drop.
@@ -669,7 +670,7 @@ def handle_view_conflicts(
 
 
 def handle_view_pending_changes(
-        request: Dict[str, str], conn: socket.socket,
+        request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
     Handling function to view pending changes in the drop.
