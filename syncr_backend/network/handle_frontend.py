@@ -4,7 +4,7 @@ import socket
 from typing import Any
 from typing import Dict
 
-import bencode
+import bencode  # type: ignore
 
 from syncr_backend.constants import ACTION_ACCEPT_CHANGES
 from syncr_backend.constants import ACTION_ACCEPT_CONFLICT_FILE
