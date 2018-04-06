@@ -9,7 +9,7 @@ from typing import Optional
 from typing import Tuple
 from typing import TypeVar
 
-import bencode
+import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import PROTOCOL_VERSION
@@ -91,7 +91,7 @@ def send_drop_metadata_request(
         request_dict['version'] = drop_version.version
         request_dict['nonce'] = drop_version.nonce
 
-    drop_metadata_bytes = network_util.send_request_to_node(
+    drop_metadata_bytes = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -123,7 +123,7 @@ def send_file_metadata_request(
         'drop_id': drop_id,
     }
 
-    file_metadata_bytes = network_util.send_request_to_node(
+    file_metadata_bytes = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -155,7 +155,7 @@ def send_chunk_list_request(
         'drop_id': drop_id,
     }
 
-    chunk_index_list = network_util.send_request_to_node(
+    chunk_index_list = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -190,7 +190,7 @@ def send_chunk_request(
         'index': file_index,
     }
 
-    chunk = network_util.send_request_to_node(
+    chunk = send_request_to_node(
         request_dict,
         ip,
         port,
