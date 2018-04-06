@@ -79,3 +79,6 @@ ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_REQUEST_CHANGE = 'request_change'
 ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
+
+# Distrubuted Hash Table constants
+DHT_LISTEN_PORT = 5678
