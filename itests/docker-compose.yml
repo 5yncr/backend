@@ -26,7 +26,6 @@ services:
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
-            #  command: sh -c "node_init; make_tracker_configs tracker 2346; git clone https://github.com/yelp/paasta /paasta; drop_init /paasta; ls /root/.5yncr/drops > /share/f; run_backend 0.0.0.0 2345 --external_address hostnode --backendonly"
         command: sh -c "/work/itests/hostnode.sh"
         ports:
             - 2345
@@ -36,7 +35,6 @@ services:
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
-            #        command: sh -c "node_init; make_tracker_configs tracker 2346; sleep 30; new_drop $(cat /share/f) /paasta"
         command: sh -c "echo hi"
         ports:
             - 2345
