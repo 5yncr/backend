@@ -4,17 +4,16 @@ import time
 from collections import OrderedDict
 from itertools import takewhile
 from typing import List
-from typing import Optional
 from typing import Tuple
 
-from kademlia import IStorage
-from kademlia import Server
+from kademlia import IStorage  # type: ignore
+from kademlia import Server  # type: ignore
 
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 
 
 def connect_dht(
-    bootstrap_ip_port_pair_list: Optional[List[Tuple[str, int]]],
+    bootstrap_ip_port_pair_list: List[Tuple[str, int]],
     listen_port: int,
 ) -> Server:
     """
@@ -35,14 +34,14 @@ def connect_dht(
 
 
 class DropPeerDHTStorage(IStorage):
-    def __init__(self, ttl: int=TRACKER_DROP_AVAILABILITY_TTL):
+    def __init__(self, ttl: int=TRACKER_DROP_AVAILABILITY_TTL) -> None:
         """
         By default, max age is a week.
         """
-        self.data = OrderedDict()
+        self.data = OrderedDict()  # type: OrderedDict
         self.ttl = ttl
 
-    def __setitem__(self, key: bytes, value: Tuple[bytes, str, int]):
+    def __setitem__(self, key: bytes, value: Tuple[bytes, str, int]) -> None:
         self.cull_entry(key)
         self.data[key] = self.data[key] + [
             (int(time.monotonic()), value),
@@ -52,7 +51,7 @@ class DropPeerDHTStorage(IStorage):
         if key not in self.data:
             return
         old_data = self.data[key]
-        new_data = []
+        new_data = []  # type: List[Tuple[bytes, str, int]]
         for entry in old_data:
             if (entry[0] + self.ttl > time.monotonic() and
                     entry[0] < time.monotonic()):

@@ -9,7 +9,7 @@ from abc import abstractmethod
 from typing import List
 from typing import Tuple
 
-from kademlia import Server
+from kademlia import Server  # type: ignore
 
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
@@ -102,7 +102,7 @@ class DHTPeerStore(DropPeerStore):
         self,
         node_id: bytes,
         node_instance: Server,
-    ):
+    ) -> None:
         """
         Initialize DHT peer store and dht node
         :param node_id: node_id
@@ -120,9 +120,13 @@ class DHTPeerStore(DropPeerStore):
         :param port: port to recieve requests regarging drop on
         """
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            self.node_instance.set(drop_id, [self.node_id, ip, port]),
-        )
+        try:
+            loop.run_until_complete(
+                self.node_instance.set(drop_id, [self.node_id, ip, port]),
+            )
+            return True
+        except Exception:
+            return False
 
     def request_peers(
         self, drop_id: bytes,
