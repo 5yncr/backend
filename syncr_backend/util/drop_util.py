@@ -24,7 +24,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def sync_drop(drop_id: bytes, save_dir: str):
+def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     """
     Syncs a drop id from remote peers
 
@@ -35,6 +35,7 @@ def sync_drop(drop_id: bytes, save_dir: str):
 
     add_drop_from_id(drop_id, save_dir)
     drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
+    all_done = True
     for file_name, file_id in drop_metadata.files.items():
         remaining_chunks = sync_drop_contents(
             drop_id=drop_id,
@@ -44,6 +45,10 @@ def sync_drop(drop_id: bytes, save_dir: str):
         )
         if not remaining_chunks:
             fileio_util.mark_file_complete(file_name)
+        else:
+            all_done = False
+
+    return all_done
 
 
 class PermissionError(Exception):

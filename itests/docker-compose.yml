@@ -6,3 +6,26 @@ services:
             context: ../
             dockerfile: ./itests/Dockerfile
         command: sh -c "/work/itests/basic_test.sh"
+        ports:
+            - 2345
+    node2:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "while true; do sleep 5; done"
+        ports:
+            - 2345
+    node3:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "while true; do sleep 5; done"
+        ports:
+            - 2345
+    tracker:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile.tracker
+        command: sh -c "tracker.py '0.0.0.0' 2346"
+        ports:
+            - 2346
