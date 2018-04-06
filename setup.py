@@ -18,6 +18,7 @@ setup(
         'bin/drop_init',
         'bin/make_tracker_configs',
         'bin/new_drop',
+        'syncr_backend/contrib/bq',
     ],
     install_requires=[
         "asn1crypto==0.24.0",
