@@ -22,6 +22,25 @@ services:
         command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
         ports:
             - 2345
+    hostnode:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/hostnode.sh"
+        ports:
+            - 2345
+        volumes:
+            - /share
+    syncnode:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "echo hi"
+        ports:
+            - 2345
+        volumes_from:
+            - hostnode:ro
+
     tracker:
         build:
             context: ../
