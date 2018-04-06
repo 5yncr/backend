@@ -1,4 +1,7 @@
+import bencode
 import socket
+import platform
+import os
 from typing import Any
 from typing import Dict
 
@@ -24,8 +27,9 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
 from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
+from syncr_backend.constants import FRONTEND_TCP_ADDRESS
+from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.util.network_util import send_response
-
 
 def handle_frontend_request(
         request: Dict[str, Any], conn: socket.socket,
@@ -697,3 +701,77 @@ def handle_view_pending_changes(
         }
 
     send_response(conn, response)
+
+
+# Functions for handling incoming frontend requests
+
+
+def handle_request():
+    """
+    Listens for request from frontend and then sends response
+    :return:
+    """
+
+    op_sys = platform.system()
+    if op_sys == 'Windows':
+        _tcp_handle_request()
+    else:
+        _unix_handle_request()
+
+
+def _tcp_handle_request():
+    """
+    Listens for request from frontend and sends response over tcp socket
+    :return:
+    """
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(3)
+    s.bind(FRONTEND_TCP_ADDRESS)
+    s.listen(1)
+    conn, addr = s.accept()
+
+    # Read request from frontend
+    request = b''
+    while True:
+        data = conn.recv(4096)
+        if not data:
+            break
+        else:
+            request += data
+
+    request_dispatcher(bencode.decode(request), conn)
+
+
+def _unix_handle_request():
+    """
+    Listens for request from frontend and sends response over unix socket
+    :return:
+    """
+
+    try:
+        os.unlink(FRONTEND_UNIX_ADDRESS)
+    except OSError:
+        # does not yet exist, do nothing
+        pass
+
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(TIMEOUT)
+    s.bind(FRONTEND_UNIX_ADDRESS)
+
+    s.listen(1)
+    conn, addr = s.accept()
+
+    # Read request from frontend
+    request = b''
+    while True:
+        data = conn.recv(4096)
+        if not data:
+            break
+        else:
+            request += data
+
+    request_dispatcher(bencode.decode(request), conn)
+
+if __name__ == '__main__':
+    handle_request()
