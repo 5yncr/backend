@@ -24,6 +24,7 @@ from syncr_backend.external_interface.tracker_util import \
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.metadata.drop_metadata import list_drops
+from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import node_id_from_private_key
 from syncr_backend.util.log_util import get_logger
 
@@ -43,7 +44,7 @@ def send_drops_to_dps(
         drops = list_drops()
         logger.info("Sending drops to dps")
         for drop in drops:
-            logger.debug("Sending drop %s", drop)
+            logger.debug("Sending drop %s", crypto_util.b64encode(drop))
             dps.add_drop_peer(drop, ip, port)
         sleep_time = TRACKER_DROP_AVAILABILITY_TTL/2 - 1
         logger.debug("Sleeping for %s", sleep_time)

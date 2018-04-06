@@ -7,6 +7,7 @@ from typing import List
 from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
+from syncr_backend.metadata.drop_metadata import send_my_pub_key
 from syncr_backend.network.listen_requests import listen_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
@@ -37,6 +38,7 @@ def run_backend() -> None:
     )
     arguments = input_args_parser.parse_args()
 
+    send_my_pub_key()
     shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
         target=listen_requests,

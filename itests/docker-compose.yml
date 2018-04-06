@@ -12,14 +12,14 @@ services:
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
-        command: sh -c "while true; do sleep 5; done"
+        command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
         ports:
             - 2345
     node3:
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
-        command: sh -c "while true; do sleep 5; done"
+        command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
         ports:
             - 2345
     tracker:
