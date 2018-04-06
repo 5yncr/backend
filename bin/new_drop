@@ -22,7 +22,10 @@ def main() -> None:
     id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
     done = drop_util.sync_drop(id, args.directory)
 
-    print(done)
+    if done:
+        print("Drop successfully synced")
+    else:
+        print("Drop not completed, re-run command")
 
 
 if __name__ == '__main__':

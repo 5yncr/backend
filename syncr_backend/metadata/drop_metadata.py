@@ -361,6 +361,8 @@ def list_drops() -> List[bytes]:
 def _get_save_path() -> str:
     node_info_path = node_init.get_full_init_directory()
     save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
     return save_path
 
 
