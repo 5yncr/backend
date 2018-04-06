@@ -775,4 +775,5 @@ def _unix_handle_request():
 
 
 if __name__ == '__main__':
-    handle_request()
+    while True:
+        handle_request()
