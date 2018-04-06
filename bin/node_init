@@ -19,15 +19,15 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.directory is not None:
-        a = {'init_directory': args.directory}
+        kwargs = {'init_directory': args.directory}
     else:
-        a = {}
+        kwargs = {}
 
     if args.force:
-        node_init.force_initialize_node(**a)
+        node_init.force_initialize_node(**kwargs)
     else:
         try:
-            node_init.initialize_node(**a)
+            node_init.initialize_node(**kwargs)
         except FileExistsError as e:
             print("This file seems to already exist: %s" % e)
 
