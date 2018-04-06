@@ -18,6 +18,7 @@ from syncr_backend.constants import ACTION_REMOVE_FILE
 from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_REQUEST_CHANGE
 from syncr_backend.constants import ACTION_SHARE_DROP
+from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
 from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
@@ -47,6 +48,7 @@ def handle_frontend_request(
         ACTION_REMOVE_OWNER: handle_remove_owner,
         ACTION_REQUEST_CHANGE: handle_request_change,
         ACTION_SHARE_DROP: handle_share_drop,
+        ACTION_TRANSFER_OWNERSHIP: handle_transfer_ownership,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_VIEW_CONFLICTS: handle_view_conflicts,
         ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
@@ -92,6 +94,38 @@ def handle_accept_changes(
             'status': 'ok',
             'result': 'success',
             'message': 'changes accepted',
+        }
+
+    send_response(conn, response)
+
+
+def handle_transfer_ownership(
+        request: Dict[str, str], conn: socket.socket,
+) -> None:
+    """
+    Handling function to transfer ownership from one drop to
+    another.
+    :param request:
+    {
+    'action': string
+    'transfer_owner_id' : string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
+
+    if request['transfer_owner_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_INVINPUT,
+        }
+    else:
+        # TODO: backend logic to apply ownership transfer.
+        new_owner = request['transfer_owner_id']
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'Primary Ownership transferred to ' + new_owner,
         }
 
     send_response(conn, response)
