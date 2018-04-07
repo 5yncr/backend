@@ -47,10 +47,11 @@ def write_chunk(
         crypto_util.b64encode(chunk_hash),
     )
 
-    with open(filepath, 'wb') as f:
+    with open(filepath, 'r+b') as f:
         pos_bytes = position * chunk_size
         f.seek(pos_bytes)
         f.write(contents)
+        f.flush()
 
 
 def read_chunk(
@@ -125,6 +126,10 @@ def mark_file_complete(filepath: str) -> None:
     :return: None
     """
     logger.debug("marking %s done", filepath)
+    if is_complete(filepath):
+        logger.debug("file already done, returning")
+        return
+
     old_file = filepath + DEFAULT_INCOMPLETE_EXT
     os.rename(old_file, filepath)
 
