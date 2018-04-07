@@ -1,6 +1,6 @@
 FROM python:alpine
 
-RUN apk add --update build-base openssl-dev libffi-dev linux-headers git wget && \
+RUN apk add --update build-base openssl-dev libffi-dev linux-headers git wget jq && \
     rm -rf /var/cache/apk/*
 
 WORKDIR /work
