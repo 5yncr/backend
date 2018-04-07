@@ -161,7 +161,7 @@ class FileMetadata(object):
         full_name = os.path.join((await self.save_dir), file_name)
         downloaded_chunks = set()  # type: Set[int]
         for chunk_idx in range(self.num_chunks):
-            _, h = await fileio_util.async_read_chunk(
+            _, h = await fileio_util.read_chunk(
                 filepath=full_name,
                 position=chunk_idx,
                 chunk_size=self.chunk_size,

@@ -408,7 +408,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
         key_request = await public_key_store.request_key(node_id)
         if key_request[0]:
             pub_key = key_request[1].encode('utf-8')
-            _save_key_to_disk(key_path, pub_key)
+            await _save_key_to_disk(key_path, pub_key)
             return load_public_key(pub_key)
         else:
             raise VerificationException()
@@ -426,14 +426,14 @@ async def send_my_pub_key() -> None:
     await public_key_store.set_key(pub_key_bytes)
 
 
-def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
+async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     Saves the public key to the specified location
     :param key_path: absolute path to location of public key
     :param pub_key: bytes to be saved
     """
-    with open(key_path, 'wb') as pub_file:
-        pub_file.write(pub_key)
+    async with aiofiles.open(key_path, 'wb') as pub_file:
+        await pub_file.write(pub_key)
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:

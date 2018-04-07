@@ -62,27 +62,7 @@ async def write_chunk(
         await f.flush()
 
 
-def read_chunk(
-    filepath, position, file_hash=None, chunk_size=DEFAULT_CHUNK_SIZE,
-) -> Tuple[bytes, bytes]:
-    if not is_complete(filepath):
-        logger.debug("file %s not done, adding extention", filepath)
-        filepath += DEFAULT_INCOMPLETE_EXT
-
-    with open(filepath, 'rb') as f:
-        pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        data = f.read(chunk_size)
-
-    h = crypto_util.hash(data)
-    if file_hash is not None:
-        logger.info("input file_hash is not None, checking")
-        if h != file_hash:
-            raise crypto_util.VerificationException()
-    return (data, h)
-
-
-async def async_read_chunk(
+async def read_chunk(
     filepath: str, position: int, file_hash: Optional[bytes]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> Tuple[bytes, bytes]:

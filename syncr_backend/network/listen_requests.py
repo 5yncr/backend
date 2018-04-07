@@ -18,7 +18,7 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
-from syncr_backend.util.fileio_util import async_read_chunk
+from syncr_backend.util.fileio_util import read_chunk
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
 
@@ -220,7 +220,7 @@ async def handle_request_chunk(
         file_name = request_drop_metadata.get_file_name_from_id(
             request['file_id'],
         )
-        chunk = (await async_read_chunk(
+        chunk = (await read_chunk(
             os.path.join(
                 drop_location, file_name,
             ), request['index'],
