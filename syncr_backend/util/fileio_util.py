@@ -150,7 +150,7 @@ def is_complete(filepath: str) -> bool:
     if os.path.isfile(filepath):
         logger.debug("file %s is done", filepath)
         return True
-    logger.error("file %s not found", filepath)
+    logger.debug("file %s not found", filepath)
     raise FileNotFoundError(filepath)
 
 
