@@ -60,7 +60,7 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(drop_id: bytes, peers: List[Tuple[str, int]]) -> None:
+def update_drop(drop_id: bytes) -> None:
     """
     Update a drop from a directory.
 
