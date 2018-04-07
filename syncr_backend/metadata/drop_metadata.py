@@ -7,6 +7,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import aiofiles  # type: ignore
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
@@ -236,6 +237,28 @@ class DropMetadata(object):
             return f.readline()
 
     @staticmethod
+    async def async_read_latest(
+        id: bytes, metadata_location: str,
+    ) -> Optional[str]:
+        """Read the latest drop version
+
+        :param id: the drop id
+        :param metadata_location: where to find it
+        """
+        file_name = DropMetadata.make_filename(id, LATEST)
+        logger.debug(
+            "trying to read file %s from %s", file_name, metadata_location,
+        )
+        if not os.path.isfile(os.path.join(metadata_location, file_name)):
+            logger.debug("File not found")
+            return None
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'r',
+        ) as f:
+            logger.debug("Reading file")
+            return await f.readline()
+
+    @staticmethod
     def read_file(
         id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
     ) -> Optional['DropMetadata']:
@@ -273,6 +296,53 @@ class DropMetadata(object):
             b = b''
             while True:
                 data = f.read(65536)
+                if not data:
+                    break
+                b += data
+            return DropMetadata.decode(b)
+
+    @staticmethod
+    async def async_read_file(
+        id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
+    ) -> Optional['DropMetadata']:
+        """Read a drop metadata file from disk
+
+        :param id: the drop id
+        :param version: the drop version
+        :param metadata_location: where to look for the file
+        :return: A DropMetadata object, or maybe None
+        """
+        logger.debug("reading from file")
+        if version is None:
+            logger.debug(
+                "Version is None, looking it up in %s", metadata_location,
+            )
+            file_name = await DropMetadata.async_read_latest(
+                id, metadata_location,
+            )
+        else:
+            logger.debug("Getting version %s", version)
+            file_name = DropMetadata.make_filename(id, version)
+        if file_name is None:
+            logger.warning(
+                "latest drop metadata not found for %s",
+                crypto_util.b64encode(id),
+            )
+            return None
+
+        if not os.path.isfile(os.path.join(metadata_location, file_name)):
+            logger.warning(
+                "drop metadata not found for %s",
+                crypto_util.b64encode(id),
+            )
+            return None
+
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'rb',
+        ) as f:
+            b = b''
+            while True:
+                data = await f.read(65536)
                 if not data:
                     break
                 b += data
@@ -349,6 +419,17 @@ def get_drop_location(drop_id: bytes) -> str:
 
     with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
         return f.read()
+
+
+async def async_get_drop_location(drop_id: bytes) -> str:
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    async with aiofiles.open(
+        os.path.join(save_path, encoded_drop_id), 'r',
+    ) as f:
+        return await f.read()
 
 
 def list_drops() -> List[bytes]:

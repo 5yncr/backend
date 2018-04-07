@@ -15,11 +15,12 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.metadata import drop_metadata
+from syncr_backend.metadata.drop_metadata import async_get_drop_location as \
+    get_drop_location
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
-from syncr_backend.metadata.drop_metadata import get_drop_location
-from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import \
+    async_get_file_metadata_from_drop_id as get_file_metadata_from_drop_id
 from syncr_backend.util.fileio_util import async_read_chunk
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
@@ -81,7 +82,7 @@ async def handle_request_drop_metadata(
     :param writer: StreamWriter
     :return: None
     """
-    file_location = get_drop_location(request['drop_id'])
+    file_location = await get_drop_location(request['drop_id'])
     file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
     if request.get('version') is not None and request.get('nonce') is not None:
         drop_version = DropVersion(
@@ -89,7 +90,7 @@ async def handle_request_drop_metadata(
         )  # type: Optional[DropVersion]
     else:
         drop_version = None
-    request_drop_metadata = DropMetadata.read_file(
+    request_drop_metadata = await DropMetadata.async_read_file(
         request['drop_id'],
         file_location,
         drop_version,
@@ -126,7 +127,7 @@ async def handle_request_file_metadata(
     :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
@@ -162,7 +163,7 @@ async def handle_request_chunk_list(
     :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
@@ -174,7 +175,7 @@ async def handle_request_chunk_list(
             'error': ERR_NEXIST,
         }
     else:
-        chunks = request_file_metadata.downloaded_chunks
+        chunks = await request_file_metadata.async_downloaded_chunks
         logger.info("sending chunk list")
         response = {
             'status': 'ok',
@@ -200,11 +201,11 @@ async def handle_request_chunk(
     :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
-    drop_location = drop_metadata.get_drop_location(request['drop_id'])
+    drop_location = await get_drop_location(request['drop_id'])
     drop_metadata_location = os.path.join(
         drop_location, DEFAULT_DROP_METADATA_LOCATION,
     )

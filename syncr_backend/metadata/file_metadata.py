@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Set  # noqa
 
+import aiofiles  # type: ignore
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
@@ -106,6 +107,33 @@ class FileMetadata(object):
             return FileMetadata.decode(b)
 
     @staticmethod
+    async def async_read_file(
+        file_id: bytes,
+        metadata_location: str,
+    ) -> Optional['FileMetadata']:
+        """Read a file metadata file and return FileMetadata
+
+        :param file_id: The hash of the file to read
+        :param metadata_location: drop location with default metadata location
+        :return: a FileMetadata object or None if it does not exist
+        """
+        logger.debug("reading from file")
+        file_name = crypto_util.b64encode(file_id).decode("utf-8")
+        if not os.path.exists(os.path.join(metadata_location, file_name)):
+            return None
+
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'rb',
+        ) as f:
+            b = b''
+            while True:
+                data = await f.read(65536)
+                if not data:
+                    break
+                b += data
+            return FileMetadata.decode(b)
+
+    @staticmethod
     def decode(data: bytes) -> 'FileMetadata':
         """Decode a bencoded byte array into a FileMetadata object
 
@@ -169,6 +197,48 @@ class FileMetadata(object):
         """
         if self._downloaded_chunks is None:
             self._downloaded_chunks = self._calculate_downloaded_chunks()
+        return self._downloaded_chunks
+
+    async def _async_calculate_downloaded_chunks(self) -> Set[int]:
+        """Figure out what chunks are complete, similar to "hashing" in some
+        bittorrent clients
+
+        :return: A set of chunk ids already downloaded
+        """
+        self.log.debug("calculating downloaded chunks")
+        # TODO: what if not exist
+        dm = await DropMetadata.async_read_file(
+            id=self.drop_id,
+            metadata_location=os.path.join(
+                self.save_dir, DEFAULT_DROP_METADATA_LOCATION,
+            ),
+        )
+        if dm is None:
+            return set()
+        file_name = dm.get_file_name_from_id(self.file_id)
+        full_name = os.path.join(self.save_dir, file_name)
+        downloaded_chunks = set()  # type: Set[int]
+        for chunk_idx in range(self.num_chunks):
+            _, h = await fileio_util.async_read_chunk(
+                filepath=full_name,
+                position=chunk_idx,
+                chunk_size=self.chunk_size,
+            )
+            if h == self.hashes[chunk_idx]:
+                downloaded_chunks.add(chunk_idx)
+        self.log.debug("calculated downloaded chunks: %s", downloaded_chunks)
+        return downloaded_chunks
+
+    @property
+    async def async_downloaded_chunks(self) -> Set[int]:
+        """Property of which chunks are downloaded
+        Note: does not automatically update, call `finish_chunk` to do that
+
+        :return: A set of chunk ids that are downloaded
+        """
+        if self._downloaded_chunks is None:
+            self._downloaded_chunks = await \
+                self._async_calculate_downloaded_chunks()
         return self._downloaded_chunks
 
     @property
@@ -253,6 +323,27 @@ def get_file_metadata_from_drop_id(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
     request_file_metadata = FileMetadata.read_file(
+        file_id,
+        file_metadata_location,
+    )
+
+    return request_file_metadata
+
+
+async def async_get_file_metadata_from_drop_id(
+    drop_id: bytes, file_id: bytes,
+) -> Optional[FileMetadata]:
+    """
+    Gets the file metadata of a file in a drop
+    :param drop_id: bytes for the drop_id that the file is part of
+    :param file_id: bytes for the file_id of desired file_name
+    :return Optional[FileMetadata] of the given file
+    """
+    drop_location = await drop_metadata.async_get_drop_location(drop_id)
+    file_metadata_location = os.path.join(
+        drop_location, DEFAULT_FILE_METADATA_LOCATION,
+    )
+    request_file_metadata = await FileMetadata.async_read_file(
         file_id,
         file_metadata_location,
     )
