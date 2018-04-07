@@ -11,4 +11,4 @@ RUN pip install -r requirements.txt
 ADD . /work/
 RUN pip install -e /work/
 
-ENV LOG_LEVEL=DEBUG
+ENV LOG_LEVEL=INFO
