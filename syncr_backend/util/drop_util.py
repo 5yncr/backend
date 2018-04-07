@@ -36,6 +36,10 @@ def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
     all_done = True
     for file_name, file_id in drop_metadata.files.items():
+        logger.debug(
+            "Downloading file %s with id %s", file_name,
+            crypto_util.b64encode(file_id),
+        )
         remaining_chunks = sync_file_contents(
             drop_id=drop_id,
             file_name=file_name,
@@ -202,6 +206,7 @@ def sync_file_contents(
     logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
     logger.debug("save dir is %s", save_dir)
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
+    file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
     try:
         needed_chunks = file_metadata.needed_chunks  # type: Optional[Set[int]]
