@@ -11,5 +11,5 @@ while [[ ! $(cat /share/large) ]]; do
     sleep 5
 done
 
-sync_drop $(cat /share/small) /small | grep "Drop successfully synced"
-sync_drop $(cat /share/large) /large | grep "Drop successfully synced"
+sync_drop "$(cat /share/small)" /small | grep "Drop successfully synced"
+sync_drop "$(cat /share/large)" /large | grep "Drop successfully synced"

@@ -6,6 +6,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import aiofiles  # type: ignore
+
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
@@ -40,8 +42,14 @@ def write_chunk(
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
-    if crypto_util.hash(contents) != chunk_hash:
-        raise crypto_util.VerificationException()
+    computed_hash = crypto_util.hash(contents)
+    if computed_hash != chunk_hash:
+        raise crypto_util.VerificationException(
+            "Computed: %s, expected: %s" % (
+                crypto_util.b64encode(computed_hash),
+                crypto_util.b64encode(chunk_hash),
+            ),
+        )
     logger.debug(
         "writing chunk with filepath %s and hash %s", filepath,
         crypto_util.b64encode(chunk_hash),
@@ -54,6 +62,26 @@ def write_chunk(
 
 
 def read_chunk(
+    filepath, position, file_hash=None, chunk_size=DEFAULT_CHUNK_SIZE,
+) -> Tuple[bytes, bytes]:
+    if not is_complete(filepath):
+        logger.debug("file %s not done, adding extention", filepath)
+        filepath += DEFAULT_INCOMPLETE_EXT
+
+    with open(filepath, 'rb') as f:
+        pos_bytes = position * chunk_size
+        f.seek(pos_bytes)
+        data = f.read(chunk_size)
+
+    h = crypto_util.hash(data)
+    if file_hash is not None:
+        logger.info("input file_hash is not None, checking")
+        if h != file_hash:
+            raise crypto_util.VerificationException()
+    return (data, h)
+
+
+async def async_read_chunk(
     filepath: str, position: int, file_hash: Optional[bytes]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> Tuple[bytes, bytes]:
@@ -72,12 +100,14 @@ def read_chunk(
         logger.debug("file %s not done, adding extention", filepath)
         filepath += DEFAULT_INCOMPLETE_EXT
 
-    with open(filepath, 'rb') as f:
+    async with aiofiles.open(filepath, 'rb') as f:
+        logger.debug("async reading %s", filepath)
         pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        data = f.read(chunk_size)
+        await f.seek(pos_bytes)
+        data = await f.read(chunk_size)
 
     h = crypto_util.hash(data)
+    logger.debug("async read hash: %s", crypto_util.b64encode(h))
     if file_hash is not None:
         logger.info("input file_hash is not None, checking")
         if h != file_hash:

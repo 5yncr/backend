@@ -30,7 +30,7 @@ from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
-from syncr_backend.util.network_util import send_response
+from syncr_backend.util.network_util import sync_send_response as send_response
 
 
 def handle_frontend_request(

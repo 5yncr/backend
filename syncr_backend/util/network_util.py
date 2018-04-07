@@ -1,4 +1,5 @@
 """Helper functions for communicating with other peers"""
+import asyncio
 import socket
 from socket import SHUT_WR
 from typing import Any
@@ -14,13 +15,21 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
+async def send_response(
+    conn: asyncio.StreamWriter, response: Dict[Any, Any],
+) -> None:
     """
     Sends a response to a connection and then closes writing to that connection
     :param conn: socket.accept() connection
     :param response: Dict[Any, Any] response
     :return: None
     """
+    conn.write(bencode.encode(response))
+    await conn.drain()
+    conn.write_eof()
+
+
+def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
     conn.send(bencode.encode(response))
     conn.shutdown(SHUT_WR)
 
