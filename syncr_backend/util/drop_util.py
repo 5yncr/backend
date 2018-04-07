@@ -214,6 +214,10 @@ def sync_file_contents(
         needed_chunks = None
 
     if not needed_chunks and needed_chunks is not None:
+        if not file_metadata.downloaded_chunks:
+            # if it's an empty file, there are no needed chunks, but we still
+            #  need to create the file
+            fileio_util.create_file(full_path, file_metadata.file_length)
         return needed_chunks
 
     fileio_util.create_file(full_path, file_metadata.file_length)
