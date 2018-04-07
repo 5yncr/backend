@@ -27,23 +27,23 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def sync_drop(drop_id: bytes, save_dir: str) -> bool:
+async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     """
     Syncs a drop id from remote peers
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
     """
-    drop_peers = get_drop_peers(drop_id)
-    start_drop_from_id(drop_id, save_dir)
-    drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
+    drop_peers = await get_drop_peers(drop_id)
+    await start_drop_from_id(drop_id, save_dir)
+    drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
     all_done = True
     for file_name, file_id in drop_metadata.files.items():
         logger.debug(
             "Downloading file %s with id %s", file_name,
             crypto_util.b64encode(file_id),
         )
-        remaining_chunks = sync_file_contents(
+        remaining_chunks = await sync_file_contents(
             drop_id=drop_id,
             file_name=file_name,
             file_id=file_id,
@@ -63,7 +63,7 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(
+async def update_drop(
         drop_id: bytes,
         add_secondary_owner: bytes=None,
         remove_secondary_owner: bytes=None,
@@ -82,16 +82,16 @@ def update_drop(
     :param file_name: name of file to be added/removed.
 
     """
-    peers = get_drop_peers(drop_id)
-    old_drop_metadata = get_drop_metadata(drop_id, peers)
-    priv_key = node_init.load_private_key_from_disk()
+    peers = await get_drop_peers(drop_id)
+    old_drop_metadata = await get_drop_metadata(drop_id, peers)
+    priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
     if old_drop_metadata.owner != node_id:
         raise PermissionError("You are not the owner of this drop")
 
-    drop_directory = get_drop_location(drop_id)
-    (new_drop_m, new_files_m) = drop_init.make_drop_metadata(
+    drop_directory = await get_drop_location(drop_id)
+    (new_drop_m, new_files_m) = await drop_init.make_drop_metadata(
         path=drop_directory,
         drop_name=old_drop_metadata.name,
         owner=old_drop_metadata.owner,
@@ -129,19 +129,19 @@ def update_drop(
         ),
     )
 
-    new_drop_m.write_file(
+    await new_drop_m.write_file(
         is_latest=True,
         metadata_location=os.path.join(
             drop_directory, DEFAULT_DROP_METADATA_LOCATION,
         ),
     )
     for f_m in new_files_m.values():
-        f_m.write_file(
+        await f_m.write_file(
             os.path.join(drop_directory, DEFAULT_FILE_METADATA_LOCATION),
         )
 
 
-def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
+async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     """Given a drop_id and save directory, sets up the directory for syncing
     and adds the info to the global dir
 
@@ -162,12 +162,12 @@ def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     os.makedirs(
         os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION), exist_ok=True,
     )
-    save_drop_location(drop_id, save_dir)
+    await save_drop_location(drop_id, save_dir)
 
 
-def get_drop_metadata(
-    drop_id: bytes, peers: List[Tuple[str, int]], save_dir:
-    Optional[str]=None, version: Optional[DropVersion]=None,
+async def get_drop_metadata(
+    drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
+    version: Optional[DropVersion]=None,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -180,10 +180,10 @@ def get_drop_metadata(
     logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
     if save_dir is None:
         logger.debug("save_dir not set, trying to look it up")
-        save_dir = get_drop_location(drop_id)
+        save_dir = await get_drop_location(drop_id)
     logger.debug("save_dir is %s", save_dir)
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
-    metadata = DropMetadata.read_file(drop_id, metadata_dir)
+    metadata = await DropMetadata.read_file(drop_id, metadata_dir)
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
@@ -191,13 +191,17 @@ def get_drop_metadata(
             'drop_id': drop_id,
             'drop_version': version,
         }
-        metadata = send_requests.do_request(
+        metadata = await send_requests.do_request(
             request_fun=send_requests.send_drop_metadata_request,
             peers=peers,
             fun_args=args,
         )
+        if metadata is None:
+            raise Exception
 
-        metadata.write_file(is_latest=True, metadata_location=metadata_dir)
+        await metadata.write_file(
+            is_latest=True, metadata_location=metadata_dir,
+        )
 
     return metadata
 
@@ -318,7 +322,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
     return subscribed_drops
 
 
-def get_file_metadata(
+async def get_file_metadata(
     drop_id: bytes, file_id: bytes, save_dir: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
@@ -333,21 +337,24 @@ def get_file_metadata(
     """
     logger.info("getting file metadata for %s", crypto_util.b64encode(file_id))
     metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
-    metadata = FileMetadata.read_file(file_id, metadata_dir)
+    metadata = await FileMetadata.read_file(file_id, metadata_dir)
     if metadata is None:
         logger.debug("file metadata not on disk, getting from network")
-        metadata = send_requests.do_request(
+        metadata = await send_requests.do_request(
             request_fun=send_requests.send_file_metadata_request,
             peers=peers,
             fun_args={'drop_id': drop_id, 'file_id': file_id},
         )
 
-        metadata.write_file(metadata_dir)
+        if metadata is None:
+            raise Exception
+
+        await metadata.write_file(metadata_dir)
 
     return metadata
 
 
-def sync_file_contents(
+async def sync_file_contents(
     drop_id: bytes, file_id: bytes, file_name: str,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> Set[int]:
@@ -361,29 +368,29 @@ def sync_file_contents(
     """
     logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
     logger.debug("save dir is %s", save_dir)
-    file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
+    file_metadata = await get_file_metadata(drop_id, file_id, save_dir, peers)
     file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
     try:
-        needed_chunks = file_metadata.needed_chunks  # type: Optional[Set[int]]
+        needed_chunks = await file_metadata.needed_chunks  # type: Optional[Set[int]]  # noqa
     except FileNotFoundError:
         needed_chunks = None
 
     if not needed_chunks and needed_chunks is not None:
-        if not file_metadata.downloaded_chunks:
+        if not await file_metadata.downloaded_chunks:
             # if it's an empty file, there are no needed chunks, but we still
             #  need to create the file
-            fileio_util.create_file(full_path, file_metadata.file_length)
+            await fileio_util.create_file(full_path, file_metadata.file_length)
         return needed_chunks
 
-    fileio_util.create_file(full_path, file_metadata.file_length)
+    await fileio_util.create_file(full_path, file_metadata.file_length)
 
     if needed_chunks is None:
-        needed_chunks = file_metadata.needed_chunks
+        needed_chunks = await file_metadata.needed_chunks
 
     for ip, port in peers:
         logger.debug("trying peer %s", ip)
-        avail_chunks = send_requests.send_chunk_list_request(
+        avail_chunks = await send_requests.send_chunk_list_request(
             ip=ip,
             port=port,
             drop_id=drop_id,
@@ -396,7 +403,7 @@ def sync_file_contents(
             continue
         for cid in can_get_from_peer:
             logger.debug("trying to download chunk %s from %s", cid, ip)
-            chunk = send_requests.send_chunk_request(
+            chunk = await send_requests.send_chunk_request(
                 ip=ip,
                 port=port,
                 drop_id=drop_id,
@@ -404,13 +411,13 @@ def sync_file_contents(
                 file_index=cid,
             )
             try:
-                fileio_util.write_chunk(
+                await fileio_util.write_chunk(
                     filepath=full_path,
                     position=cid,
                     contents=chunk,
                     chunk_hash=file_metadata.hashes[cid],
                 )
-                file_metadata.finish_chunk(cid)
+                await file_metadata.finish_chunk(cid)
                 needed_chunks -= {cid}
             except crypto_util.VerificationException as e:
                 logger.warning(
@@ -426,15 +433,17 @@ class PeerStoreError(Exception):
     pass
 
 
-def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
+async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop
     :param drop_id: id of drop
     """
-    priv_key = node_init.load_private_key_from_disk()
+    priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
-    drop_peer_store_instance = drop_peer_store.get_drop_peer_store(node_id)
-    success, drop_peers = drop_peer_store_instance.request_peers(drop_id)
+    drop_peer_store_instance = await drop_peer_store.get_drop_peer_store(
+        node_id,
+    )
+    success, drop_peers = await drop_peer_store_instance.request_peers(drop_id)
     if not success:
         raise PeerStoreError("Could not connect to peers")
 

@@ -38,7 +38,7 @@ from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import simple_get_drop_metadata
 from syncr_backend.util.drop_util import update_drop
-from syncr_backend.util.network_util import send_response
+from syncr_backend.util.network_util import sync_send_response as send_response
 
 
 def handle_frontend_request(

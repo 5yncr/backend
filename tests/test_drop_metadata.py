@@ -1,8 +1,14 @@
+import asyncio
 import base64
 from unittest import mock
 
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util.crypto_util import load_public_key
+
+
+def run_coro(f):
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(f)
 
 
 @mock.patch('syncr_backend.metadata.drop_metadata.get_pub_key', autospec=True)
@@ -47,9 +53,12 @@ def test_drop_metadata_decode(mock_get_pub_key):
         b"ZzV4U0FnRngrVG5oZHROdUhpTENZSmx1dGZ0dGpTV0plZmMvV0VYSGtvMkZsbTZ4Cn"\
         b"hwSU40NDJlSDVjRnVxVUNBd0VBQVE9PQotLS0tLUVORCBQVUJMSUMgS0VZLS0tLS0K"
 
-    mock_get_pub_key.return_value = load_public_key(base64.b64decode(p))
+    async def pub_key(_):
+        return load_public_key(base64.b64decode(p))
 
-    d = DropMetadata.decode(base64.b64decode(i))
+    mock_get_pub_key.side_effect = pub_key
+
+    d = run_coro(DropMetadata.decode(base64.b64decode(i)))
     expected_id = b"OnO4z+byMrImwSEPlZszPkd1NGmst1HoRMMffKiIJGChrkmTuO+XyzD"\
                   b"aJUTCYrqWFm2D32JXtnVoQhk82UbvEA=="
     assert base64.b64encode(d.id) == expected_id

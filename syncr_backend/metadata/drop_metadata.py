@@ -7,6 +7,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import aiofiles  # type: ignore
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
@@ -132,7 +133,7 @@ class DropMetadata(object):
         return h
 
     @property
-    def header(self) -> Dict[str, Any]:
+    async def header(self) -> Dict[str, Any]:
         """Get the full header, including signature
         If there is not signature already, will generate it, which requires
         to the private key of signed_by
@@ -142,12 +143,12 @@ class DropMetadata(object):
         h = self.unsigned_header
         if self.sig is None:
             self.log.debug("signing header")
-            key = node_init.load_private_key_from_disk()
+            key = await node_init.load_private_key_from_disk()
             self.sig = crypto_util.sign_dictionary(key, h)
         h["header_signature"] = self.sig
         return h
 
-    def verify_header(self) -> None:
+    async def verify_header(self) -> None:
         """Verify the signature in the header
 
         If the signature is OK, returns none, if the signature is None or is
@@ -156,7 +157,7 @@ class DropMetadata(object):
         if self.sig is None:
             self.log.error("header signature not found when verifying")
             raise VerificationException()
-        key = get_pub_key(self.signed_by)
+        key = await get_pub_key(self.signed_by)
         crypto_util.verify_signed_dictionary(
             key, self.sig, self.unsigned_header,
         )
@@ -182,7 +183,7 @@ class DropMetadata(object):
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
 
-    def write_file(
+    async def write_file(
         self, metadata_location: str, is_latest: bool=True,
     ) -> None:
         """Write the representation of this objec to disk
@@ -194,13 +195,17 @@ class DropMetadata(object):
         file_name = DropMetadata.make_filename(self.id, self.version)
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
-        with open(os.path.join(metadata_location, file_name), 'wb') as f:
-            f.write(self.encode())
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'wb',
+        ) as f:
+            await f.write(await self.encode())
         if is_latest:
-            DropMetadata.write_latest(self.id, self.version, metadata_location)
+            await DropMetadata.write_latest(
+                self.id, self.version, metadata_location,
+            )
 
     @staticmethod
-    def write_latest(
+    async def write_latest(
         id: bytes, version: DropVersion,
         metadata_location: str,
     ) -> None:
@@ -211,12 +216,14 @@ class DropMetadata(object):
         :para metadata_location: where to write it
         """
         file_name = DropMetadata.make_filename(id, LATEST)
-        with open(os.path.join(metadata_location, file_name), 'w') as f:
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'w',
+        ) as f:
             to_write = DropMetadata.make_filename(id, version)
-            f.write(to_write)
+            await f.write(to_write)
 
     @staticmethod
-    def read_latest(
+    async def read_latest(
         id: bytes, metadata_location: str,
     ) -> Optional[str]:
         """Read the latest drop version
@@ -231,12 +238,14 @@ class DropMetadata(object):
         if not os.path.isfile(os.path.join(metadata_location, file_name)):
             logger.debug("File not found")
             return None
-        with open(os.path.join(metadata_location, file_name), 'r') as f:
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'r',
+        ) as f:
             logger.debug("Reading file")
-            return f.readline()
+            return await f.readline()
 
     @staticmethod
-    def read_file(
+    async def read_file(
         id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
     ) -> Optional['DropMetadata']:
         """Read a drop metadata file from disk
@@ -251,7 +260,9 @@ class DropMetadata(object):
             logger.debug(
                 "Version is None, looking it up in %s", metadata_location,
             )
-            file_name = DropMetadata.read_latest(id, metadata_location)
+            file_name = await DropMetadata.read_latest(
+                id, metadata_location,
+            )
         else:
             logger.debug("Getting version %s", version)
             file_name = DropMetadata.make_filename(id, version)
@@ -269,26 +280,28 @@ class DropMetadata(object):
             )
             return None
 
-        with open(os.path.join(metadata_location, file_name), 'rb') as f:
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'rb',
+        ) as f:
             b = b''
             while True:
-                data = f.read(65536)
+                data = await f.read(65536)
                 if not data:
                     break
                 b += data
-            return DropMetadata.decode(b)
+            return await DropMetadata.decode(b)
 
-    def encode(self) -> bytes:
+    async def encode(self) -> bytes:
         """Encode the full drop metadata file, including files, to bytes
 
         :return: The bencoded full metadata file
         """
-        h = self.header
+        h = await self.header
         h["files"] = self.files
         return bencode.encode(h)
 
     @staticmethod
-    def decode(b: bytes) -> 'DropMetadata':
+    async def decode(b: bytes) -> 'DropMetadata':
         """Decodes a bencoded drop metadata file to a DropMetadata object
         Also verifies the files hash and header signature, and throws an
         exception if they're not OK
@@ -316,11 +329,11 @@ class DropMetadata(object):
             sig=decoded["header_signature"],
         )
         dm.verify_files_hash()
-        dm.verify_header()
+        await dm.verify_header()
         return dm
 
 
-def save_drop_location(drop_id: bytes, location: str) -> None:
+async def save_drop_location(drop_id: bytes, location: str) -> None:
     """Save a drops location in the central data dir
 
     :param drop_id: The unencoded drop id
@@ -333,22 +346,21 @@ def save_drop_location(drop_id: bytes, location: str) -> None:
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
-        f.write(location)
+    async with aiofiles.open(
+        os.path.join(save_path, encoded_drop_id), 'w',
+    ) as f:
+        await f.write(location)
 
 
-def get_drop_location(drop_id: bytes) -> str:
-    """Get a drops location on disk, from the drop id
-
-    :param drop_id: The unencoded drop id
-    :return: The directory the drop is in
-    """
+async def get_drop_location(drop_id: bytes) -> str:
     save_path = _get_save_path()
 
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
 
-    with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
-        return f.read()
+    async with aiofiles.open(
+        os.path.join(save_path, encoded_drop_id), 'r',
+    ) as f:
+        return await f.read()
 
 
 def list_drops() -> List[bytes]:
@@ -366,7 +378,7 @@ def _get_save_path() -> str:
     return save_path
 
 
-def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
+async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     """
     Gets the public key from disk if possible otherwise request it from
     PublicKeyStore
@@ -386,41 +398,42 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     key_path = os.path.join(pub_key_directory, key_file_name)
 
     if os.path.isfile(key_path):
-        with open(key_path, 'rb') as pub_file:
-            pub_key = pub_file.read()
+        async with aiofiles.open(key_path, 'rb') as pub_file:
+            pub_key = await pub_file.read()
             return load_public_key(pub_key)
     else:
-        this_node_id = node_id_from_private_key(load_private_key_from_disk())
-        public_key_store = get_public_key_store(this_node_id)
-        key_request = public_key_store.request_key(node_id)
+        key_bytes = await load_private_key_from_disk()
+        this_node_id = node_id_from_private_key(key_bytes)
+        public_key_store = await get_public_key_store(this_node_id)
+        key_request = await public_key_store.request_key(node_id)
         if key_request[0]:
             pub_key = key_request[1].encode('utf-8')
-            _save_key_to_disk(key_path, pub_key)
+            await _save_key_to_disk(key_path, pub_key)
             return load_public_key(pub_key)
         else:
             raise VerificationException()
 
 
-def send_my_pub_key() -> None:
-    this_node_id = node_id_from_private_key(load_private_key_from_disk())
+async def send_my_pub_key() -> None:
+    this_node_id = node_id_from_private_key(await load_private_key_from_disk())
     logger.info(
         "Sending pub key for %s to tracker",
         crypto_util.b64encode(this_node_id),
     )
-    public_key_store = get_public_key_store(this_node_id)
-    pub_key = load_private_key_from_disk().public_key()
+    public_key_store = await get_public_key_store(this_node_id)
+    pub_key = (await load_private_key_from_disk()).public_key()
     pub_key_bytes = crypto_util.dump_public_key(pub_key)
-    public_key_store.set_key(pub_key_bytes)
+    await public_key_store.set_key(pub_key_bytes)
 
 
-def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
+async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     Saves the public key to the specified location
     :param key_path: absolute path to location of public key
     :param pub_key: bytes to be saved
     """
-    with open(key_path, 'wb') as pub_file:
-        pub_file.write(pub_key)
+    async with aiofiles.open(key_path, 'wb') as pub_file:
+        await pub_file.write(pub_key)
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:

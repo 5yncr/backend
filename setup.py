@@ -26,6 +26,7 @@ setup(
         'syncr_backend/contrib/bq',
     ],
     install_requires=[
+        "aiofiles==0.3.2",
         "asn1crypto==0.24.0",
         "aspy.yaml==1.0.0",
         "attrs==17.4.0",
