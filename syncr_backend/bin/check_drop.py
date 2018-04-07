@@ -1,5 +1,6 @@
 #!/usr/env/bin/python
 import argparse
+import asyncio
 import os
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
@@ -15,6 +16,11 @@ logger = get_logger(__name__)
 
 
 def main() -> None:
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(a_main())
+
+
+async def a_main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "drop_id",
@@ -24,19 +30,21 @@ def main() -> None:
     args = parser.parse_args()
 
     drop_id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
-    drop_location = get_drop_location(drop_id)
+    drop_location = await get_drop_location(drop_id)
     metadata_dir = os.path.join(drop_location, DEFAULT_DROP_METADATA_LOCATION)
     file_metadata_dir = os.path.join(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
-    metadata = DropMetadata.read_file(drop_id, metadata_dir)
+    metadata = await DropMetadata.read_file(drop_id, metadata_dir)
 
     if metadata is None:
         logger.error("Drop metadata not found, failing")
         exit(1)
 
     for file_name, file_id in metadata.files.items():
-        file_metadata = FileMetadata.read_file(file_id, file_metadata_dir)
+        file_metadata = await FileMetadata.read_file(
+            file_id, file_metadata_dir,
+        )
 
         if file_metadata is None:
             logger.error("File metadata for %s not found, exiting", file_name)
@@ -44,7 +52,7 @@ def main() -> None:
 
         file_metadata.file_name = file_name
 
-        needed_chunks = file_metadata.needed_chunks
+        needed_chunks = await file_metadata.needed_chunks
         if needed_chunks:
             logger.error(
                 "File %s has needed chunks %s, exiting", file_name,

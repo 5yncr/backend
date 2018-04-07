@@ -5,7 +5,8 @@ import threading
 from typing import Any
 from typing import List
 
-from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
+from syncr_backend.external_interface.drop_peer_store import \
+    a_send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata.drop_metadata import send_my_pub_key
@@ -59,27 +60,24 @@ def run_backend() -> None:
     else:
         ext_port = int(arguments.port[0])
 
-    send_my_pub_key()
+    loop = asyncio.get_event_loop()
+    loop.create_task(send_my_pub_key())
+
     shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
         target=listen_requests,
         args=[
-            arguments.ip[0], arguments.port[0], asyncio.get_event_loop(),
+            arguments.ip[0], arguments.port[0], loop,
             shutdown_flag,
         ],
     )
     request_listen_thread.start()
-    send_drops_thread = threading.Thread(
-        target=send_drops_to_dps,
-        args=[ext_addr, ext_port, shutdown_flag],
-    )
-    send_drops_thread.start()
+    loop.create_task(a_send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
     if not arguments.backendonly:
         read_cmds_from_cmdline()
         shutdown_flag.set()
         network_util.close_socket_thread(arguments.ip[0], arguments.port[0])
-        send_drops_thread.join()
         request_listen_thread.join()
 
 

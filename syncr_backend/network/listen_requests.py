@@ -7,7 +7,6 @@ from typing import Optional  # noqa
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
@@ -15,12 +14,10 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.metadata.drop_metadata import async_get_drop_location as \
-    get_drop_location
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
-from syncr_backend.metadata.file_metadata import \
-    async_get_file_metadata_from_drop_id as get_file_metadata_from_drop_id
+from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
 from syncr_backend.util.fileio_util import async_read_chunk
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
@@ -57,7 +54,7 @@ async def async_handle_request(
 ) -> None:
     request = b''
     while 1:
-        data = await reader.read(DEFAULT_BUFFER_SIZE)
+        data = await reader.read()
         if not data:
             break
         else:
@@ -90,7 +87,7 @@ async def handle_request_drop_metadata(
         )  # type: Optional[DropVersion]
     else:
         drop_version = None
-    request_drop_metadata = await DropMetadata.async_read_file(
+    request_drop_metadata = await DropMetadata.read_file(
         request['drop_id'],
         file_location,
         drop_version,
@@ -106,7 +103,7 @@ async def handle_request_drop_metadata(
         logger.info("sending drop metadata")
         response = {
             'status': 'ok',
-            'response': request_drop_metadata.encode(),
+            'response': await request_drop_metadata.encode(),
         }
 
     await send_response(writer, response)
@@ -175,7 +172,7 @@ async def handle_request_chunk_list(
             'error': ERR_NEXIST,
         }
     else:
-        chunks = await request_file_metadata.async_downloaded_chunks
+        chunks = await request_file_metadata.downloaded_chunks
         logger.info("sending chunk list")
         response = {
             'status': 'ok',
@@ -209,7 +206,7 @@ async def handle_request_chunk(
     drop_metadata_location = os.path.join(
         drop_location, DEFAULT_DROP_METADATA_LOCATION,
     )
-    request_drop_metadata = DropMetadata.read_file(
+    request_drop_metadata = await DropMetadata.read_file(
         request['drop_id'], drop_metadata_location,
     )
 

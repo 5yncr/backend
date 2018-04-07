@@ -25,8 +25,8 @@ async def send_response(
     :return: None
     """
     conn.write(bencode.encode(response))
-    await conn.drain()
     conn.write_eof()
+    await conn.drain()
 
 
 def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:

@@ -18,7 +18,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def write_chunk(
+async def write_chunk(
     filepath: str, position: int, contents: bytes, chunk_hash: bytes,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
@@ -55,11 +55,11 @@ def write_chunk(
         crypto_util.b64encode(chunk_hash),
     )
 
-    with open(filepath, 'r+b') as f:
+    async with aiofiles.open(filepath, 'r+b') as f:
         pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        f.write(contents)
-        f.flush()
+        await f.seek(pos_bytes)
+        await f.write(contents)
+        await f.flush()
 
 
 def read_chunk(
@@ -116,7 +116,7 @@ async def async_read_chunk(
     return (data, h)
 
 
-def create_file(
+async def create_file(
     filepath: str, size_bytes: int,
 ) -> None:
     """Create a file at filepath of the correct size. May raise relevant IO
@@ -141,9 +141,9 @@ def create_file(
     dirname = os.path.dirname(filepath)
     if not os.path.exists(dirname):
         os.makedirs(dirname, exist_ok=True)
-    with open(filepath, 'wb') as f:
+    async with aiofiles.open(filepath, 'wb') as f:
         logger.debug("truncating %s ot %s bytes", filepath, size_bytes)
-        f.truncate(size_bytes)
+        await f.truncate(size_bytes)
 
 
 def mark_file_complete(filepath: str) -> None:
