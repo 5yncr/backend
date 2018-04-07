@@ -18,6 +18,7 @@ setup(
         'bin/drop_init',
         'bin/make_tracker_configs',
         'bin/sync_drop',
+        'bin/check_drop',
         'syncr_backend/contrib/bq',
     ],
     install_requires=[
