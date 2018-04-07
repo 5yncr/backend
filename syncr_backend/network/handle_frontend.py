@@ -730,18 +730,20 @@ def _tcp_handle_request():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(FRONTEND_TCP_ADDRESS)
     s.listen(1)
-    conn, addr = s.accept()
 
-    # Read request from frontend
-    request = b''
     while True:
-        data = conn.recv(4096)
-        if not data:
-            break
-        else:
-            request += data
+        conn, addr = s.accept()
 
-    handle_frontend_request(bencode.decode(request), conn)
+        # Read request from frontend
+        request = b''
+        while True:
+            data = conn.recv(4096)
+            if not data:
+                break
+            else:
+                request += data
+
+        handle_frontend_request(bencode.decode(request), conn)
 
 
 def _unix_handle_request():
@@ -760,20 +762,21 @@ def _unix_handle_request():
     s.bind(FRONTEND_UNIX_ADDRESS)
 
     s.listen(1)
-    conn, addr = s.accept()
 
-    # Read request from frontend
-    request = b''
     while True:
-        data = conn.recv(4096)
-        if not data:
-            break
-        else:
-            request += data
+        conn, addr = s.accept()
 
-    handle_frontend_request(bencode.decode(request), conn)
+        # Read request from frontend
+        request = b''
+        while True:
+            data = conn.recv(4096)
+            if not data:
+                break
+            else:
+                request += data
+
+        handle_frontend_request(bencode.decode(request), conn)
 
 
 if __name__ == '__main__':
-    while True:
-        handle_request()
+    handle_request()
