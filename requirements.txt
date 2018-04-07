@@ -1,4 +1,3 @@
--e git+git@github.com:5yncr/backend.git@a06d3bed8fea0e868738a6b862a4eead1a2bc3dc#egg=5yncr_Backend
 asn1crypto==0.24.0
 aspy.yaml==1.0.0
 attrs==17.4.0
