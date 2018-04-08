@@ -14,6 +14,13 @@ if [[ -f "/ext/debian.iso" ]]; then
 else
     wget -v https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.4.0-amd64-netinst.iso -O /large/debian.iso
 fi
+cp /large/debian.iso /large/debian2.iso
+cp /large/debian.iso /large/debian3.iso
+cp /large/debian.iso /large/debian4.iso
+cp /large/debian.iso /large/debian5.iso
+cp /large/debian.iso /large/debian6.iso
+cp /large/debian.iso /large/debian7.iso
+cp /large/debian.iso /large/debian8.iso
 
 drop_init /small > /share/small
 drop_init /large > /share/large

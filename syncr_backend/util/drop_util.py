@@ -1,5 +1,9 @@
+import asyncio
 import os
 import shutil
+from concurrent.futures import ALL_COMPLETED
+from concurrent.futures import FIRST_COMPLETED
+from typing import Dict  # noqa
 from typing import List
 from typing import Optional  # noqa
 from typing import Set
@@ -7,6 +11,7 @@ from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
 from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
@@ -35,21 +40,46 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     await start_drop_from_id(drop_id, save_dir)
     drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
     all_done = True
+    remaining_tasks = {}  # type: Dict[str, asyncio.Future[Set[int]]]
     for file_name, file_id in drop_metadata.files.items():
         logger.debug(
             "Downloading file %s with id %s", file_name,
             crypto_util.b64encode(file_id),
         )
-        remaining_chunks = await sync_file_contents(
-            drop_id=drop_id,
-            file_name=file_name,
-            file_id=file_id,
-            peers=drop_peers,
-            save_dir=save_dir,
+        remaining_tasks[file_name] = asyncio.ensure_future(
+            sync_file_contents(
+                drop_id=drop_id,
+                file_name=file_name,
+                file_id=file_id,
+                peers=drop_peers,
+                save_dir=save_dir,
+            ),
         )
-        if not remaining_chunks:
-            full_file_name = os.path.join(save_dir, file_name)
-            fileio_util.mark_file_complete(full_file_name)
+        done, pending = await asyncio.wait(
+            remaining_tasks.values(), timeout=1, return_when=ALL_COMPLETED,
+        )
+        while len(pending) >= MAX_CONCURRENT_FILE_DOWNLOADS:
+            logger.info("Hit max concurrent files, waiting for one to finish")
+            done, pending = await asyncio.wait(
+                pending, return_when=FIRST_COMPLETED,
+            )
+
+    while pending:
+        logger.info("Waiting for files to finish...")
+        done, pending = await asyncio.wait(
+            remaining_tasks.values(),
+            return_when=ALL_COMPLETED,
+        )
+
+    for f_name, task in remaining_tasks.items():
+        if task.done():
+            remaining_chunks = task.result()
+
+            if not remaining_chunks:
+                full_file_name = os.path.join(save_dir, file_name)
+                fileio_util.mark_file_complete(full_file_name)
+            else:
+                all_done = False
         else:
             all_done = False
 

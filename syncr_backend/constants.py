@@ -57,6 +57,9 @@ ERR_NEXIST = 0
 ERR_INCOMPAT = 1
 ERR_INVINPUT = 2
 
+# Concurrency
+MAX_CONCURRENT_FILE_DOWNLOADS = 4
+
 # Frontend action types
 ACTION_REMOVE_FILE = 'remove_file'
 ACTION_GET_OWNED_DROPS = 'get_owned_drops'
