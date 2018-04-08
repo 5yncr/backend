@@ -5,6 +5,11 @@ from typing import Awaitable
 from typing import List
 from typing import TypeVar
 
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
+
 
 R = TypeVar('R')
 
@@ -31,7 +36,7 @@ async def limit_gather(
         tasks.append(asyncio.ensure_future(f))
 
         done, pending = await asyncio.wait(
-            tasks, timeout=1, return_when=ALL_COMPLETED,
+            tasks, timeout=task_timeout, return_when=ALL_COMPLETED,
         )
         while len(pending) >= n:
             done, pending = await asyncio.wait(
@@ -42,3 +47,27 @@ async def limit_gather(
         done, pending = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
 
     return [t.result() for t in tasks]
+
+
+async def process_queue_with_limit(
+    queue: 'asyncio.Queue[Awaitable[R]]', n: int,
+    done_queue: 'asyncio.Queue[R]', task_timeout: int=0,
+):
+    tasks = []
+    while True:
+        task = asyncio.ensure_future(await queue.get())
+        task.add_done_callback(
+            lambda future: done_queue.put_nowait(future.result()),
+        )
+        task.add_done_callback(
+            lambda _: queue.task_done(),
+        )
+        tasks.append(task)
+
+        done, pending = await asyncio.wait(
+            tasks, timeout=task_timeout, return_when=ALL_COMPLETED,
+        )
+        while len(pending) >= n:
+            done, pending = await asyncio.wait(
+                pending, return_when=FIRST_COMPLETED,
+            )
