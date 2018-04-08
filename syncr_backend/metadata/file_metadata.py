@@ -3,7 +3,6 @@ import hashlib
 import logging
 import os
 from math import ceil
-from typing import Any
 from typing import List
 from typing import Optional
 from typing import Set  # noqa
@@ -192,12 +191,17 @@ class FileMetadata(object):
         return all_chunks - (await self.downloaded_chunks)
 
     async def finish_chunk(self, chunk_id: int) -> None:
+        """Mark chunk finished
+
+        :param chunk_id: The chunk that's done
+        """
         self.log.debug("finishing chunk %s", chunk_id)
         (await self.downloaded_chunks).add(chunk_id)
 
 
 async def file_hashes(
-    f: Any, chunk_size: int=DEFAULT_CHUNK_SIZE,
+    f: aiofiles.threadpool.AsyncBufferedReader,
+    chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> List[bytes]:
     """Given an open file in mode 'rb', hash its chunks and return a list of
     the hashes
@@ -217,7 +221,9 @@ async def file_hashes(
     return hashes
 
 
-async def hash_file(f: Any) -> bytes:
+async def hash_file(
+    f: aiofiles.threadpool.AsyncBufferedReader,
+) -> bytes:
     """Hash a file
 
     :param f: An open file, seeked to 0

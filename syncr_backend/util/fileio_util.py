@@ -1,6 +1,9 @@
 """Helper functions for reading from and writing to the filesystem"""
+import asyncio
 import fnmatch
 import os
+from collections import defaultdict
+from typing import Dict  # noqa
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -16,6 +19,9 @@ from syncr_backend.util.log_util import get_logger
 
 
 logger = get_logger(__name__)
+
+
+write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
 
 
 async def write_chunk(
@@ -55,11 +61,13 @@ async def write_chunk(
         crypto_util.b64encode(chunk_hash),
     )
 
+    await write_locks[filepath].acquire()
     async with aiofiles.open(filepath, 'r+b') as f:
         pos_bytes = position * chunk_size
         await f.seek(pos_bytes)
         await f.write(contents)
         await f.flush()
+    write_locks[filepath].release()
 
 
 async def read_chunk(

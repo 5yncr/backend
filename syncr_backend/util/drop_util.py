@@ -1,12 +1,21 @@
+import asyncio
 import os
 import shutil
+from random import shuffle
+from typing import AsyncIterator
+from typing import Awaitable  # noqa
+from typing import Dict  # noqa
 from typing import List
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
+from typing import TypeVar
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import MAX_CHUNKS_PER_PEER
+from syncr_backend.constants import MAX_CONCURRENT_CHUNK_DOWNLOADS
+from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
 from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
@@ -18,6 +27,7 @@ from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
+from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
 from syncr_backend.util.crypto_util import VerificationException
@@ -37,26 +47,55 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
     drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
-    all_done = True
-    for file_name, file_id in drop_metadata.files.items():
-        logger.debug(
-            "Downloading file %s with id %s", file_name,
-            crypto_util.b64encode(file_id),
-        )
-        remaining_chunks = await sync_file_contents(
-            drop_id=drop_id,
-            file_name=file_name,
-            file_id=file_id,
-            peers=drop_peers,
-            save_dir=save_dir,
-        )
-        if not remaining_chunks:
-            full_file_name = os.path.join(save_dir, file_name)
-            fileio_util.mark_file_complete(full_file_name)
-        else:
-            all_done = False
 
-    return all_done
+    file_results = await async_util.limit_gather(
+        fs=[
+            sync_and_finish_file(
+                drop_id=drop_id,
+                file_name=file_name,
+                file_id=file_id,
+                # call rotate(drop_peers) so each file starts with a new peer
+                peers=rotate(drop_peers),
+                save_dir=save_dir,
+            ) for file_name, file_id in drop_metadata.files.items()
+        ],
+        n=MAX_CONCURRENT_FILE_DOWNLOADS,
+        task_timeout=1,
+    )
+
+    return all(file_results)
+
+
+T = TypeVar('T')
+
+
+def rotate(l: List[T]) -> List[T]:
+    """Puts the first element at the back and return the list
+    :param l: a list
+    :return: that list, with the first element at the back
+    """
+    if len(l) <= 1:
+        return l
+    l.append(l.pop(0))
+    return l
+
+
+async def sync_and_finish_file(
+    drop_id: bytes, file_name: str, file_id: bytes,
+    peers: List[Tuple[str, int]], save_dir: str,
+) -> bool:
+    remaining_chunks = await sync_file_contents(
+        drop_id=drop_id,
+        file_name=file_name,
+        file_id=file_id,
+        peers=peers,
+        save_dir=save_dir,
+    )
+    if not remaining_chunks:
+        full_file_name = os.path.join(save_dir, file_name)
+        fileio_util.mark_file_complete(full_file_name)
+        return True
+    return False
 
 
 class PermissionError(Exception):
@@ -366,13 +405,14 @@ async def sync_file_contents(
     :param peers: where to look for chunks
     :return: A set of chunk ids NOT downloaded
     """
-    logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
+    logger.info("syncing contents of file %s", file_name)
     logger.debug("save dir is %s", save_dir)
     file_metadata = await get_file_metadata(drop_id, file_id, save_dir, peers)
     file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
+    needed_chunks = None  # type: Optional[Set[int]]
     try:
-        needed_chunks = await file_metadata.needed_chunks  # type: Optional[Set[int]]  # noqa
+        needed_chunks = await file_metadata.needed_chunks
     except FileNotFoundError:
         needed_chunks = None
 
@@ -388,45 +428,118 @@ async def sync_file_contents(
     if needed_chunks is None:
         needed_chunks = await file_metadata.needed_chunks
 
+    process_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[Optional[int]]] # noqa
+    result_queue = asyncio.Queue()  # type: asyncio.Queue[Optional[int]]
+
+    processor = asyncio.ensure_future(
+        async_util.process_queue_with_limit(
+            process_queue, MAX_CONCURRENT_CHUNK_DOWNLOADS, result_queue, 1,
+        ),
+    )
+
+    while needed_chunks:
+        added = 0
+        async for (ip, port), chunks_to_download in peers_and_chunks(
+            peers, needed_chunks, drop_id, file_id, MAX_CHUNKS_PER_PEER,
+        ):
+            for cid in chunks_to_download:
+                await process_queue.put(
+                    download_chunk_form_peer(
+                        ip=ip,
+                        port=port,
+                        drop_id=drop_id,
+                        file_id=file_id,
+                        file_index=cid,
+                        file_metadata=file_metadata,
+                        full_path=full_path,
+                    ),
+                )
+                added += 1
+
+        await process_queue.join()
+        while not result_queue.empty():
+            result = await result_queue.get()
+            if result is not None:
+                needed_chunks.remove(result)
+            result_queue.task_done()
+        if not added:
+            break
+
+    processor.cancel()
+    return needed_chunks
+
+
+async def peers_and_chunks(
+    peers: List[Tuple[str, int]], needed_chunks: Set[int],
+    drop_id: bytes, file_id: bytes, chunks_per_peer: int,
+) -> AsyncIterator[Tuple[Tuple[str, int], Set[int]]]:
+    """
+    For each peer, figure out what chunks it has, then yield the first
+    chunks_per_peer chunks that haven't been reserved for another peer
+
+    :param peers: Peer list
+    :param needed_chunks: Needed chunks
+    :param drop_id: Drop ID
+    :param file_id: File ID
+    :param chunks_per_peer: How many chunks each peer gets assigned
+    :return: Async Iterator over peers and sets of chunk indexes
+    """
+    needed_chunks = needed_chunks.copy()
     for ip, port in peers:
-        logger.debug("trying peer %s", ip)
-        avail_chunks = await send_requests.send_chunk_list_request(
-            ip=ip,
-            port=port,
-            drop_id=drop_id,
-            file_id=file_id,
-        )
-        avail_set = set(avail_chunks)
-        can_get_from_peer = avail_set & needed_chunks
-        if not can_get_from_peer:
-            logger.debug("no chunks available, skipping")
-            continue
-        for cid in can_get_from_peer:
-            logger.debug("trying to download chunk %s from %s", cid, ip)
-            chunk = await send_requests.send_chunk_request(
+        avail_chunks = set(
+            await send_requests.send_chunk_list_request(
                 ip=ip,
                 port=port,
                 drop_id=drop_id,
                 file_id=file_id,
-                file_index=cid,
-            )
-            try:
-                await fileio_util.write_chunk(
-                    filepath=full_path,
-                    position=cid,
-                    contents=chunk,
-                    chunk_hash=file_metadata.hashes[cid],
-                )
-                await file_metadata.finish_chunk(cid)
-                needed_chunks -= {cid}
-            except crypto_util.VerificationException as e:
-                logger.warning(
-                    "verification exception (%s) from peer %s, skipping",
-                    e, ip,
-                )
-                break
+            ),
+        )
+        can_get_from_peer = avail_chunks & needed_chunks
+        chunks_for_peer = set(list(can_get_from_peer)[:chunks_per_peer])
+        needed_chunks -= chunks_for_peer
+        yield ((ip, port), chunks_for_peer)
+        if not needed_chunks:
+            break
 
-    return needed_chunks
+
+async def download_chunk_form_peer(
+    ip: str, port: int, drop_id: bytes, file_id: bytes, file_index: int,
+    file_metadata: FileMetadata, full_path: str,
+) -> Optional[int]:
+    """Download a chunk from a peer, and if it succeeds mark that chunk done
+    in the File Metadata
+
+    :param ip: Peer ip
+    :param port: Peer port
+    :param drop_id: Drop ID
+    :param file_id: File ID
+    :param file_index: Chunk index
+    :param file_metadata: The file metadata
+    :param full_path: The path of the file
+    :return: The chunk id if success, otherwise None
+    """
+    chunk = await send_requests.send_chunk_request(
+        ip=ip,
+        port=port,
+        drop_id=drop_id,
+        file_id=file_id,
+        file_index=file_index,
+    )
+    try:
+        await fileio_util.write_chunk(
+            filepath=full_path,
+            position=file_index,
+            contents=chunk,
+            chunk_hash=file_metadata.hashes[file_index],
+        )
+        await file_metadata.finish_chunk(file_index)
+        return file_index
+    except crypto_util.VerificationException as e:
+        logger.warning(
+            "verification exception (%s) from peer %s, skipping",
+            e, ip,
+        )
+        return None
 
 
 class PeerStoreError(Exception):
@@ -435,8 +548,9 @@ class PeerStoreError(Exception):
 
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
-    Gets the peers that have a drop
+    Gets the peers that have a drop. Also shuffles the list
     :param drop_id: id of drop
+    :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
@@ -447,4 +561,8 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     if not success:
         raise PeerStoreError("Could not connect to peers")
 
-    return [(ip, int(port)) for peer_name, ip, port in drop_peers]
+    peers = [(ip, int(port)) for peer_name, ip, port in drop_peers]
+
+    shuffle(peers)
+
+    return peers
