@@ -21,6 +21,7 @@ def main() -> None:
 
 
 async def a_main() -> None:
+    """Lots to await on, so call this whole function in a run_until_complete"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "drop_id",

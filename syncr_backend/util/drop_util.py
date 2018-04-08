@@ -46,6 +46,14 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
             "Downloading file %s with id %s", file_name,
             crypto_util.b64encode(file_id),
         )
+
+        # The next several lines:
+        #  1. schedules `sync_file_contents` to be run, saving the resulting
+        #     task to a dict
+        #  2. waits up to 1 second for the task to finish, continues if it
+        #     doesn't
+        #  3. If equal to or more than MAX_CONCURRENT_FILE_DOWNLOADS are not
+        #     done (pending), wait for one to finish before continuing
         remaining_tasks[file_name] = asyncio.ensure_future(
             sync_file_contents(
                 drop_id=drop_id,
@@ -64,6 +72,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
                 pending, return_when=FIRST_COMPLETED,
             )
 
+    # Wait for no tasks to be pending (not done)
     while pending:
         logger.info("Waiting for files to finish...")
         done, pending = await asyncio.wait(
@@ -73,6 +82,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
 
     for f_name, task in remaining_tasks.items():
         if task.done():
+            # task.result() is the result of `sync_file_contents`
             remaining_chunks = task.result()
 
             if not remaining_chunks:

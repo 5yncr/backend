@@ -30,9 +30,10 @@ async def request_dispatcher(
     request: dict, writer: asyncio.StreamWriter,
 ) -> None:
     """
+    Handle and dispatch requests
 
     :param request: dict containing request data
-    :param writer: StreamWriter
+    :param writer: StreamWriter to pass to the handle function
     :return: None
     """
     function_map = {
@@ -52,6 +53,11 @@ async def request_dispatcher(
 async def async_handle_request(
     reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
 ) -> None:
+    """Handle a request by reading the data and passing it to dispatcher
+
+    :param reader: StreamReader
+    :param writer: StreamWriter
+    """
     request = b''
     while 1:
         data = await reader.read()
@@ -67,6 +73,7 @@ async def handle_request_drop_metadata(
     request: dict, writer: asyncio.StreamWriter,
 ) -> None:
     """
+    Handle a drop metadata request
 
     :param request:
     {
@@ -259,6 +266,7 @@ def listen_requests(
     loop,
     shutdown_flag: threading.Event,
 ) -> None:
+    """Run the request server until closing"""
     coro = asyncio.start_server(
         async_handle_request, tcp_ip, int(tcp_port), loop=loop,
     )

@@ -189,6 +189,7 @@ class DropMetadata(object):
         """Write the representation of this objec to disk
 
         :param metadata_location: where to write to disk
+        :param is_latest: whther to also write the LATEST file
         :return: None
         """
         self.log.debug("writing file")
@@ -334,7 +335,7 @@ class DropMetadata(object):
 
 
 async def save_drop_location(drop_id: bytes, location: str) -> None:
-    """Save a drops location in the central data dir
+    """Save a drop's location in the central data dir
 
     :param drop_id: The unencoded drop id
     :param location: Where the drop is located on disk
@@ -353,6 +354,11 @@ async def save_drop_location(drop_id: bytes, location: str) -> None:
 
 
 async def get_drop_location(drop_id: bytes) -> str:
+    """Get a drop's location from the central data dir
+
+    :param drop_id: The drop id to look up
+    :return: The drops save dir
+    """
     save_path = _get_save_path()
 
     encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')

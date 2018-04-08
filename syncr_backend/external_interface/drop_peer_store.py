@@ -34,20 +34,17 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def send_drops_to_dps(
-    ip: str,
-    port: int,
-    loop,
-    shutdown_flag: threading.Event,
-) -> None:
-    loop.create_task(a_send_drops_to_dps(ip, port, shutdown_flag))
-
-
-async def a_send_drops_to_dps(
+async def send_drops_to_dps(
     ip: str,
     port: int,
     shutdown_flag: threading.Event,
 ) -> None:
+    """For each drop tell the dps that ip/port has that drop
+
+    :param ip: The ip/address to tell the dps
+    :param port: The port to tell the dps
+    :param shutdown_flag: Stop when this is set
+    """
     this_node_id = node_id_from_private_key(await load_private_key_from_disk())
     dps = await get_drop_peer_store(this_node_id)
 

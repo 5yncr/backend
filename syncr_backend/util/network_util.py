@@ -16,20 +16,27 @@ logger = get_logger(__name__)
 
 
 async def send_response(
-    conn: asyncio.StreamWriter, response: Dict[Any, Any],
+    writer: asyncio.StreamWriter, response: Dict[Any, Any],
 ) -> None:
     """
     Sends a response to a connection and then closes writing to that connection
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter to write to
     :param response: Dict[Any, Any] response
     :return: None
     """
-    conn.write(bencode.encode(response))
-    conn.write_eof()
-    await conn.drain()
+    writer.write(bencode.encode(response))
+    writer.write_eof()
+    await writer.drain()
 
 
 def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
+    """
+    Syncronous version of send_response, using old style sockets
+
+    :param conn: socket.accept() connection
+    :param reponse: Dict[Any, Any] response
+    :return: None
+    """
     conn.send(bencode.encode(response))
     conn.shutdown(SHUT_WR)
 

@@ -5,8 +5,7 @@ import threading
 from typing import Any
 from typing import List
 
-from syncr_backend.external_interface.drop_peer_store import \
-    a_send_drops_to_dps
+from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata.drop_metadata import send_my_pub_key
@@ -72,7 +71,7 @@ def run_backend() -> None:
         ],
     )
     request_listen_thread.start()
-    loop.create_task(a_send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
+    loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
     if not arguments.backendonly:
         read_cmds_from_cmdline()
