@@ -12,6 +12,8 @@ from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import MAX_CHUNKS_PER_PEER
+from syncr_backend.constants import MAX_CONCURRENT_CHUNK_DOWNLOADS
 from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
 from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
@@ -217,10 +219,6 @@ async def get_file_metadata(
         await metadata.write_file(metadata_dir)
 
     return metadata
-
-
-MAX_CHUNKS_PER_PEER = 8
-MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 
 
 async def sync_file_contents(

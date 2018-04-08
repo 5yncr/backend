@@ -53,6 +53,21 @@ async def process_queue_with_limit(
     queue: 'asyncio.Queue[Awaitable[R]]', n: int,
     done_queue: 'asyncio.Queue[R]', task_timeout: int=0,
 ):
+    """Processses up to n tasks from queue at a time, putting the results in
+    done_queue.
+
+    Otherwise similar to limit_gather.
+
+    This function does not return, and should be cancled when queue.join()
+    returns, everything from done_queue has been processed, and there is
+    nothing left to add.
+
+    :param queue: The queue of input tasks
+    :param n: The max number of pending tasks at a time
+    :param done_queue: Queue to add results to
+    :param task_timeout: Allow tasks to take up to this long before running
+    another
+    """
     tasks = []
     while True:
         task = asyncio.ensure_future(await queue.get())
