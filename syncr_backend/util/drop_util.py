@@ -303,6 +303,17 @@ async def peers_and_chunks(
     peers: List[Tuple[str, int]], needed_chunks: Set[int],
     drop_id: bytes, file_id: bytes, chunks_per_peer: int,
 ) -> AsyncIterator[Tuple[Tuple[str, int], Set[int]]]:
+    """
+    For each peer, figure out what chunks it has, then yield the first
+    chunks_per_peer chunks that haven't been reserved for another peer
+
+    :param peers: Peer list
+    :param needed_chunks: Needed chunks
+    :param drop_id: Drop ID
+    :param file_id: File ID
+    :param chunks_per_peer: How many chunks each peer gets assigned
+    :return: Async Iterator over peers and sets of chunk indexes
+    """
     for ip, port in peers:
         avail_chunks = set(
             await send_requests.send_chunk_list_request(
@@ -315,6 +326,8 @@ async def peers_and_chunks(
         can_get_from_peer = avail_chunks & needed_chunks
         chunks_for_peer = set(list(can_get_from_peer)[:chunks_per_peer])
         needed_chunks -= chunks_for_peer
+        if not needed_chunks:
+            break
         yield ((ip, port), chunks_for_peer)
 
 
@@ -322,6 +335,18 @@ async def download_chunk_form_peer(
     ip: str, port: int, drop_id: bytes, file_id: bytes, file_index: int,
     file_metadata: FileMetadata, full_path: str,
 ) -> Optional[int]:
+    """Download a chunk from a peer, and if it succeeds mark that chunk done
+    in the File Metadata
+
+    :param ip: Peer ip
+    :param port: Peer port
+    :param drop_id: Drop ID
+    :param file_id: File ID
+    :param file_index: Chunk index
+    :param file_metadata: The file metadata
+    :param full_path: The path of the file
+    :return: The chunk id if success, otherwise None
+    """
     chunk = await send_requests.send_chunk_request(
         ip=ip,
         port=port,
