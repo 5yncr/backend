@@ -13,8 +13,8 @@ done
 
 sleep 5
 
-sync_drop "$(cat /share/small)" /small | grep "Drop successfully synced"
-sync_drop "$(cat /share/large)" /large | grep "Drop successfully synced"
+sync_drop "$(cat /share/small)" /small
+sync_drop "$(cat /share/large)" /large
 
 check_drop "$(cat /share/small)"
 check_drop "$(cat /share/large)"

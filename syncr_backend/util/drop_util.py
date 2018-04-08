@@ -326,9 +326,9 @@ async def peers_and_chunks(
         can_get_from_peer = avail_chunks & needed_chunks
         chunks_for_peer = set(list(can_get_from_peer)[:chunks_per_peer])
         needed_chunks -= chunks_for_peer
+        yield ((ip, port), chunks_for_peer)
         if not needed_chunks:
             break
-        yield ((ip, port), chunks_for_peer)
 
 
 async def download_chunk_form_peer(
