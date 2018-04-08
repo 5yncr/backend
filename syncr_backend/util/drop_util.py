@@ -1,8 +1,6 @@
-import asyncio
 import os
 import shutil
-from concurrent.futures import ALL_COMPLETED
-from concurrent.futures import FIRST_COMPLETED
+from random import shuffle
 from typing import Dict  # noqa
 from typing import List
 from typing import Optional  # noqa
@@ -21,6 +19,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
+from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
 from syncr_backend.util.log_util import get_logger
@@ -39,48 +38,22 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
     drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
-    tasks = []  # type: List[asyncio.Future[bool]]
-    for file_name, file_id in drop_metadata.files.items():
-        logger.debug(
-            "Downloading file %s with id %s", file_name,
-            crypto_util.b64encode(file_id),
-        )
 
-        # The next several lines:
-        #  1. schedules `sync_and_finish_file` to be run, saving the resulting
-        #     task to a list
-        #  2. waits up to 1 second for the task to finish, continues if it
-        #     doesn't
-        #  3. If equal to or more than MAX_CONCURRENT_FILE_DOWNLOADS are not
-        #     done (pending), wait for one to finish before continuing
-        tasks.append(
-            asyncio.ensure_future(
-                sync_and_finish_file(
-                    drop_id=drop_id,
-                    file_name=file_name,
-                    file_id=file_id,
-                    peers=drop_peers,
-                    save_dir=save_dir,
-                ),
-            ),
-        )
-        done, pending = await asyncio.wait(
-            tasks, timeout=1, return_when=ALL_COMPLETED,
-        )
-        while len(pending) >= MAX_CONCURRENT_FILE_DOWNLOADS:
-            logger.info("Hit max concurrent files, waiting for one to finish")
-            done, pending = await asyncio.wait(
-                pending, return_when=FIRST_COMPLETED,
-            )
+    file_results = await async_util.limit_gather(
+        fs=[
+            sync_and_finish_file(
+                drop_id=drop_id,
+                file_name=file_name,
+                file_id=file_id,
+                peers=drop_peers,
+                save_dir=save_dir,
+            ) for file_name, file_id in drop_metadata.files.items()
+        ],
+        n=MAX_CONCURRENT_FILE_DOWNLOADS,
+        task_timeout=1,
+    )
 
-    # Wait for no tasks to be pending (not done)
-    while pending:
-        logger.info("Waiting for files to finish...")
-        done, pending = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
-
-    all_done = all([t.result() for t in tasks])
-
-    return all_done
+    return all(file_results)
 
 
 async def sync_and_finish_file(
@@ -255,13 +228,14 @@ async def sync_file_contents(
     :param peers: where to look for chunks
     :return: A set of chunk ids NOT downloaded
     """
-    logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
+    logger.info("syncing contents of file %s", file_name)
     logger.debug("save dir is %s", save_dir)
     file_metadata = await get_file_metadata(drop_id, file_id, save_dir, peers)
     file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
+    needed_chunks = None  # type: Optional[Set[int]]
     try:
-        needed_chunks = await file_metadata.needed_chunks  # type: Optional[Set[int]]  # noqa
+        needed_chunks = await file_metadata.needed_chunks
     except FileNotFoundError:
         needed_chunks = None
 
@@ -324,8 +298,9 @@ class PeerStoreError(Exception):
 
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
-    Gets the peers that have a drop
+    Gets the peers that have a drop. Also shuffles the list
     :param drop_id: id of drop
+    :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
@@ -336,4 +311,8 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     if not success:
         raise PeerStoreError("Could not connect to peers")
 
-    return [(ip, int(port)) for peer_name, ip, port in drop_peers]
+    peers = [(ip, int(port)) for peer_name, ip, port in drop_peers]
+
+    shuffle(peers)
+
+    return peers
