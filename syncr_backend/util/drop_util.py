@@ -39,8 +39,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
     drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
-    all_done = True
-    remaining_tasks = {}  # type: Dict[str, asyncio.Future[Set[int]]]
+    tasks = []  # type: List[asyncio.Future[bool]]
     for file_name, file_id in drop_metadata.files.items():
         logger.debug(
             "Downloading file %s with id %s", file_name,
@@ -48,23 +47,25 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
         )
 
         # The next several lines:
-        #  1. schedules `sync_file_contents` to be run, saving the resulting
-        #     task to a dict
+        #  1. schedules `sync_and_finish_file` to be run, saving the resulting
+        #     task to a list
         #  2. waits up to 1 second for the task to finish, continues if it
         #     doesn't
         #  3. If equal to or more than MAX_CONCURRENT_FILE_DOWNLOADS are not
         #     done (pending), wait for one to finish before continuing
-        remaining_tasks[file_name] = asyncio.ensure_future(
-            sync_file_contents(
-                drop_id=drop_id,
-                file_name=file_name,
-                file_id=file_id,
-                peers=drop_peers,
-                save_dir=save_dir,
+        tasks.append(
+            asyncio.ensure_future(
+                sync_and_finish_file(
+                    drop_id=drop_id,
+                    file_name=file_name,
+                    file_id=file_id,
+                    peers=drop_peers,
+                    save_dir=save_dir,
+                ),
             ),
         )
         done, pending = await asyncio.wait(
-            remaining_tasks.values(), timeout=1, return_when=ALL_COMPLETED,
+            tasks, timeout=1, return_when=ALL_COMPLETED,
         )
         while len(pending) >= MAX_CONCURRENT_FILE_DOWNLOADS:
             logger.info("Hit max concurrent files, waiting for one to finish")
@@ -75,25 +76,29 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     # Wait for no tasks to be pending (not done)
     while pending:
         logger.info("Waiting for files to finish...")
-        done, pending = await asyncio.wait(
-            remaining_tasks.values(),
-            return_when=ALL_COMPLETED,
-        )
+        done, pending = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
 
-    for f_name, task in remaining_tasks.items():
-        if task.done():
-            # task.result() is the result of `sync_file_contents`
-            remaining_chunks = task.result()
-
-            if not remaining_chunks:
-                full_file_name = os.path.join(save_dir, file_name)
-                fileio_util.mark_file_complete(full_file_name)
-            else:
-                all_done = False
-        else:
-            all_done = False
+    all_done = all([t.result() for t in tasks])
 
     return all_done
+
+
+async def sync_and_finish_file(
+    drop_id: bytes, file_name: str, file_id: bytes,
+    peers: List[Tuple[str, int]], save_dir: str,
+) -> bool:
+    remaining_chunks = await sync_file_contents(
+        drop_id=drop_id,
+        file_name=file_name,
+        file_id=file_id,
+        peers=peers,
+        save_dir=save_dir,
+    )
+    if not remaining_chunks:
+        full_file_name = os.path.join(save_dir, file_name)
+        fileio_util.mark_file_complete(full_file_name)
+        return True
+    return False
 
 
 class PermissionError(Exception):
