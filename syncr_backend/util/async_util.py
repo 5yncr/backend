@@ -85,10 +85,13 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
 CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 
-def async_cache(maxsize=128, cache_none=False):
+def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
 
     def decorator(fn):
-        cache = LRUCache(maxsize=maxsize)
+        if cache_obj is None:
+            cache = LRUCache(maxsize=maxsize, **kwargs)
+        else:
+            cache = cache_obj(maxsize=maxsize, **kwargs)
         sentinel = object()
         hits = misses = 0
 

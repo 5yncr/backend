@@ -1,6 +1,7 @@
-from typing import Callable, Awaitable, Any, Generic, TypeVar, Dict, List, NamedTuple
+from typing import Callable, Awaitable, Any, Generic, TypeVar, Dict, List, NamedTuple, Optional
 from asyncio import Queue
 from mypy_extensions import VarArg, KwArg
+from collections import MutableMapping
 
 
 _T = TypeVar("_T")
@@ -22,7 +23,7 @@ class _cache_wrapper(Generic[_T]):
     def cache_clear(self) -> None: ...
 
 class async_cache():
-    def __init__(self, maxsize: int=..., cache_none: bool=...) -> None: ...
+    def __init__(self, maxsize: int=..., cache_obj:Optional[Callable[..., MutableMapping]]=..., cache_none: bool=..., **kwargs: Any) -> None: ...
     def __call__(self, f: F) -> F: ...
 
 async def limit_gather(fs: List[Awaitable[_T]], n: int, task_timeout: int=...) -> List[_T]: ...

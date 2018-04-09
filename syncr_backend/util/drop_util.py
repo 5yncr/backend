@@ -11,11 +11,14 @@ from typing import Set
 from typing import Tuple
 from typing import TypeVar
 
+from cachetools import TTLCache  # type: ignore
+
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
 from syncr_backend.constants import MAX_CHUNKS_PER_PEER
 from syncr_backend.constants import MAX_CONCURRENT_CHUNK_DOWNLOADS
 from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
+from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
@@ -336,20 +339,27 @@ async def peers_and_chunks(
     """
     needed_chunks = needed_chunks.copy()
     for ip, port in peers:
-        avail_chunks = set(
-            await send_requests.send_chunk_list_request(
-                ip=ip,
-                port=port,
-                drop_id=drop_id,
-                file_id=file_id,
-            ),
-        )
+        avail_chunks = await get_chunk_list(ip, port, drop_id, file_id)
         can_get_from_peer = avail_chunks & needed_chunks
         chunks_for_peer = set(list(can_get_from_peer)[:chunks_per_peer])
         needed_chunks -= chunks_for_peer
         yield ((ip, port), chunks_for_peer)
         if not needed_chunks:
             break
+
+
+@async_util.async_cache(
+    maxsize=1024, cache_obj=TTLCache, ttl=TRACKER_DROP_AVAILABILITY_TTL,
+)
+async def get_chunk_list(
+    ip: str, port: int, drop_id: bytes, file_id: bytes,
+) -> Set[int]:
+    return set(await send_requests.send_chunk_list_request(
+        ip=ip,
+        port=port,
+        drop_id=drop_id,
+        file_id=file_id,
+    ))
 
 
 async def download_chunk_form_peer(
