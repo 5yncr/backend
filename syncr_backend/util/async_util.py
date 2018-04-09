@@ -79,7 +79,7 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
             )
 
 
-def async_cache(maxsize):
+def async_cache(maxsize=128):
 
     def decorator(fn):
         cache = {}  # type: dict
