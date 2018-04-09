@@ -89,6 +89,7 @@ class FileMetadata(object):
     async def read_file(
         file_id: bytes,
         metadata_location: str,
+        file_name: str,
     ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
@@ -270,8 +271,9 @@ async def get_file_metadata_from_drop_id(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
     request_file_metadata = await FileMetadata.read_file(
-        file_id,
-        file_metadata_location,
+        file_id=file_id,
+        metadata_location=file_metadata_location,
+        file_name="",
     )
 
     return request_file_metadata

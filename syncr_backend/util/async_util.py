@@ -85,7 +85,7 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
 CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 
-def async_cache(maxsize=128):
+def async_cache(maxsize=128, cache_none=False):
 
     def decorator(fn):
         cache = LRUCache(maxsize=maxsize)
@@ -101,7 +101,8 @@ def async_cache(maxsize=128):
                 hits += 1
                 return result
             result = await fn(*args, **kwargs)
-            cache[key] = result
+            if cache_none or result is not None:
+                cache[key] = result
             misses += 1
             return result
 
@@ -113,8 +114,12 @@ def async_cache(maxsize=128):
             cache.clear()
             hits = misses = 0
 
+        def _dump_cache():
+            return cache
+
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
+        wrapper._dump_cache = _dump_cache
 
         return wrapper
 

@@ -1,8 +1,12 @@
 from typing import Callable, Awaitable, Any, Generic, TypeVar, Dict, List, NamedTuple
 from asyncio import Queue
+from mypy_extensions import VarArg, KwArg
 
 
 _T = TypeVar("_T")
+
+FuncType = Callable[..., Any]
+F = TypeVar('F', bound=FuncType)
 
 class CacheInfo(NamedTuple('CacheInfo', [
     ('hits', int),
@@ -18,8 +22,8 @@ class _cache_wrapper(Generic[_T]):
     def cache_clear(self) -> None: ...
 
 class async_cache():
-    def __init__(self, maxsize: int=...) -> None: ...
-    def __call__(self, f: Callable[..., Awaitable[_T]]) -> _cache_wrapper[_T]: ...
+    def __init__(self, maxsize: int=..., cache_none: bool=...) -> None: ...
+    def __call__(self, f: F) -> F: ...
 
 async def limit_gather(fs: List[Awaitable[_T]], n: int, task_timeout: int=...) -> List[_T]: ...
 

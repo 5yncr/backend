@@ -186,7 +186,9 @@ async def get_drop_metadata(
         save_dir = await get_drop_location(drop_id)
     logger.debug("save_dir is %s", save_dir)
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
-    metadata = await DropMetadata.read_file(drop_id, metadata_dir)
+    metadata = await DropMetadata.read_file(
+        id=drop_id, metadata_location=metadata_dir,
+    )
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
@@ -206,7 +208,7 @@ async def get_drop_metadata(
 
 
 async def get_file_metadata(
-    drop_id: bytes, file_id: bytes, save_dir: str,
+    drop_id: bytes, file_id: bytes, save_dir: str, file_name: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
     """Get file metadata, given a file id, drop id and save dir.  If the file
@@ -220,7 +222,9 @@ async def get_file_metadata(
     """
     logger.info("getting file metadata for %s", crypto_util.b64encode(file_id))
     metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
-    metadata = await FileMetadata.read_file(file_id, metadata_dir)
+    metadata = await FileMetadata.read_file(
+        file_id=file_id, metadata_location=metadata_dir, file_name=file_name,
+    )
     if metadata is None:
         logger.debug("file metadata not on disk, getting from network")
         metadata = await send_requests.do_request(
@@ -251,7 +255,9 @@ async def sync_file_contents(
     """
     logger.info("syncing contents of file %s", file_name)
     logger.debug("save dir is %s", save_dir)
-    file_metadata = await get_file_metadata(drop_id, file_id, save_dir, peers)
+    file_metadata = await get_file_metadata(
+        drop_id, file_id, save_dir, file_name, peers,
+    )
     file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
     needed_chunks = None  # type: Optional[Set[int]]
