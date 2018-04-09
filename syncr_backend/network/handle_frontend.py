@@ -708,7 +708,7 @@ def handle_view_pending_changes(
 # Functions for handling incoming frontend requests
 
 
-def handle_request():
+def handle_request() -> None:
     """
     Listens for request from frontend and then sends response
     :return:
@@ -721,7 +721,7 @@ def handle_request():
         _unix_handle_request()
 
 
-def _tcp_handle_request():
+def _tcp_handle_request() -> None:
     """
     Listens for request from frontend and sends response over tcp socket
     :return:
@@ -746,7 +746,7 @@ def _tcp_handle_request():
         handle_frontend_request(bencode.decode(request), conn)
 
 
-def _unix_handle_request():
+def _unix_handle_request() -> None:
     """
     Listens for request from frontend and sends response over unix socket
     :return:

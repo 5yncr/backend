@@ -3,6 +3,7 @@ import asyncio
 import os
 import sys
 import threading
+from asyncio import AbstractEventLoop
 from typing import Optional  # noqa
 
 import bencode  # type: ignore
@@ -263,7 +264,7 @@ async def handle_request_new_drop_metadata(
 def listen_requests(
     tcp_ip: str,
     tcp_port: str,
-    loop,
+    loop: AbstractEventLoop,
     shutdown_flag: threading.Event,
 ) -> None:
     """Run the request server until closing"""

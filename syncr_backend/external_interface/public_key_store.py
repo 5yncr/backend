@@ -65,11 +65,13 @@ class PublicKeyStore(ABC):
     """Abstract base class for storage and retrieval of public keys"""
 
     @abstractmethod
-    async def set_key(self, key):
+    async def set_key(self, key: bytes) -> bool:
         pass
 
     @abstractmethod
-    async def request_key(self, request_node_id):
+    async def request_key(
+        self, request_node_id: bytes,
+    ) -> Tuple[bool, Optional[str]]:
         pass
 
 

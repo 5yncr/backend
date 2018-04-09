@@ -3,8 +3,10 @@ import logging
 import os
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import aiofiles  # type: ignore
@@ -37,14 +39,14 @@ class DropVersion(object):
         self.version = version
         self.nonce = nonce
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, Union['DropVersion', int]]]:
         """Used for calling dict() on this object, so it becomes
         {'version': version, 'nonce': nonce}
         """
         yield 'version', self.version
         yield 'nonce', self.nonce
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s_%s" % (self.version, self.nonce)
 
 
@@ -163,7 +165,7 @@ class DropMetadata(object):
             key, self.sig, (await self.unsigned_header),
         )
 
-    def get_file_name_from_id(self, file_hash) -> str:
+    def get_file_name_from_id(self, file_hash: bytes) -> str:
         """Get the file name of a file id
 
         :param file_hash: the file id
@@ -414,7 +416,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
         this_node_id = await node_id_from_private_key(key_bytes)
         public_key_store = await get_public_key_store(this_node_id)
         key_request = await public_key_store.request_key(node_id)
-        if key_request[0]:
+        if key_request[0] and key_request[1] is not None:
             pub_key = key_request[1].encode('utf-8')
             await _save_key_to_disk(key_path, pub_key)
             return load_public_key(pub_key)

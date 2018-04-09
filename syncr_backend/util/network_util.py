@@ -73,7 +73,7 @@ def raise_network_error(
     raise exceptionmap[errno]
 
 
-def close_socket_thread(ip: str, port: int):
+def close_socket_thread(ip: str, port: int) -> None:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((ip, port))

@@ -3,7 +3,7 @@ import asyncio
 from syncr_backend.util import crypto_util
 
 
-def test_signature():
+def test_signature() -> None:
     loop = asyncio.get_event_loop()
     rsa_private_key = loop.run_until_complete(
         crypto_util.generate_private_key(),
