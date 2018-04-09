@@ -17,6 +17,7 @@ from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.async_util import async_cache
 from syncr_backend.util.log_util import get_logger
 
 
@@ -84,9 +85,11 @@ class FileMetadata(object):
             await f.write(self.encode())
 
     @staticmethod
+    @async_cache(maxsize=1024)
     async def read_file(
         file_id: bytes,
         metadata_location: str,
+        file_name: str,
     ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
@@ -104,7 +107,7 @@ class FileMetadata(object):
         ) as f:
             b = b''
             while True:
-                data = await f.read(65536)
+                data = await f.read()
                 if not data:
                     break
                 b += data
@@ -214,7 +217,7 @@ async def file_hashes(
 
     b = await f.read(chunk_size)
     while len(b) > 0:
-        hashes.append(crypto_util.hash(b))
+        hashes.append(await crypto_util.hash(b))
 
         b = await f.read(chunk_size)
 
@@ -231,7 +234,7 @@ async def hash_file(
     """
     sha = hashlib.sha256()
     while True:
-        data = await f.read(65536)
+        data = await f.read()
         if not data:
             break
         sha.update(data)
@@ -268,8 +271,9 @@ async def get_file_metadata_from_drop_id(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
     request_file_metadata = await FileMetadata.read_file(
-        file_id,
-        file_metadata_location,
+        file_id=file_id,
+        metadata_location=file_metadata_location,
+        file_name="",
     )
 
     return request_file_metadata

@@ -1,4 +1,5 @@
 """Functions for initializing a new node"""
+import asyncio
 import os
 import shutil
 from pathlib import Path
@@ -75,7 +76,8 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
         raise FileExistsError(full_directory)
 
     os.makedirs(full_directory)
-    private_key = crypto_util.generate_private_key()
+    loop = asyncio.get_event_loop()
+    private_key = loop.run_until_complete(crypto_util.generate_private_key())
     write_private_key_to_disk(private_key, full_directory)
 
 

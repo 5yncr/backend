@@ -3,6 +3,7 @@ import asyncio
 import os
 import sys
 import threading
+from asyncio import AbstractEventLoop
 from typing import Optional  # noqa
 
 import bencode  # type: ignore
@@ -95,9 +96,9 @@ async def handle_request_drop_metadata(
     else:
         drop_version = None
     request_drop_metadata = await DropMetadata.read_file(
-        request['drop_id'],
-        file_location,
-        drop_version,
+        id=request['drop_id'],
+        metadata_location=file_location,
+        version=drop_version,
     )
 
     if request_drop_metadata is None:
@@ -214,7 +215,7 @@ async def handle_request_chunk(
         drop_location, DEFAULT_DROP_METADATA_LOCATION,
     )
     request_drop_metadata = await DropMetadata.read_file(
-        request['drop_id'], drop_metadata_location,
+        id=request['drop_id'], metadata_location=drop_metadata_location,
     )
 
     if request_file_metadata is None or request_drop_metadata is None:
@@ -263,7 +264,7 @@ async def handle_request_new_drop_metadata(
 def listen_requests(
     tcp_ip: str,
     tcp_port: str,
-    loop,
+    loop: AbstractEventLoop,
     shutdown_flag: threading.Event,
 ) -> None:
     """Run the request server until closing"""

@@ -1,9 +1,11 @@
 import asyncio
+import functools
+from collections import namedtuple
 from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import FIRST_COMPLETED
-from typing import Awaitable
-from typing import List
-from typing import TypeVar
+from functools import _make_key  # type: ignore
+
+from cachetools import LRUCache
 
 from syncr_backend.util.log_util import get_logger
 
@@ -11,12 +13,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-R = TypeVar('R')
-
-
-async def limit_gather(
-    fs: List[Awaitable[R]], n: int, task_timeout: int=0,
-) -> List[R]:
+async def limit_gather(fs, n, task_timeout=0):
     """
     Gathers the tasks in fs, but only allows n at a time to be pending.
     If task_timeout is greater than 0, allows each task that long to complete
@@ -30,7 +27,7 @@ async def limit_gather(
     :param task_timeout: Give each task this long before trying the next
     :return: A list of what is returned by the tasks in fs
     """
-    tasks = []  # List[asyncio.Future[R]]
+    tasks = []
 
     for f in fs:
         tasks.append(asyncio.ensure_future(f))
@@ -49,10 +46,7 @@ async def limit_gather(
     return [t.result() for t in tasks]
 
 
-async def process_queue_with_limit(
-    queue: 'asyncio.Queue[Awaitable[R]]', n: int,
-    done_queue: 'asyncio.Queue[R]', task_timeout: int=0,
-):
+async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
     """Processses up to n tasks from queue at a time, putting the results in
     done_queue.
 
@@ -86,3 +80,50 @@ async def process_queue_with_limit(
             done, pending = await asyncio.wait(
                 pending, return_when=FIRST_COMPLETED,
             )
+
+
+CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+
+
+def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
+
+    def decorator(fn):
+        if cache_obj is None:
+            cache = LRUCache(maxsize=maxsize, **kwargs)
+        else:
+            cache = cache_obj(maxsize=maxsize, **kwargs)
+        sentinel = object()
+        hits = misses = 0
+
+        @functools.wraps(fn)
+        async def wrapper(*args, **kwargs):
+            nonlocal hits, misses
+            key = _make_key(args, kwargs, typed=False)
+            result = cache.get(key, sentinel)
+            if result is not sentinel:
+                hits += 1
+                return result
+            result = await fn(*args, **kwargs)
+            if cache_none or result is not None:
+                cache[key] = result
+            misses += 1
+            return result
+
+        def cache_info():
+            return CacheInfo(hits, misses, maxsize, len(cache))
+
+        def cache_clear():
+            nonlocal hits, misses
+            cache.clear()
+            hits = misses = 0
+
+        def _dump_cache():
+            return cache
+
+        wrapper.cache_info = cache_info
+        wrapper.cache_clear = cache_clear
+        wrapper._dump_cache = _dump_cache
+
+        return wrapper
+
+    return decorator

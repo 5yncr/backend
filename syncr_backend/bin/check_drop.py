@@ -36,7 +36,9 @@ async def a_main() -> None:
     file_metadata_dir = os.path.join(
         drop_location, DEFAULT_FILE_METADATA_LOCATION,
     )
-    metadata = await DropMetadata.read_file(drop_id, metadata_dir)
+    metadata = await DropMetadata.read_file(
+        id=drop_id, metadata_location=metadata_dir,
+    )
 
     if metadata is None:
         logger.error("Drop metadata not found, failing")
@@ -44,7 +46,8 @@ async def a_main() -> None:
 
     for file_name, file_id in metadata.files.items():
         file_metadata = await FileMetadata.read_file(
-            file_id, file_metadata_dir,
+            file_id=file_id, metadata_location=file_metadata_dir,
+            file_name=file_name,
         )
 
         if file_metadata is None:

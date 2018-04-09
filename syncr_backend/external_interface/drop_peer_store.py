@@ -45,7 +45,9 @@ async def send_drops_to_dps(
     :param port: The port to tell the dps
     :param shutdown_flag: Stop when this is set
     """
-    this_node_id = node_id_from_private_key(await load_private_key_from_disk())
+    this_node_id = await node_id_from_private_key(
+        await load_private_key_from_disk(),
+    )
     dps = await get_drop_peer_store(this_node_id)
 
     while not shutdown_flag.is_set():

@@ -1,18 +1,25 @@
 import asyncio
 import base64
+from typing import Any
+from typing import Awaitable
+from typing import TypeVar
 from unittest import mock
 
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import load_public_key
 
 
-def run_coro(f):
+R = TypeVar('R')
+
+
+def run_coro(f: Awaitable[R]) -> R:
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(f)
 
 
 @mock.patch('syncr_backend.metadata.drop_metadata.get_pub_key', autospec=True)
-def test_drop_metadata_decode(mock_get_pub_key):
+def test_drop_metadata_decode(mock_get_pub_key: mock.Mock) -> None:
 
     i = b"ZDc6ZHJvcF9pZDY0OjpzuM/m8jKyJsEhD5WbMz5HdTRprLdR6ETDH3yoiCRgoa5Jk7"\
         b"jvl8sw2iVEwmK6lhZtg99iV7Z1aEIZPNlG7xA1OmZpbGVzZDM6b25lMzI647DEQpj8"\
@@ -53,7 +60,7 @@ def test_drop_metadata_decode(mock_get_pub_key):
         b"ZzV4U0FnRngrVG5oZHROdUhpTENZSmx1dGZ0dGpTV0plZmMvV0VYSGtvMkZsbTZ4Cn"\
         b"hwSU40NDJlSDVjRnVxVUNBd0VBQVE9PQotLS0tLUVORCBQVUJMSUMgS0VZLS0tLS0K"
 
-    async def pub_key(_):
+    async def pub_key(_: Any) -> crypto_util.rsa.RSAPublicKey:
         return load_public_key(base64.b64decode(p))
 
     mock_get_pub_key.side_effect = pub_key

@@ -11,11 +11,14 @@ from typing import Set
 from typing import Tuple
 from typing import TypeVar
 
+from cachetools import TTLCache  # type: ignore
+
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
 from syncr_backend.constants import MAX_CHUNKS_PER_PEER
 from syncr_backend.constants import MAX_CONCURRENT_CHUNK_DOWNLOADS
 from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
+from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
@@ -222,7 +225,9 @@ async def get_drop_metadata(
         save_dir = await get_drop_location(drop_id)
     logger.debug("save_dir is %s", save_dir)
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
-    metadata = await DropMetadata.read_file(drop_id, metadata_dir)
+    metadata = await DropMetadata.read_file(
+        id=drop_id, metadata_location=metadata_dir,
+    )
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
@@ -362,7 +367,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
 
 
 async def get_file_metadata(
-    drop_id: bytes, file_id: bytes, save_dir: str,
+    drop_id: bytes, file_id: bytes, save_dir: str, file_name: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
     """Get file metadata, given a file id, drop id and save dir.  If the file
@@ -376,7 +381,9 @@ async def get_file_metadata(
     """
     logger.info("getting file metadata for %s", crypto_util.b64encode(file_id))
     metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
-    metadata = await FileMetadata.read_file(file_id, metadata_dir)
+    metadata = await FileMetadata.read_file(
+        file_id=file_id, metadata_location=metadata_dir, file_name=file_name,
+    )
     if metadata is None:
         logger.debug("file metadata not on disk, getting from network")
         metadata = await send_requests.do_request(
@@ -407,7 +414,9 @@ async def sync_file_contents(
     """
     logger.info("syncing contents of file %s", file_name)
     logger.debug("save dir is %s", save_dir)
-    file_metadata = await get_file_metadata(drop_id, file_id, save_dir, peers)
+    file_metadata = await get_file_metadata(
+        drop_id, file_id, save_dir, file_name, peers,
+    )
     file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
     needed_chunks = None  # type: Optional[Set[int]]
@@ -486,20 +495,27 @@ async def peers_and_chunks(
     """
     needed_chunks = needed_chunks.copy()
     for ip, port in peers:
-        avail_chunks = set(
-            await send_requests.send_chunk_list_request(
-                ip=ip,
-                port=port,
-                drop_id=drop_id,
-                file_id=file_id,
-            ),
-        )
+        avail_chunks = await get_chunk_list(ip, port, drop_id, file_id)
         can_get_from_peer = avail_chunks & needed_chunks
         chunks_for_peer = set(list(can_get_from_peer)[:chunks_per_peer])
         needed_chunks -= chunks_for_peer
         yield ((ip, port), chunks_for_peer)
         if not needed_chunks:
             break
+
+
+@async_util.async_cache(
+    maxsize=1024, cache_obj=TTLCache, ttl=TRACKER_DROP_AVAILABILITY_TTL,
+)
+async def get_chunk_list(
+    ip: str, port: int, drop_id: bytes, file_id: bytes,
+) -> Set[int]:
+    return set(await send_requests.send_chunk_list_request(
+        ip=ip,
+        port=port,
+        drop_id=drop_id,
+        file_id=file_id,
+    ))
 
 
 async def download_chunk_form_peer(
@@ -553,7 +569,7 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
     drop_peer_store_instance = await drop_peer_store.get_drop_peer_store(
         node_id,
     )

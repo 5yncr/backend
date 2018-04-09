@@ -137,7 +137,7 @@ def parse_cmd(
         return_list[1] = []
 
 
-def execute_function(function_name: str, args: List[str]):
+def execute_function(function_name: str, args: List[str]) -> None:
     """
     Runs a function with the given args
     TODO: add real drop/metadata request commands that interface
