@@ -17,6 +17,7 @@ from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.async_util import async_cache
 from syncr_backend.util.log_util import get_logger
 
 
@@ -84,6 +85,7 @@ class FileMetadata(object):
             await f.write(self.encode())
 
     @staticmethod
+    @async_cache()
     async def read_file(
         file_id: bytes,
         metadata_location: str,

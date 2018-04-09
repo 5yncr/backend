@@ -18,6 +18,7 @@ from syncr_backend.init import node_init
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.util import crypto_util
+from syncr_backend.util.async_util import async_cache
 from syncr_backend.util.crypto_util import load_public_key
 from syncr_backend.util.crypto_util import node_id_from_private_key
 from syncr_backend.util.crypto_util import VerificationException
@@ -246,6 +247,7 @@ class DropMetadata(object):
             return await f.readline()
 
     @staticmethod
+    @async_cache()
     async def read_file(
         id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
     ) -> Optional['DropMetadata']:
