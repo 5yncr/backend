@@ -1,5 +1,6 @@
 import asyncio
 import functools
+from collections import namedtuple
 from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import FIRST_COMPLETED
 from functools import _make_key  # type: ignore
@@ -79,6 +80,9 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
             )
 
 
+CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+
+
 def async_cache(maxsize=128):
 
     def decorator(fn):
@@ -100,7 +104,7 @@ def async_cache(maxsize=128):
             return result
 
         def cache_info():
-            return {'hits': hits, 'misses': misses}
+            return CacheInfo(hits, misses, maxsize, len(cache))
 
         def cache_clear():
             nonlocal hits, misses
