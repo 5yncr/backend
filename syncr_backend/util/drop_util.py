@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
+from typing import TypeVar
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
@@ -50,7 +51,8 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
                 drop_id=drop_id,
                 file_name=file_name,
                 file_id=file_id,
-                peers=drop_peers,
+                # call rotate(drop_peers) so each file starts with a new peer
+                peers=rotate(drop_peers),
                 save_dir=save_dir,
             ) for file_name, file_id in drop_metadata.files.items()
         ],
@@ -59,6 +61,20 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     )
 
     return all(file_results)
+
+
+T = TypeVar('T')
+
+
+def rotate(l: List[T]) -> List[T]:
+    """Puts the first element at the back and return the list
+    :param l: a list
+    :return: that list, with the first element at the back
+    """
+    if len(l) <= 1:
+        return l
+    l.append(l.pop(0))
+    return l
 
 
 async def sync_and_finish_file(
