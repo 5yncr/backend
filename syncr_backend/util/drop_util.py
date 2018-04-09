@@ -281,11 +281,10 @@ async def sync_file_contents(
         ),
     )
 
-    can_keep_going = True
-    while needed_chunks and can_keep_going:
+    while needed_chunks:
         added = 0
         async for (ip, port), chunks_to_download in peers_and_chunks(
-            peers, needed_chunks.copy(), drop_id, file_id, MAX_CHUNKS_PER_PEER,
+            peers, needed_chunks, drop_id, file_id, MAX_CHUNKS_PER_PEER,
         ):
             for cid in chunks_to_download:
                 await process_queue.put(
@@ -301,15 +300,14 @@ async def sync_file_contents(
                 )
                 added += 1
 
-        if not added:
-            can_keep_going = False
-
         await process_queue.join()
         while not result_queue.empty():
             result = await result_queue.get()
             if result is not None:
                 needed_chunks.remove(result)
             result_queue.task_done()
+        if not added:
+            break
 
     processor.cancel()
     return needed_chunks
@@ -330,6 +328,7 @@ async def peers_and_chunks(
     :param chunks_per_peer: How many chunks each peer gets assigned
     :return: Async Iterator over peers and sets of chunk indexes
     """
+    needed_chunks = needed_chunks.copy()
     for ip, port in peers:
         avail_chunks = set(
             await send_requests.send_chunk_list_request(
