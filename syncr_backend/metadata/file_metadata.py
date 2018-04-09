@@ -217,7 +217,7 @@ async def file_hashes(
 
     b = await f.read(chunk_size)
     while len(b) > 0:
-        hashes.append(crypto_util.hash(b))
+        hashes.append(await crypto_util.hash(b))
 
         b = await f.read(chunk_size)
 

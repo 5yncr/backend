@@ -413,7 +413,7 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
     drop_peer_store_instance = await drop_peer_store.get_drop_peer_store(
         node_id,
     )

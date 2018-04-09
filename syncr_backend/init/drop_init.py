@@ -30,7 +30,7 @@ async def initialize_drop(directory: str) -> bytes:
     """
     logger.info("initializing drop in dir %s", directory)
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
     (drop_m, files_m) = await make_drop_metadata(
         path=directory,
         drop_name=os.path.basename(directory),

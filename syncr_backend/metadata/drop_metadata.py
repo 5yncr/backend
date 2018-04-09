@@ -80,7 +80,7 @@ class DropMetadata(object):
         )
 
     @property
-    def files_hash(self) -> bytes:
+    async def files_hash(self) -> bytes:
         """Generate the hash of the files dictionary
 
         :return: The hash of the bencoded files dict
@@ -88,14 +88,14 @@ class DropMetadata(object):
         if self._files_hash is not None:
             return self._files_hash
         else:
-            h = self._gen_files_hash()
+            h = await self._gen_files_hash()
             self._files_hash = h
             return h
 
-    def _gen_files_hash(self) -> bytes:
-        return crypto_util.hash_dict(self.files)
+    async def _gen_files_hash(self) -> bytes:
+        return await crypto_util.hash_dict(self.files)
 
-    def verify_files_hash(self) -> None:
+    async def verify_files_hash(self) -> None:
         """Verify the file hash in this object
 
         Returns None if the hash is OK, throwns an exception if the hash is not
@@ -105,13 +105,13 @@ class DropMetadata(object):
             self.log.error("no files hash found when verifying")
             raise VerificationException()
         given = self._files_hash
-        expected = self._gen_files_hash()
+        expected = await self._gen_files_hash()
         if given != expected:
             self.log.error("files verification failed!")
             raise VerificationException()
 
     @property
-    def unsigned_header(self) -> Dict[str, Any]:  # TODO: type this better?
+    async def unsigned_header(self) -> Dict[str, Any]:
         """Get the unsigned version of the header
         The signature is set to b"", and the files list is {}
 
@@ -128,7 +128,7 @@ class DropMetadata(object):
             "other_owners": self.other_owners,
             "header_signature": b"",
             "signed_by": self.signed_by,
-            "files_hash": self.files_hash,
+            "files_hash": await self.files_hash,
             "files": {},
         }
         return h
@@ -141,11 +141,11 @@ class DropMetadata(object):
 
         :return: The full drop metadata header in dict form
         """
-        h = self.unsigned_header
+        h = await self.unsigned_header
         if self.sig is None:
             self.log.debug("signing header")
             key = await node_init.load_private_key_from_disk()
-            self.sig = crypto_util.sign_dictionary(key, h)
+            self.sig = await crypto_util.sign_dictionary(key, h)
         h["header_signature"] = self.sig
         return h
 
@@ -159,8 +159,8 @@ class DropMetadata(object):
             self.log.error("header signature not found when verifying")
             raise VerificationException()
         key = await get_pub_key(self.signed_by)
-        crypto_util.verify_signed_dictionary(
-            key, self.sig, self.unsigned_header,
+        await crypto_util.verify_signed_dictionary(
+            key, self.sig, (await self.unsigned_header),
         )
 
     def get_file_name_from_id(self, file_hash) -> str:
@@ -331,7 +331,7 @@ class DropMetadata(object):
             files=decoded["files"],
             sig=decoded["header_signature"],
         )
-        dm.verify_files_hash()
+        await dm.verify_files_hash()
         await dm.verify_header()
         return dm
 
@@ -411,7 +411,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
             return load_public_key(pub_key)
     else:
         key_bytes = await load_private_key_from_disk()
-        this_node_id = node_id_from_private_key(key_bytes)
+        this_node_id = await node_id_from_private_key(key_bytes)
         public_key_store = await get_public_key_store(this_node_id)
         key_request = await public_key_store.request_key(node_id)
         if key_request[0]:
@@ -423,7 +423,9 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 
 async def send_my_pub_key() -> None:
-    this_node_id = node_id_from_private_key(await load_private_key_from_disk())
+    this_node_id = await node_id_from_private_key(
+        await load_private_key_from_disk(),
+    )
     logger.info(
         "Sending pub key for %s to tracker",
         crypto_util.b64encode(this_node_id),

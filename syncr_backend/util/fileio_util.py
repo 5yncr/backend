@@ -48,7 +48,7 @@ async def write_chunk(
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
-    computed_hash = crypto_util.hash(contents)
+    computed_hash = await crypto_util.hash(contents)
     if computed_hash != chunk_hash:
         raise crypto_util.VerificationException(
             "Computed: %s, expected: %s" % (
@@ -95,7 +95,7 @@ async def read_chunk(
         await f.seek(pos_bytes)
         data = await f.read(chunk_size)
 
-    h = crypto_util.hash(data)
+    h = await crypto_util.hash(data)
     logger.debug("async read hash: %s", crypto_util.b64encode(h))
     if file_hash is not None:
         logger.info("input file_hash is not None, checking")
