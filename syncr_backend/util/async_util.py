@@ -5,6 +5,8 @@ from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import FIRST_COMPLETED
 from functools import _make_key  # type: ignore
 
+from cachetools import LRUCache
+
 from syncr_backend.util.log_util import get_logger
 
 
@@ -86,7 +88,7 @@ CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 def async_cache(maxsize=128):
 
     def decorator(fn):
-        cache = {}  # type: dict
+        cache = LRUCache(maxsize=maxsize)
         sentinel = object()
         hits = misses = 0
 
