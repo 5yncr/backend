@@ -290,7 +290,7 @@ class DropMetadata(object):
         ) as f:
             b = b''
             while True:
-                data = await f.read(65536)
+                data = await f.read()
                 if not data:
                     break
                 b += data

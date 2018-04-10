@@ -33,6 +33,7 @@ setup(
         "bencode.py==2.0.0",
         "cached-property==1.3.1",
         "cffi==1.11.4",
+        "cachetools==2.0.1",
         "coverage==4.5.1",
         "cryptography==2.1.4",
         "flake8==3.5.0",

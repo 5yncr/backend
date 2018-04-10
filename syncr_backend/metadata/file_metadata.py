@@ -107,7 +107,7 @@ class FileMetadata(object):
         ) as f:
             b = b''
             while True:
-                data = await f.read(65536)
+                data = await f.read()
                 if not data:
                     break
                 b += data
@@ -234,7 +234,7 @@ async def hash_file(
     """
     sha = hashlib.sha256()
     while True:
-        data = await f.read(65536)
+        data = await f.read()
         if not data:
             break
         sha.update(data)
