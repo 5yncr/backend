@@ -2,14 +2,19 @@
 set -ex -o pipefail
 /work/itests/setup.sh
 
-while [[ ! $(cat /share/small) ]]; do
+while [[ ! "$(cat /share/small)" ]]; do
     echo "waiting for small file..."
     sleep 5
 done
-while [[ ! $(cat /share/large) ]]; do
+while [[ ! "$(cat /share/large)" ]]; do
     echo "waiting for large file..."
     sleep 5
 done
 
-sync_drop $(cat /share/small) /small | grep "Drop successfully synced"
-sync_drop $(cat /share/large) /large | grep "Drop successfully synced"
+sleep 5
+
+sync_drop "$(cat /share/small)" /small
+sync_drop "$(cat /share/large)" /large
+
+check_drop "$(cat /share/small)"
+check_drop "$(cat /share/large)"

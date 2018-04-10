@@ -30,7 +30,7 @@ from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
-from syncr_backend.util.network_util import send_response
+from syncr_backend.util.network_util import sync_send_response as send_response
 
 
 def handle_frontend_request(
@@ -708,7 +708,7 @@ def handle_view_pending_changes(
 # Functions for handling incoming frontend requests
 
 
-def handle_request():
+def handle_request() -> None:
     """
     Listens for request from frontend and then sends response
     :return:
@@ -721,7 +721,7 @@ def handle_request():
         _unix_handle_request()
 
 
-def _tcp_handle_request():
+def _tcp_handle_request() -> None:
     """
     Listens for request from frontend and sends response over tcp socket
     :return:
@@ -746,7 +746,7 @@ def _tcp_handle_request():
         handle_frontend_request(bencode.decode(request), conn)
 
 
-def _unix_handle_request():
+def _unix_handle_request() -> None:
     """
     Listens for request from frontend and sends response over unix socket
     :return:
