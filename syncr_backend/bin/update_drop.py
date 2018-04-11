@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 
+from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 
 
@@ -29,6 +30,7 @@ def main() -> None:
 
     if args.drop_id:
         drop_id = args.drop_id.encode('utf-8')
+        drop_id = crypto_util.b64decode(drop_id)
     if not args.drop_id:
         drop_id = drop_util.get_drop_id_from_directory(args.save_dir)
 
