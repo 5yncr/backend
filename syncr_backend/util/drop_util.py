@@ -181,9 +181,9 @@ def verify_version(drop_metadata: DropMetadata) -> None:
         version = drop_metadata.previous_versions[0]
         peers = get_drop_peers(drop_metadata.id)
         dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
-        dmd.verify_version()
+        verify_version(dmd)
 
-        if drop_metadata.signed_by == dmd.primary_owner:
+        if drop_metadata.signed_by == dmd.owner:
             logger.debug(
                 "Beginning ownership change verification for drop: %s",
                 drop_metadata.id,
@@ -195,7 +195,7 @@ def verify_version(drop_metadata: DropMetadata) -> None:
             )
         # TODO change in case of other owners becoming a list
         elif drop_metadata.signed_by not in drop_metadata.other_owners.keys() \
-                or drop_metadata.signed_by != drop_metadata.primary_owner:
+                or drop_metadata.signed_by != drop_metadata.owner:
             logger.debug(
                 "%s signed as not owner on drop %s",
                 drop_metadata.signed_by,
@@ -207,14 +207,14 @@ def verify_version(drop_metadata: DropMetadata) -> None:
     else:
         #  Ownership changes are not allowed in merges and must be signed by
         #  primary owner
-        primary_owner = drop_metadata.primary_owner
+        primary_owner = drop_metadata.owner
         if primary_owner != drop_metadata.signed_by:
             raise VerificationException()
         for version in drop_metadata.previous_versions:
             peers = get_drop_peers(drop_metadata.id)
             dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
-            dmd.verify_version()
-            if primary_owner != dmd.primary_owner:
+            verify_version(dmd)
+            if primary_owner != dmd.owner:
                 raise VerificationException()
 
 
