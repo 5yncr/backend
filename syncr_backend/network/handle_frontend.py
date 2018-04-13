@@ -30,6 +30,7 @@ from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
+from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.util.network_util import send_response
 
 
@@ -474,6 +475,10 @@ def handle_input_name(
     :param conn: socket.accept() connection
     :return: None
     """
+
+    # TODO: Allow user to select directory from UI.
+    #   Done by adding "select directory" button to UI prompt.
+    # TODO: Check to see if selected path is valid.
     if request['drop_name'] is None:
         response = {
             'status': 'error',
@@ -481,7 +486,15 @@ def handle_input_name(
         }
     else:
         # TODO: backend logic to create a drop.
+        #   Achieved by calling initialize_drop from drop_init.py
         # TODO: Test if given drop_name is valid.
+        #   tracker should check to see if drop_name already exists
+        #   if so, then drop should not be created. Otherwise,
+        #   convert drop name to bytes and create drop.
+
+        # The following is called if input is valid:
+        initialize_drop(request['drop_name'])
+
         response = {
             'status': 'ok',
             'result': 'success',
