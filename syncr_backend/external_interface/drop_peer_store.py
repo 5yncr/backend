@@ -14,7 +14,7 @@ from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
 from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
-from syncr_backend.external_interface.distributed_hash_table_util import \
+from syncr_backend.external_interface.dht_util import \
     get_dht
 from syncr_backend.external_interface.store_exceptions import \
     IncompleteConfigError

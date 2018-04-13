@@ -1,6 +1,7 @@
 import asyncio
 import time
 from collections import OrderedDict
+from typing import Any
 from typing import List
 from typing import Tuple
 
@@ -29,6 +30,8 @@ def get_dht(
     global _node_instance
     if _node_instance is None:
         _node_instance = connect_dht(bootstrap_ip_port_pair_list, listen_port)
+
+    return _node_instance
 
 
 def connect_dht(
@@ -71,7 +74,7 @@ class DropPeerDHTStorage(IStorage):
                 (int(time.monotonic()), value),
             ]
 
-    def cull_entry(self, key: bytes):
+    def cull_entry(self, key: bytes) -> None:
         if key not in self.data:
             return
         old_data = self.data[key]
@@ -83,12 +86,12 @@ class DropPeerDHTStorage(IStorage):
 
         self.data[key] = new_data
 
-    def get(self, key: bytes, default=None):
+    def get(self, key: bytes, default=None) -> Any:
         if key in self.data:
             return self.__getitem__(key)
         return default
 
-    def __getitem__(self, key: bytes):
+    def __getitem__(self, key: bytes) -> Any:
         if key in self.data:
             self.cull_entry(key)
             return self[key]

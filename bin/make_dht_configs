@@ -16,21 +16,26 @@ def main() -> None:
         help='Port to listen on for DHT',
     )
     parser.add_argument(
-        "--bootstrap-ips",
-        type=str,
-        help='IP of the DHT bootstrap',
-    )
-    parser.add_argument(
-        "--bootstrap-ports",
+        "--bootstrap-peers",
         type=int,
-        help='Port of the DHT bootstrap',
+        help=(
+            'Peers of the DHT bootstrap.\n'
+            'Usage: --bootstrap-peers ip:port,ip2:port2,...'
+        ),
     )
     args = parser.parse_args()
+    peerlist = args.bootstrap_peers.split(',')
+    iplist = []
+    portlist = []
+    try:
+        iplist = list(map(lambda x: x.split(':')[0], peerlist))
 
-    iplist = args.bootstrap_ips.split(',')
-    portlist = list(map(lambda x: int(x), args.bootstrap_ports.split(',')))
-    if len(iplist) != len(portlist) or len(iplist) == 0:
-        raise Exception("Must have at least 1 bootstrap ip")
+        portlist = list(map(lambda x: int(x.split(':')[1]), peerlist))
+
+    except IndexError:
+        print("Must have at least 1 bootstrap ip")
+        exit(1)
+
     config = {
         'type': 'dht',
         'bootstrap_ips': iplist,
