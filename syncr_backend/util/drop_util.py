@@ -24,7 +24,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def sync_drop(drop_id: bytes, save_dir: str):
+def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     """
     Syncs a drop id from remote peers
 
@@ -32,18 +32,28 @@ def sync_drop(drop_id: bytes, save_dir: str):
     :param save_dir: directory to save drop
     """
     drop_peers = get_drop_peers(drop_id)
-
-    add_drop_from_id(drop_id, save_dir)
+    start_drop_from_id(drop_id, save_dir)
     drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
+    all_done = True
     for file_name, file_id in drop_metadata.files.items():
-        remaining_chunks = sync_drop_contents(
+        logger.debug(
+            "Downloading file %s with id %s", file_name,
+            crypto_util.b64encode(file_id),
+        )
+        remaining_chunks = sync_file_contents(
             drop_id=drop_id,
+            file_name=file_name,
             file_id=file_id,
             peers=drop_peers,
             save_dir=save_dir,
         )
         if not remaining_chunks:
-            fileio_util.mark_file_complete(file_name)
+            full_file_name = os.path.join(save_dir, file_name)
+            fileio_util.mark_file_complete(full_file_name)
+        else:
+            all_done = False
+
+    return all_done
 
 
 class PermissionError(Exception):
@@ -59,7 +69,6 @@ def update_drop(drop_id: bytes) -> None:
 
     """
     peers = get_drop_peers(drop_id)
-
     old_drop_metadata = get_drop_metadata(drop_id, peers)
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
@@ -97,21 +106,20 @@ def update_drop(drop_id: bytes) -> None:
         )
 
 
-def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
+def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     """Given a drop_id and save directory, sets up the directory for syncing
     and adds the info to the global dir
 
     Should be followed by calls to `get_drop_metadata`, `get_file_metadata` for
-    each file, and `sync_drop_contents`
+    each file, and `sync_file_contents`
 
     :param drop_id: The drop id to add
     :param save_dir: where to download the drop to
     """
 
     logger.info(
-        "Adding drop from id %s to %s", crypto_util.b64encode(
-            drop_id,
-        ), save_dir,
+        "Adding drop from id %s to %s", crypto_util.b64encode(drop_id),
+        save_dir,
     )
     os.makedirs(
         os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION), exist_ok=True,
@@ -134,10 +142,12 @@ def get_drop_metadata(
     :return: A drop metadata object
     """
     logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
-    metadata = None
-    if save_dir is not None:
-        metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
-        metadata = DropMetadata.read_file(drop_id, metadata_dir)
+    if save_dir is None:
+        logger.debug("save_dir not set, trying to look it up")
+        save_dir = get_drop_location(drop_id)
+    logger.debug("save_dir is %s", save_dir)
+    metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
+    metadata = DropMetadata.read_file(drop_id, metadata_dir)
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
@@ -181,8 +191,8 @@ def get_file_metadata(
     return metadata
 
 
-def sync_drop_contents(
-    drop_id: bytes, file_id: bytes,
+def sync_file_contents(
+    drop_id: bytes, file_id: bytes, file_name: str,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> Set[int]:
     """Download as much of a file as possible
@@ -194,16 +204,29 @@ def sync_drop_contents(
     :return: A set of chunk ids NOT downloaded
     """
     logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
+    logger.debug("save dir is %s", save_dir)
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
-    drop_metadata = get_drop_metadata(drop_id, peers)
-    file_name = drop_metadata.get_file_name_from_id(file_metadata.file_id)
+    file_metadata.file_name = file_name
     full_path = os.path.join(save_dir, file_name)
+    try:
+        needed_chunks = file_metadata.needed_chunks  # type: Optional[Set[int]]
+    except FileNotFoundError:
+        needed_chunks = None
+
+    if not needed_chunks and needed_chunks is not None:
+        if not file_metadata.downloaded_chunks:
+            # if it's an empty file, there are no needed chunks, but we still
+            #  need to create the file
+            fileio_util.create_file(full_path, file_metadata.file_length)
+        return needed_chunks
 
     fileio_util.create_file(full_path, file_metadata.file_length)
 
+    if needed_chunks is None:
+        needed_chunks = file_metadata.needed_chunks
+
     for ip, port in peers:
         logger.debug("trying peer %s", ip)
-        needed_chunks = file_metadata.needed_chunks
         avail_chunks = send_requests.send_chunk_list_request(
             ip=ip,
             port=port,
