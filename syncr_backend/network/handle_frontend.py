@@ -3,6 +3,7 @@ import platform
 import socket
 from typing import Any
 from typing import Dict
+from typing import List
 
 import bencode  # type: ignore
 
@@ -30,6 +31,7 @@ from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
+from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import simple_get_drop_metadata
@@ -378,11 +380,14 @@ def handle_get_owned_drops(
     """
 
     owned_drops = get_owned_drops_metadata()
+    drop_dictionaries = List[Dict[str, Any]]
+    for drop in owned_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
 
     response = {
         'status': 'ok',
         'result': 'success',
-        'requested_drops': owned_drops,
+        'requested_drops': drop_dictionaries,
         'message': 'owned drops retrieved',
     }
 
@@ -409,7 +414,8 @@ def handle_get_selected_drops(
             'error': ERR_INVINPUT,
         }
     else:
-        drop = simple_get_drop_metadata(request['drop_id'])
+        md = simple_get_drop_metadata(request['drop_id'])
+        drop = drop_metadata_to_response(md)
 
         response = {
             'status': 'ok',
@@ -442,12 +448,15 @@ def handle_get_subscribed_drops(
     :return: None
     """
 
-    drops = get_subscribed_drops_metadata()
+    subscribed_drops = get_subscribed_drops_metadata()
+    drop_dictionaries = List[Dict[str, Any]]
+    for drop in subscribed_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
 
     response = {
         'status': 'ok',
         'result': 'success',
-        'requested_drops': drops,
+        'requested_drops': drop_dictionaries,
         'message': 'subscribed drops retrieved',
     }
 
@@ -734,9 +743,30 @@ def handle_view_pending_changes(
     send_response(conn, response)
 
 
+# Helper functions for structure of responses
+def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
+    """
+    Converts dropMetadata object into frontend readable dictionary.
+    :param md: DropMetadata object
+    :return: Dictionary for frontend
+    """
+    response = {
+        'drop_id': md.drop_id,
+        'name': md.name,
+        'version': md.version,
+        'previous_versions': md.previous_versions,
+        'primary_owner': md.primary_owner,
+        'other_owners': md.other_owners,
+        'signed_by': md.signed_by,
+        'files_hash': md.files_hash,
+        'files': md.files,
+        'sig': md.sig,
+    }
+
+    return response
+
+
 # Functions for handling incoming frontend requests
-
-
 def handle_request():
     """
     Listens for request from frontend and then sends response
