@@ -80,5 +80,6 @@ ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_REQUEST_CHANGE = 'request_change'
 ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
 
-# Distrubuted Hash Table constants
-DHT_LISTEN_PORT = 5678
+# Frontend connection settings
+FRONTEND_TCP_ADDRESS = ('localhost', 12345)
+FRONTEND_UNIX_ADDRESS = './unix_socket'
