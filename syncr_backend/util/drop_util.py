@@ -154,9 +154,10 @@ def get_drop_metadata(
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
-        args = {'drop_id': drop_id}
-        if version is not None:
-            args['drop_version'] = version
+        args = {
+            'drop_id': drop_id,
+            'drop_version': version,
+        }
         metadata = send_requests.do_request(
             request_fun=send_requests.send_drop_metadata_request,
             peers=peers,
