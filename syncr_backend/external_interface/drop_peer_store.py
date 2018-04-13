@@ -9,13 +9,13 @@ from abc import abstractmethod
 from typing import List
 from typing import Tuple
 
-from kademlia import Server  # type: ignore
-
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
 from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
+from syncr_backend.external_interface.distributed_hash_table_util import \
+    get_dht
 from syncr_backend.external_interface.store_exceptions import \
     IncompleteConfigError
 from syncr_backend.external_interface.store_exceptions import \
@@ -76,7 +76,14 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
             )
             return pks
         elif config_file['type'] == 'dht':
-            raise NotImplementedError()
+            return DHTPeerStore(
+                node_id,
+                zip(
+                    config_file['bootstrap_ips'],
+                    config_file['bootstrap_ports'],
+                ),
+                config_file['listenport'],
+            )
         else:
             raise UnsupportedOptionError()
     except KeyError:
@@ -101,16 +108,17 @@ class DHTPeerStore(DropPeerStore):
     def __init__(
         self,
         node_id: bytes,
-        node_instance: Server,
-    ) -> None:
+        bootstrap_list: List[Tuple[str, int]],
+        listen_port: int,
+    ):
         """
-        Initialize DHT peer store and dht node
-        :param node_id: node_id
-        :param node_instance: instance of dht server node
-        to dht with
+        Sets up DHT peer store
+        :param node_id: node_id of this node
+        :param bootstrap_list: list of ip,port to bootstrap connect to dht
         """
         self.node_id = node_id
-        self.node_instance = node_instance
+        self.listen_port = listen_port
+        self.node_instance = get_dht(bootstrap_list, listen_port)
 
     def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """

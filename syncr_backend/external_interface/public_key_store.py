@@ -1,8 +1,10 @@
 """Functionality to get public keys from a public key store"""
+import asyncio
 import json
 import os
 from abc import ABC
 from abc import abstractmethod
+from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -10,6 +12,8 @@ from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
 from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
+from syncr_backend.external_interface.distributed_hash_table_util import \
+    get_dht
 from syncr_backend.external_interface.store_exceptions import (
     IncompleteConfigError
 )
@@ -50,7 +54,14 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
             )
             return pks
         elif config_file['type'] == 'dht':
-            raise NotImplementedError()
+            raise DHTKeyStore(
+                node_id,
+                zip(
+                    config_file['bootstrap_ips'],
+                    config_file['bootstrap_ports'],
+                ),
+                config_file['listenport'],
+            )
         else:
             raise UnsupportedOptionError()
     except KeyError:
@@ -67,6 +78,54 @@ class PublicKeyStore(ABC):
     @abstractmethod
     def request_key(self, request_node_id):
         pass
+
+
+class DHTKeyStore(PublicKeyStore):
+    def __init__(
+        self,
+        node_id: bytes, bootstrap_list: List[Tuple[str, int]],
+        listen_port: int,
+    ):
+        """
+        Sets up tracker key store
+        :param node_id: node id and SHA256 hash
+        :param bootstrap_list: list of ip,port to bootstrap connect to dht
+        """
+        self.node_id = node_id
+        self.node = get_dht(bootstrap_list, listen_port)
+
+    def set_key(self, key: bytes):
+        """
+        Sets the public key of the this node on the DHT
+        :param key: 4096 RSA public key
+        :return: boolean on success of setting key
+        """
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(
+                self.node_instance.set(self.node_id, key),
+            )
+            return True
+        except Exception:
+            return False
+
+    @abstractmethod
+    def request_key(self, request_node_id: bytes,):
+        """
+        Asks DHT for the public key of a given node for sake of signature
+        verification
+        :param request_node_id: SHA256 hash
+        :return: boolean (success of getting key),
+                2048 RSA public key (if boolean is True)
+        """
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(
+            self.node_instance.get(request_node_id),
+        )
+        if result is not None:
+            return True, result
+        else:
+            return False, []
 
 
 class TrackerKeyStore(PublicKeyStore):
