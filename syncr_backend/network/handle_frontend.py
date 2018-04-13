@@ -31,6 +31,9 @@ from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
+from syncr_backend.util.drop_util import get_drop_metadata
+from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.network_util import send_response
 
 
@@ -190,13 +193,27 @@ def handle_add_file(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to add file to drop.
-        # TODO: Test if given drop_id and file_path are valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'file added to drop',
         }
+
+        update_drop(
+            request['drop_id'],
+            add_file=request['file_path'],
+        )
+
+        peers = get_drop_peers(request['drop_id'])
+        meta = get_drop_metadata(request['drop_id'], peers)
+
+        if os.path.basename(request['file_path']) not in meta.files:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'message': 'file was not added to the drop',
+
+            }
 
     send_response(conn, response)
 
@@ -534,13 +551,27 @@ def handle_remove_file(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to remove file from drop.
-        # TODO: Test if given drop_id and file_name are valid.
         response = {
             'status': 'ok',
             'result': 'success',
-            'message': 'file successfully removed',
+            'message': 'file removed from drop',
         }
+
+        update_drop(
+            request['drop_id'],
+            remove_file=request['file_path'],
+        )
+
+        peers = get_drop_peers(request['drop_id'])
+        meta = get_drop_metadata(request['drop_id'], peers)
+
+        if os.path.basename(request['file_path']) in meta.files:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'message': 'file was not removed from the drop',
+
+            }
 
     send_response(conn, response)
 
