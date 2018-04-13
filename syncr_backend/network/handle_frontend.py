@@ -559,7 +559,7 @@ def handle_remove_file(
 
         update_drop(
             request['drop_id'],
-            remove_file=request['file_path'],
+            remove_file=os.path.basename(request['file_path']),
         )
 
         peers = get_drop_peers(request['drop_id'])
