@@ -475,30 +475,36 @@ def handle_input_name(
     :param conn: socket.accept() connection
     :return: None
     """
+    # This code assumes that the user has already
+    # created a folder to initialize as a drop.
+    # Work needs to be done on the frontend to
+    # instruct the user on initializing a drop.
+    #
+    # First, we check to see if Logger already contains name of drop id
+    # If so, do nothing, send message failure back
+    #
+    # Else, initialize directory with 'drop_name' as the name of the drop
 
-    # TODO: Allow user to select directory from UI.
-    #   Done by adding "select directory" button to UI prompt.
-    # TODO: Check to see if selected path is valid.
-    if request['drop_name'] is None:
+    # TODO: Allow user to select directory location from UI.
+
+    directory = request['directory']
+    drop_name = os.path.basename(directory)
+
+    # TODO: Change 'False' to check if drop_name already exists in tracker
+    if False:
         response = {
             'status': 'error',
-            'error': ERR_INVINPUT,
+            'result': 'failure',
+            'message': 'A drop already exists with the given drop name',
         }
     else:
-        # TODO: backend logic to create a drop.
-        #   Achieved by calling initialize_drop from drop_init.py
-        # TODO: Test if given drop_name is valid.
-        #   tracker should check to see if drop_name already exists
-        #   if so, then drop should not be created. Otherwise,
-        #   convert drop name to bytes and create drop.
 
-        # The following is called if input is valid:
-        initialize_drop(request['drop_name'])
+        initialize_drop(directory)
 
         response = {
             'status': 'ok',
             'result': 'success',
-            'message': 'Drop ' + request['drop_name'] + ' created',
+            'message': 'Drop ' + drop_name + ' created',
         }
 
     send_response(conn, response)
