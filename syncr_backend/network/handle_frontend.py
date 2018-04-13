@@ -3,7 +3,6 @@ import platform
 import socket
 from typing import Any
 from typing import Dict
-from typing import List
 
 import bencode  # type: ignore
 
@@ -380,7 +379,7 @@ def handle_get_owned_drops(
     """
 
     owned_drops = get_owned_drops_metadata()
-    drop_dictionaries = List[Dict[str, Any]]
+    drop_dictionaries = []
     for drop in owned_drops:
         drop_dictionaries.append(drop_metadata_to_response(drop))
 
@@ -449,7 +448,7 @@ def handle_get_subscribed_drops(
     """
 
     subscribed_drops = get_subscribed_drops_metadata()
-    drop_dictionaries = List[Dict[str, Any]]
+    drop_dictionaries = []
     for drop in subscribed_drops:
         drop_dictionaries.append(drop_metadata_to_response(drop))
 
@@ -751,14 +750,13 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     :return: Dictionary for frontend
     """
     response = {
-        'drop_id': md.drop_id,
+        'drop_id': md.id,
         'name': md.name,
         'version': md.version,
         'previous_versions': md.previous_versions,
-        'primary_owner': md.primary_owner,
+        'primary_owner': md.owner,
         'other_owners': md.other_owners,
         'signed_by': md.signed_by,
-        'files_hash': md.files_hash,
         'files': md.files,
         'sig': md.sig,
     }

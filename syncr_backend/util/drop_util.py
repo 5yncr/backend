@@ -65,7 +65,7 @@ def update_drop(
         drop_id: bytes,
         add_secondary_owner: bytes=None,
         remove_secondary_owner: bytes=None,
-) -> None:
+) -> DropMetadata:
     """
     Update a drop from a directory.
 
@@ -119,6 +119,8 @@ def update_drop(
         f_m.write_file(
             os.path.join(drop_directory, DEFAULT_FILE_METADATA_LOCATION),
         )
+
+    return new_drop_m
 
 
 def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
