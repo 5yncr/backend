@@ -54,11 +54,13 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
             )
             return pks
         elif config_file['type'] == 'dht':
-            raise DHTKeyStore(
+            return DHTKeyStore(
                 node_id,
-                zip(
-                    config_file['bootstrap_ips'],
-                    config_file['bootstrap_ports'],
+                list(
+                    zip(
+                        config_file['bootstrap_ips'],
+                        config_file['bootstrap_ports'],
+                    ),
                 ),
                 config_file['listenport'],
             )
@@ -85,14 +87,14 @@ class DHTKeyStore(PublicKeyStore):
         self,
         node_id: bytes, bootstrap_list: List[Tuple[str, int]],
         listen_port: int,
-    ):
+    ) -> None:
         """
         Sets up tracker key store
         :param node_id: node id and SHA256 hash
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
         """
         self.node_id = node_id
-        self.node = get_dht(bootstrap_list, listen_port)
+        self.node_instance = get_dht(bootstrap_list, listen_port)
 
     def set_key(self, key: bytes):
         """
@@ -109,7 +111,6 @@ class DHTKeyStore(PublicKeyStore):
         except Exception:
             return False
 
-    @abstractmethod
     def request_key(self, request_node_id: bytes,):
         """
         Asks DHT for the public key of a given node for sake of signature

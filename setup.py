@@ -36,7 +36,6 @@ setup(
         "mccabe==0.6.1",
         "mypy==0.560",
         "nodeenv==1.2.0",
-        "pkg-resources==0.0.0",
         "pluggy==0.6.0",
         "pre-commit==1.6.0",
         "psutil==5.4.3",

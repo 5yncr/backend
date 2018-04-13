@@ -4,8 +4,8 @@ from collections import OrderedDict
 from typing import List
 from typing import Tuple
 
-from kademlia import IStorage  # type: ignore
-from kademlia import Server  # type: ignore
+from kademlia.network import Server  # type: ignore
+from kademlia.storage import IStorage  # type: ignore
 
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 

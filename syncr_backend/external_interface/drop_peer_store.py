@@ -78,9 +78,11 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
         elif config_file['type'] == 'dht':
             return DHTPeerStore(
                 node_id,
-                zip(
-                    config_file['bootstrap_ips'],
-                    config_file['bootstrap_ports'],
+                list(
+                    zip(
+                        config_file['bootstrap_ips'],
+                        config_file['bootstrap_ports'],
+                    ),
                 ),
                 config_file['listenport'],
             )
@@ -110,7 +112,7 @@ class DHTPeerStore(DropPeerStore):
         node_id: bytes,
         bootstrap_list: List[Tuple[str, int]],
         listen_port: int,
-    ):
+    ) -> None:
         """
         Sets up DHT peer store
         :param node_id: node_id of this node
