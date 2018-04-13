@@ -62,7 +62,7 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
                         config_file['bootstrap_ports'],
                     ),
                 ),
-                config_file['listenport'],
+                config_file['listen_port'],
             )
         else:
             raise UnsupportedOptionError()

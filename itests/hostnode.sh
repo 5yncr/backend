@@ -1,7 +1,7 @@
 #!/bin/sh
 set -ex -o pipefail
 
-/work/itests/setup.sh
+/work/itests/setup_init.sh
 
 git clone https://github.com/yelp/paasta /small
 mkdir /large

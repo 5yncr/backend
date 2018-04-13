@@ -84,7 +84,7 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
                         config_file['bootstrap_ports'],
                     ),
                 ),
-                config_file['listenport'],
+                config_file['listen_port'],
             )
         else:
             raise UnsupportedOptionError()
@@ -129,6 +129,7 @@ class DHTPeerStore(DropPeerStore):
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
         """
+        logger.debug("DHT add drop peer : %s", str((ip, port)))
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(
@@ -141,9 +142,11 @@ class DHTPeerStore(DropPeerStore):
     def request_peers(
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
+
         loop = asyncio.get_event_loop()
         result = loop.run_until_complete(self.node_instance.get(drop_id))
         if result is not None:
+            logger.debug("DHT get drop peer : %s", str(result))
             return True, result
         else:
             return False, []

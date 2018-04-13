@@ -6,43 +6,50 @@ import os
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "listenport",
-        type=str,
+        type=int,
         help='Port to listen on for DHT',
+        default="",
     )
     parser.add_argument(
         "--bootstrap-peers",
-        type=int,
+        type=str,
         help=(
             'Peers of the DHT bootstrap.\n'
             'Usage: --bootstrap-peers ip:port,ip2:port2,...'
         ),
     )
     args = parser.parse_args()
-    peerlist = args.bootstrap_peers.split(',')
+
     iplist = []
     portlist = []
-    try:
-        iplist = list(map(lambda x: x.split(':')[0], peerlist))
+    if args.bootstrap_peers != "":
+        peerlist = args.bootstrap_peers.split(',')
+        try:
+            iplist = list(map(lambda x: x.split(':')[0], peerlist))
 
-        portlist = list(map(lambda x: int(x.split(':')[1]), peerlist))
+            portlist = list(map(lambda x: int(x.split(':')[1]), peerlist))
 
-    except IndexError:
-        print("Must have at least 1 bootstrap ip")
-        exit(1)
+        except IndexError:
+            print("Must have at least 1 bootstrap ip")
+            exit(1)
 
     config = {
         'type': 'dht',
         'bootstrap_ips': iplist,
         'bootstrap_ports': portlist,
-        'listen_port': args.listenport
+        'listen_port': args.listenport,
     }
-
+    logger.info("Created DHT config file")
     init_directory = get_full_init_directory(None)
     pks_config_path = os.path.join(init_directory, DEFAULT_PKS_CONFIG_FILE)
     dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)

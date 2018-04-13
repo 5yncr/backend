@@ -31,6 +31,28 @@ services:
             - 2345
         volumes:
             - /share
+    hostnode_dht:
+        environment:
+          - USE_DHT=yes
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/hostnode.sh"
+        ports:
+            - 2345
+        volumes:
+            - /share
+    syncnode_dht:
+        environment:
+          - USE_DHT=yes
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "echo hi"
+        ports:
+            - 2345
+        volumes_from:
+            - hostnode:ro
     syncnode:
         build:
             context: ../

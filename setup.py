@@ -17,6 +17,7 @@ setup(
         'bin/node_init',
         'bin/drop_init',
         'bin/make_tracker_configs',
+        'bin/make_dht_configs',
         'bin/sync_drop',
         'syncr_backend/contrib/bq',
     ],

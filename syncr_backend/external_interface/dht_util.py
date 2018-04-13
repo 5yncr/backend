@@ -9,6 +9,10 @@ from kademlia.network import Server  # type: ignore
 from kademlia.storage import IStorage  # type: ignore
 
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 _node_instance = None
 
@@ -27,6 +31,7 @@ def get_dht(
     :param listen_port: port to listen on
     :return: instance of server
     """
+    logger.info("set up DHT")
     global _node_instance
     if _node_instance is None:
         _node_instance = connect_dht(bootstrap_ip_port_pair_list, listen_port)
