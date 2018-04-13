@@ -42,12 +42,16 @@ def write_chunk(
     filepath += DEFAULT_INCOMPLETE_EXT
     if crypto_util.hash(contents) != chunk_hash:
         raise crypto_util.VerificationException()
-    logger.debug("writing chunk with hash %s", chunk_hash)
+    logger.debug(
+        "writing chunk with filepath %s and hash %s", filepath,
+        crypto_util.b64encode(chunk_hash),
+    )
 
-    with open(filepath, 'wb') as f:
+    with open(filepath, 'r+b') as f:
         pos_bytes = position * chunk_size
         f.seek(pos_bytes)
         f.write(contents)
+        f.flush()
 
 
 def read_chunk(
@@ -104,6 +108,9 @@ def create_file(
         pass
 
     filepath = new_path
+    dirname = os.path.dirname(filepath)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname, exist_ok=True)
     with open(filepath, 'wb') as f:
         logger.debug("truncating %s ot %s bytes", filepath, size_bytes)
         f.truncate(size_bytes)
@@ -119,6 +126,10 @@ def mark_file_complete(filepath: str) -> None:
     :return: None
     """
     logger.debug("marking %s done", filepath)
+    if is_complete(filepath):
+        logger.debug("file already done, returning")
+        return
+
     old_file = filepath + DEFAULT_INCOMPLETE_EXT
     os.rename(old_file, filepath)
 
@@ -139,7 +150,7 @@ def is_complete(filepath: str) -> bool:
     if os.path.isfile(filepath):
         logger.debug("file %s is done", filepath)
         return True
-    logger.error("file %s not found", filepath)
+    logger.debug("file %s not found", filepath)
     raise FileNotFoundError(filepath)
 
 
