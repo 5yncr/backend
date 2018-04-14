@@ -32,7 +32,7 @@ def main() -> None:
 
     iplist = []
     portlist = []
-    if args.bootstrap_peers != "":
+    if args.bootstrap_peers is not None:
         peerlist = args.bootstrap_peers.split(',')
         try:
             iplist = list(map(lambda x: x.split(':')[0], peerlist))

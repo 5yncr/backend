@@ -48,6 +48,7 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     config_file = json.load(open(pks_config_path))
 
     try:
+        logger.debug("Keystore is of type %s", config_file['type'])
         if config_file['type'] == 'tracker':
             pks = TrackerKeyStore(
                 node_id, config_file['ip'], int(config_file['port']),

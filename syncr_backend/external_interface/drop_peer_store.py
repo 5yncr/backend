@@ -129,12 +129,12 @@ class DHTPeerStore(DropPeerStore):
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
         """
-        logger.debug("DHT add drop peer : %s", str((ip, port)))
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(
-                self.node_instance.set(drop_id, [self.node_id, ip, port]),
+                self.node_instance.set(drop_id, (self.node_id, ip, port)),
             )
+            logger.debug("DHT added drop peer : %s", str((ip, port)))
             return True
         except Exception:
             return False
@@ -149,6 +149,7 @@ class DHTPeerStore(DropPeerStore):
             logger.debug("DHT get drop peer : %s", str(result))
             return True, result
         else:
+            logger.debug("DHT failed get drop peer")
             return False, []
 
 

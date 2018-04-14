@@ -31,11 +31,12 @@ def get_dht(
     :param listen_port: port to listen on
     :return: instance of server
     """
-    logger.info("set up DHT")
+    get_logger("kademlia")
     global _node_instance
     if _node_instance is None:
         _node_instance = connect_dht(bootstrap_ip_port_pair_list, listen_port)
 
+    logger.debug("set up DHT: %s", str(bootstrap_ip_port_pair_list))
     return _node_instance
 
 
@@ -57,15 +58,21 @@ def connect_dht(
     if len(bootstrap_ip_port_pair_list) > 0:
         loop.run_until_complete(node.bootstrap(bootstrap_ip_port_pair_list))
 
+    # t1 = threading.Thread(target=dht_thread, args=(
+    #     loop, node, listen_port,)
+    # )
+    # t1.start()
+
     return node
 
 
 class DropPeerDHTStorage(IStorage):
     def __init__(self, ttl: int=TRACKER_DROP_AVAILABILITY_TTL) -> None:
         """
-        By default, max age is a week.
+        Creates a new DropPeerDHTStorage module to plug into the dht
+        :param ttl: ttl of entries in the dht
         """
-        self.data = OrderedDict()  # type: OrderedDict
+        self.data = OrderedDict()  # type: OrderedDict[bytes, Any]
         self.ttl = ttl
 
     def __setitem__(self, key: bytes, value: Tuple[bytes, str, int]) -> None:
@@ -78,6 +85,7 @@ class DropPeerDHTStorage(IStorage):
             self.data[key] = [
                 (int(time.monotonic()), value),
             ]
+        logger.debug("Set new drop peer value to: %s", str(self.data[key]))
 
     def cull_entry(self, key: bytes) -> None:
         if key not in self.data:
@@ -100,13 +108,18 @@ class DropPeerDHTStorage(IStorage):
         if key in self.data:
             self.cull_entry(key)
             return self[key]
-        raise Exception("Key not found")
+        raise KeyError("Key not found")
 
     def __iter__(self):
         return iter(self.data)
 
     def __repr__(self):
         return repr(self.data)
+
+    def items(self):
+        ikeys = self.data.keys()
+        ivalues = map(lambda x: x[1], self.data.values())
+        return zip(ikeys, ivalues)
 
     # def _tripleIterable(self):
         # ikeys = self.data.keys()
