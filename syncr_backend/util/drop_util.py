@@ -4,6 +4,7 @@ import shutil
 from random import shuffle
 from typing import AsyncIterator
 from typing import Awaitable  # noqa
+from typing import cast
 from typing import Dict  # noqa
 from typing import List
 from typing import Optional  # noqa
@@ -240,8 +241,8 @@ async def get_drop_metadata(
             peers=peers,
             fun_args=args,
         )
-        if metadata is None:
-            raise Exception
+        # mypy can't figure out that this won't be None
+        metadata = cast(DropMetadata, metadata)
 
         await metadata.write_file(
             is_latest=True, metadata_location=metadata_dir,

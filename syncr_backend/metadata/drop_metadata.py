@@ -192,7 +192,7 @@ class DropMetadata(object):
         """Write the representation of this objec to disk
 
         :param metadata_location: where to write to disk
-        :param is_latest: whther to also write the LATEST file
+        :param is_latest: whether to also write the LATEST file
         :return: None
         """
         self.log.debug("writing file")
