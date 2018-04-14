@@ -5,8 +5,6 @@ import os
 NODE_ID_BYTE_SIZE = 32
 DROP_ID_BYTE_SIZE = 64
 
-DEFAULT_BUFFER_SIZE = 4096
-
 # Request types for tracker
 TRACKER_REQUEST_GET_KEY = 0
 TRACKER_REQUEST_POST_KEY = 1
@@ -57,13 +55,19 @@ ERR_NEXIST = 0
 ERR_INCOMPAT = 1
 ERR_INVINPUT = 2
 
+# Concurrency
+MAX_CONCURRENT_FILE_DOWNLOADS = 4
+MAX_CHUNKS_PER_PEER = 8
+MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
+
+
 # Frontend action types
 ACTION_REMOVE_FILE = 'remove_file'
 ACTION_GET_OWNED_DROPS = 'get_owned_drops'
 ACTION_GET_SUB_DROPS = 'get_subscribed_drops'
 ACTION_GET_SELECT_DROPS = 'get_selected_drop'
 ACTION_GET_CONFLICTING_FILES = 'get_conflicting_files'
-ACTION_INPUT_NAME = 'input_name'
+ACTION_INITIALIZE_DROP = 'initialize_drop'
 ACTION_INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
 ACTION_DECLINE_CONFLICT_FILE = 'decline_conflict_file'
 ACTION_ACCEPT_CONFLICT_FILE = 'accept_conflict_file'
@@ -79,3 +83,7 @@ ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_REQUEST_CHANGE = 'request_change'
 ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
+
+# Frontend connection settings
+FRONTEND_TCP_ADDRESS = ('localhost', 12345)
+FRONTEND_UNIX_ADDRESS = './unix_socket'

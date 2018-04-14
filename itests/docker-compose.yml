@@ -38,6 +38,7 @@ services:
             - 2345
         volumes:
             - /share
+            - ./ext:/ext:ro
     hostnode_dht:
         environment:
           - USE_DHT=yes
@@ -49,6 +50,7 @@ services:
             - 2345
         volumes:
             - /share
+            - ./ext:/ext:ro
     syncnode_dht:
         environment:
           - USE_DHT=yes

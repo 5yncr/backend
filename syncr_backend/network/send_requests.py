@@ -1,11 +1,15 @@
 """The send side of network communications"""
+import asyncio
 from typing import Any
+from typing import Awaitable
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import TypeVar
+
+import bencode  # type: ignore
 
 from syncr_backend.constants import PROTOCOL_VERSION
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
@@ -17,6 +21,7 @@ from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import network_util
 from syncr_backend.util.log_util import get_logger
+from syncr_backend.util.network_util import raise_network_error
 
 
 R = TypeVar('R')
@@ -24,8 +29,8 @@ R = TypeVar('R')
 logger = get_logger(__name__)
 
 
-def do_request(
-    request_fun: Callable[..., R],
+async def do_request(
+    request_fun: Callable[..., Awaitable[R]],
     peers: List[Tuple[str, int]],
     fun_args: Dict[str, Any],
 ) -> R:
@@ -46,7 +51,7 @@ def do_request(
 
     for (ip, port) in peers:
         try:
-            result = request_fun(ip, port, **fun_args)
+            result = await request_fun(ip, port, **fun_args)
         except (TimeoutError, network_util.SyncrNetworkException) as e:
             last_err = e
             pass
@@ -60,7 +65,7 @@ def do_request(
     return result
 
 
-def send_drop_metadata_request(
+async def send_drop_metadata_request(
     ip: str,
     port: int,
     drop_id: bytes,
@@ -85,16 +90,16 @@ def send_drop_metadata_request(
         request_dict['version'] = drop_version.version
         request_dict['nonce'] = drop_version.nonce
 
-    drop_metadata_bytes = network_util.send_request_to_node(
+    drop_metadata_bytes = await send_request_to_node(
         request_dict,
         ip,
         port,
     )
     logger.debug("recieved drop metadata")
-    return DropMetadata.decode(drop_metadata_bytes)
+    return await DropMetadata.decode(drop_metadata_bytes)
 
 
-def send_file_metadata_request(
+async def send_file_metadata_request(
     ip: str,
     port: int,
     drop_id: bytes,
@@ -117,7 +122,7 @@ def send_file_metadata_request(
         'drop_id': drop_id,
     }
 
-    file_metadata_bytes = network_util.send_request_to_node(
+    file_metadata_bytes = await send_request_to_node(
         request_dict,
         ip,
         port,
@@ -126,7 +131,7 @@ def send_file_metadata_request(
     return FileMetadata.decode(file_metadata_bytes)
 
 
-def send_chunk_list_request(
+async def send_chunk_list_request(
     ip: str,
     port: int,
     drop_id: bytes,
@@ -149,7 +154,7 @@ def send_chunk_list_request(
         'drop_id': drop_id,
     }
 
-    chunk_index_list = network_util.send_request_to_node(
+    chunk_index_list = await send_request_to_node(
         request_dict,
         ip,
         port,
@@ -158,7 +163,7 @@ def send_chunk_list_request(
     return chunk_index_list
 
 
-def send_chunk_request(
+async def send_chunk_request(
     ip: str,
     port: int,
     drop_id: bytes,
@@ -184,7 +189,7 @@ def send_chunk_request(
         'index': file_index,
     }
 
-    chunk = network_util.send_request_to_node(
+    chunk = await send_request_to_node(
         request_dict,
         ip,
         port,
@@ -194,3 +199,36 @@ def send_chunk_request(
         return chunk.encode('utf-8')
     else:
         return chunk
+
+
+async def send_request_to_node(
+    request: Dict[str, Any], ip: str, port: int,
+) -> Any:
+    """
+    Creates a connection a node and sends a given request to the
+    node and returns the response
+    :param port: port where node is serving
+    :param ip: ip of node
+    :param request: Dictionary of a request as specified in the Spec Document
+    :return: node response
+    """
+    reader, writer = await asyncio.open_connection(ip, port)
+    writer.write(bencode.encode(request))
+    writer.write_eof()
+    await writer.drain()
+
+    data = b''
+    while 1:
+        sockdata = await reader.read()
+        if not sockdata:
+            break
+        data += sockdata
+    reader.feed_eof()
+
+    response = bencode.decode(data)
+    if (response['status'] == 'ok'):
+        logger.debug("sending OK")
+        return response['response']
+    else:
+        logger.debug("sending error")
+        raise_network_error(response['error'])
