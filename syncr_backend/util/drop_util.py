@@ -254,10 +254,9 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
             continue
         else:
             secondary_owner = False
-            for owner in md.other_owners:
-                if owner == node_id:
-                    secondary_owner = True
-            if not secondary_owner:
+            if node_id in md.other_owners:
+                continue
+            else:
                 subscribed_drops.append(md)
 
     return subscribed_drops
