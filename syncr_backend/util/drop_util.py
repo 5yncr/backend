@@ -200,7 +200,7 @@ def get_owned_drops_metadata() -> List[DropMetadata]:
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
-    owned_drops = List[DropMetadata]
+    owned_drops = []
 
     for drop_id in drops:
         # Get drop_metadata object for drop
@@ -208,7 +208,7 @@ def get_owned_drops_metadata() -> List[DropMetadata]:
         if md.owner == node_id:
             owned_drops.append(md)
         else:
-            for owner in md.secondary_owners:
+            for owner in md.other_owners:
                 if owner == node_id:
                     owned_drops.append(md)
 
@@ -226,7 +226,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
-    subscribed_drops = List[DropMetadata]
+    subscribed_drops = []
 
     # Subscribed drops are those on the disk that this node does not own
     for drop_id in drops:
@@ -236,7 +236,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
             continue
         else:
             secondary_owner = False
-            for owner in md.secondary_owners:
+            for owner in md.other_owners:
                 if owner == node_id:
                     secondary_owner = True
             if not secondary_owner:

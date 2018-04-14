@@ -238,7 +238,7 @@ def handle_add_owner(
 
         md = simple_get_drop_metadata(request['drop_id'])
 
-        if request['owner_id'] not in md['other_owners']:
+        if request['owner_id'] not in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to add owner to drop'
 
@@ -590,7 +590,7 @@ def handle_remove_owner(
 
         md = simple_get_drop_metadata(request['drop_id'])
 
-        if request['owner_id'] in md['other_owners']:
+        if request['owner_id'] in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to remove owner from drop'
 
