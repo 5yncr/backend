@@ -231,10 +231,13 @@ def handle_add_owner(
             'message': 'owner successfully added',
         }
 
-        md = update_drop(
+        update_drop(
             request['drop_id'],
             add_secondary_owner=request['owner_id'],
         )
+
+        md = simple_get_drop_metadata(request['drop_id'])
+
         if request['owner_id'] not in md['other_owners']:
             response['result'] = 'failure'
             response['message'] = 'unable to add owner to drop'
@@ -580,10 +583,13 @@ def handle_remove_owner(
             'message': 'owner successfully removed',
         }
 
-        md = update_drop(
+        update_drop(
             request['drop_id'],
             remove_secondary_owner=request['owner_id'],
         )
+
+        md = simple_get_drop_metadata(request['drop_id'])
+
         if request['owner_id'] in md['other_owners']:
             response['result'] = 'failure'
             response['message'] = 'unable to remove owner from drop'
