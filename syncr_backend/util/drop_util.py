@@ -133,8 +133,8 @@ def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 
 
 def get_drop_metadata(
-        drop_id: bytes, peers: List[Tuple[str, int]], save_dir:
-        Optional[str]=None, version: Optional[DropVersion]=None,
+    drop_id: bytes, peers: List[Tuple[str, int]], save_dir:
+    Optional[str]=None, version: Optional[DropVersion]=None,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -169,7 +169,10 @@ def get_drop_metadata(
     return metadata
 
 
-def verify_version(drop_metadata: DropMetadata) -> None:
+def verify_version(
+    drop_metadata: DropMetadata,
+    peers: Optional[List[Tuple[str, int]]]=None,
+) -> None:
     """Verify the DropMetadata version recursively
 
     If this version and all prior versions leading up to it are legitimate
@@ -180,9 +183,10 @@ def verify_version(drop_metadata: DropMetadata) -> None:
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
-        peers = get_drop_peers(drop_metadata.id)
+        if peers is None:
+            peers = get_drop_peers(drop_metadata.id)
         dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
-        verify_version(dmd)
+        verify_version(dmd, peers)
 
         if drop_metadata.signed_by == dmd.owner:
             logger.debug(
@@ -212,9 +216,10 @@ def verify_version(drop_metadata: DropMetadata) -> None:
         if primary_owner != drop_metadata.signed_by:
             raise VerificationException()
         for version in drop_metadata.previous_versions:
-            peers = get_drop_peers(drop_metadata.id)
+            if peers is None:
+                peers = get_drop_peers(drop_metadata.id)
             dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
-            verify_version(dmd)
+            verify_version(dmd, peers)
             if primary_owner != dmd.owner:
                 raise VerificationException()
 
