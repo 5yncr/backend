@@ -251,7 +251,7 @@ async def get_drop_metadata(
     return metadata
 
 
-def verify_version(
+async def verify_version(
     drop_metadata: DropMetadata,
     peers: Optional[List[Tuple[str, int]]]=None,
 ) -> None:
@@ -261,13 +261,13 @@ def verify_version(
     returns none, otherwise throws an exception
     """
     if len(drop_metadata.previous_versions) == 0:
-        drop_metadata.verify_header()
+        await drop_metadata.verify_header()
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
         if peers is None:
-            peers = get_drop_peers(drop_metadata.id)
-        dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
+            peers = await get_drop_peers(drop_metadata.id)
+        dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
         verify_version(dmd, peers)
 
         if drop_metadata.signed_by == dmd.owner:
@@ -275,7 +275,7 @@ def verify_version(
                 "Beginning ownership change verification for drop: %s",
                 drop_metadata.id,
             )
-            drop_metadata.verify_header()
+            await drop_metadata.verify_header()
             logger.debug(
                 "Ownership change verified for drop: %s",
                 drop_metadata.id,
@@ -290,7 +290,7 @@ def verify_version(
             )
             raise VerificationException()
         else:
-            drop_metadata.verify_header()
+            await drop_metadata.verify_header()
     else:
         #  Ownership changes are not allowed in merges and must be signed by
         #  primary owner
@@ -299,26 +299,28 @@ def verify_version(
             raise VerificationException()
         for version in drop_metadata.previous_versions:
             if peers is None:
-                peers = get_drop_peers(drop_metadata.id)
-            dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
-            verify_version(dmd, peers)
+                peers = await get_drop_peers(drop_metadata.id)
+            dmd = await get_drop_metadata(
+                drop_metadata.id, peers, version=version,
+            )
+            await verify_version(dmd, peers)
             if primary_owner != dmd.owner:
                 raise VerificationException()
 
 
-def simple_get_drop_metadata(drop_id: bytes) -> DropMetadata:
+async def simple_get_drop_metadata(drop_id: bytes) -> DropMetadata:
     """
     Get drop_metadata object from just drop_id
     :param drop_id:
     :return: A drop_metadata object
     """
-    peers = get_drop_peers(drop_id)
-    drop_metadata = get_drop_metadata(drop_id, peers)
+    peers = await get_drop_peers(drop_id)
+    drop_metadata = await get_drop_metadata(drop_id, peers)
 
     return drop_metadata
 
 
-def get_owned_drops_metadata() -> List[DropMetadata]:
+async def get_owned_drops_metadata() -> List[DropMetadata]:
     """
     Get list of metadata objects for owned drops (primary and secondary)
     :return: list of metadata objects this node owns
@@ -326,14 +328,14 @@ def get_owned_drops_metadata() -> List[DropMetadata]:
     drops = list_drops()
 
     # Get current nodes id
-    priv_key = node_init.load_private_key_from_disk()
+    priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
     owned_drops = []
 
     for drop_id in drops:
         # Get drop_metadata object for drop
-        md = simple_get_drop_metadata(drop_id)
+        md = await simple_get_drop_metadata(drop_id)
         if md.owner == node_id:
             owned_drops.append(md)
         else:
@@ -344,7 +346,7 @@ def get_owned_drops_metadata() -> List[DropMetadata]:
     return owned_drops
 
 
-def get_subscribed_drops_metadata() -> List[DropMetadata]:
+async def get_subscribed_drops_metadata() -> List[DropMetadata]:
     """
     Get list of metadata objects for subscribed drops
     :return: list of metadata objects this node is subscribed to
@@ -352,7 +354,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
     drops = list_drops()
 
     # Get current nodes id
-    priv_key = node_init.load_private_key_from_disk()
+    priv_key = await node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
 
     subscribed_drops = []
@@ -360,7 +362,7 @@ def get_subscribed_drops_metadata() -> List[DropMetadata]:
     # Subscribed drops are those on the disk that this node does not own
     for drop_id in drops:
         # Get drop_metadata object for drop
-        md = simple_get_drop_metadata(drop_id)
+        md = await simple_get_drop_metadata(drop_id)
         if md.owner != node_id and node_id not in md.other_owners:
             subscribed_drops.append(md)
 
