@@ -17,10 +17,11 @@ setup(
             'check_drop = syncr_backend.bin.check_drop:main',
             'drop_init = syncr_backend.bin.drop_init:main',
             'sync_drop = syncr_backend.bin.sync_drop:main',
-            'make_tracker_configs = syncr_backend.bin.make_tracker_configs:main',  # noqa
             'make_dht_configs = syncr_backend.bin.make_dht_configs:main',
+            'make_tracker_configs = syncr_backend.bin.make_tracker_configs:main',  # noqa
             'node_init = syncr_backend.bin.node_init:main',
             'run_backend = syncr_backend.bin.run_backend:run_backend',
+            'run_dht_server = syncr_backend.bin.run_dht_server:main',
         ],
     },
     scripts=[

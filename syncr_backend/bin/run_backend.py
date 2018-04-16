@@ -2,9 +2,11 @@
 import argparse
 import asyncio
 import threading
+import time
 from typing import Any
 from typing import List
 
+from syncr_backend.external_interface.dht_util import get_dht
 from syncr_backend.external_interface.dht_util import initialize_dht
 from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
@@ -81,15 +83,15 @@ def run_backend() -> None:
     )
     # initilize dht
     config_file = loop.run_until_complete(load_config_file())
-    ip_port_list = list(
-        zip(
-            config_file['bootstrap_ips'],
-            config_file['bootstrap_ports'],
-        ),
-    )
     if config_file['type'] == 'dht':
+        ip_port_list = list(
+            zip(
+                config_file['bootstrap_ips'],
+                config_file['bootstrap_ports'],
+            ),
+        )
         initialize_dht(ip_port_list, config_file['listen_port'])
-
+    logger.debug("run backend DHT instance %s", get_dht())
     request_listen_thread.start()
     loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
@@ -188,6 +190,7 @@ def execute_function(function_name: str, args: List[str]) -> None:
     :param function_name: string name of the function to run
     :param args: arguments for the function to run
     """
+    loop = asyncio.get_event_loop()
     # for functions that create or destroy the init directory
     if function_name == "node_init":
         node_init.initialize_node(*args)
@@ -202,12 +205,20 @@ def execute_function(function_name: str, args: List[str]) -> None:
 
     elif function_name == "drop_update":
         drop_id = crypto_util.b64decode(args[0].encode())
-        asyncio.ensure_future(drop_util.update_drop(drop_id))
+        task = loop.create_task(drop_util.update_drop(drop_id))
+        while not task.done():
+            time.sleep(10)
 
     elif function_name == "sync_drop":
         drop_id = crypto_util.b64decode(args[0].encode())
         # takes drop_id as b64 and save+directory
-        asyncio.ensure_future(drop_util.sync_drop(drop_id, args[1]))
+
+        async def sync_wrapper(drop_id: bytes, save_dir: str) -> None:
+            await drop_util.sync_drop(drop_id, save_dir)
+
+        task = loop.create_task(sync_wrapper(drop_id, args[1]))
+        while not task.done():
+            time.sleep(10)
 
     else:
         print("Function [%s] not found" % (function_name))

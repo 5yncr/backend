@@ -53,7 +53,7 @@ def initialize_dht(
 
     logger.debug("set up DHT: %s", str(bootstrap_ip_port_pair_list))
 
-    node = Server(storage=DropPeerDHTStorage(TRACKER_DROP_AVAILABILITY_TTL))
+    node = Server()
     node.listen(listen_port)
     loop = asyncio.get_event_loop()
     if len(bootstrap_ip_port_pair_list) > 0:
@@ -79,13 +79,9 @@ class DropPeerDHTStorage(IStorage):
     def __setitem__(self, key: bytes, value: Tuple[bytes, str, int]) -> None:
         self.cull_entry(key)
         if key in self.data:
-            self.data[key] = self.data[key] + [
-                (int(time.monotonic()), value),
-            ]
+            self.data[key].append((int(time.monotonic()), value))
         else:
-            self.data[key] = [
-                (int(time.monotonic()), value),
-            ]
+            self.data[key] = [(int(time.monotonic()), value)]
         logger.debug("Set new drop peer value to: %s", str(self.data[key]))
 
     def cull_entry(self, key: bytes) -> None:
@@ -93,6 +89,7 @@ class DropPeerDHTStorage(IStorage):
             return
         old_data = self.data[key]
         new_data = []  # type: List[Tuple[bytes, str, int]]
+        logger.debug("culled entry %s", old_data)
         for entry in old_data:
             if (entry[0] + self.ttl > time.monotonic() and
                     entry[0] < time.monotonic()):
@@ -100,15 +97,20 @@ class DropPeerDHTStorage(IStorage):
 
         self.data[key] = new_data
 
-    def get(self, key: bytes, default: Optional[Any]=None) -> Any:
+    def get(
+        self,
+        key: bytes,
+        default: Optional[Any]=[],
+    ) -> Optional[Any]:
+
         if key in self.data:
             return self.__getitem__(key)
         return default
 
-    def __getitem__(self, key: bytes) -> Any:
+    def __getitem__(self, key: bytes) -> List[Tuple[bytes, str, int]]:
         if key in self.data:
             self.cull_entry(key)
-            return self[key]
+            return list(map(lambda x: x[1], self.data[key]))
         raise KeyError("Key not found")
 
     def __iter__(self) -> Any:
@@ -119,7 +121,9 @@ class DropPeerDHTStorage(IStorage):
 
     def items(self) -> Any:
         ikeys = self.data.keys()
-        ivalues = map(lambda x: x[1], self.data.values())
+        ivalues = list(
+            map(lambda x: map(lambda y: y[1], x), self.data.values()),
+        )
         return zip(ikeys, ivalues)
 
     # def _tripleIterable(self):

@@ -126,14 +126,23 @@ class DHTPeerStore(DropPeerStore):
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
         """
-        try:
+        current_peers = await self.node_instance.get(drop_id)
+        if current_peers is None:
+            current_peers = []
+        else:
+            current_peers = list(current_peers)
+        in_current_peers = False
+        for i in range(len(current_peers)):
+            if current_peers[i][0] == self.node_id:
+                in_current_peers = True
+                current_peers[i] = (self.node_id, ip, port)
+        if not in_current_peers:
+            current_peers.append((self.node_id, ip, port))
+        logger.debug("Setting: %s", str(tuple(current_peers)))
+        await self.node_instance.set(drop_id, tuple(current_peers))
 
-            await self.node_instance.set(drop_id, (self.node_id, ip, port)),
-
-            logger.debug("DHT added drop peer : %s", str((ip, port)))
-            return True
-        except Exception:
-            return False
+        logger.debug("DHT added drop peer : %s", str((ip, port)))
+        return True
 
     async def request_peers(
         self, drop_id: bytes,
@@ -144,7 +153,7 @@ class DHTPeerStore(DropPeerStore):
             logger.debug("DHT get drop peer : %s", str(result))
             return True, result
         else:
-            logger.debug("DHT failed get drop peer")
+            logger.debug("DHT failed get drop peer, drop_id: %s", str(drop_id))
             return False, []
 
 

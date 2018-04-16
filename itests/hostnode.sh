@@ -1,7 +1,7 @@
 #!/bin/sh
 set -ex -o pipefail
 
-/work/itests/setup_init.sh
+/work/itests/setup.sh
 
 if [[ -d "/ext/small" ]]; then
     cp -r /ext/small /small

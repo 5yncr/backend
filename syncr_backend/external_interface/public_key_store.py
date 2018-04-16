@@ -111,6 +111,7 @@ class DHTKeyStore(PublicKeyStore):
         """
 
         result = await self.node_instance.get(request_node_id)
+
         if result is not None:
             return True, result
         else:
