@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+from typing import List  # NOQA
 
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
@@ -30,8 +31,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    iplist = []
-    portlist = []
+    iplist = []  # type: List[str]
+    portlist = []  # type: List[int]
     if args.bootstrap_peers is not None:
         peerlist = args.bootstrap_peers.split(',')
         try:

@@ -3,6 +3,7 @@ import time
 from collections import OrderedDict
 from typing import Any
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from kademlia.network import Server  # type: ignore
@@ -17,10 +18,7 @@ logger = get_logger(__name__)
 _node_instance = None
 
 
-def get_dht(
-    bootstrap_ip_port_pair_list: List[Tuple[str, int]],
-    listen_port: int,
-):
+def get_dht() -> Server:
     """
     returns the node_instance of the dht
     if no node instance has been created it
@@ -31,19 +29,16 @@ def get_dht(
     :param listen_port: port to listen on
     :return: instance of server
     """
-    get_logger("kademlia")
     global _node_instance
     if _node_instance is None:
-        _node_instance = connect_dht(bootstrap_ip_port_pair_list, listen_port)
-
-    logger.debug("set up DHT: %s", str(bootstrap_ip_port_pair_list))
+        raise TypeError("DHT has not been initilized")
     return _node_instance
 
 
-def connect_dht(
+def initialize_dht(
     bootstrap_ip_port_pair_list: List[Tuple[str, int]],
     listen_port: int,
-) -> Server:
+) -> None:
     """
     connects to the distributed hash table
     if no bootstrap ip port pair list is given, it starts a new dht
@@ -52,6 +47,12 @@ def connect_dht(
     :param listen_port: port to listen on
     :return: instance of server
     """
+    global _node_instance
+
+    get_logger("kademlia")
+
+    logger.debug("set up DHT: %s", str(bootstrap_ip_port_pair_list))
+
     node = Server(storage=DropPeerDHTStorage(TRACKER_DROP_AVAILABILITY_TTL))
     node.listen(listen_port)
     loop = asyncio.get_event_loop()
@@ -63,7 +64,7 @@ def connect_dht(
     # )
     # t1.start()
 
-    return node
+    _node_instance = node
 
 
 class DropPeerDHTStorage(IStorage):
@@ -99,7 +100,7 @@ class DropPeerDHTStorage(IStorage):
 
         self.data[key] = new_data
 
-    def get(self, key: bytes, default=None) -> Any:
+    def get(self, key: bytes, default: Optional[Any]=None) -> Any:
         if key in self.data:
             return self.__getitem__(key)
         return default
@@ -110,13 +111,13 @@ class DropPeerDHTStorage(IStorage):
             return self[key]
         raise KeyError("Key not found")
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         return iter(self.data)
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return repr(self.data)
 
-    def items(self):
+    def items(self) -> Any:
         ikeys = self.data.keys()
         ivalues = map(lambda x: x[1], self.data.values())
         return zip(ikeys, ivalues)
@@ -127,7 +128,7 @@ class DropPeerDHTStorage(IStorage):
         # ivalues = map(operator.itemgetter(1), self.data.values())
         # return zip(ikeys, ibirthday, ivalues)
 
-    def iteritemsOlderThan(self, secondsOld):
+    def iteritemsOlderThan(self, secondsOld: int) -> List[Any]:
         """
         This method is unnesessary due to the setting method culling inputs
         and that the default ttl is less than 1 hour. The kademlia paper calls

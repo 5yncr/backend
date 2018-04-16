@@ -1,16 +1,10 @@
 """Functionality to get public keys from a public key store"""
-import asyncio
-import json
-import os
 from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Optional
 from typing import Tuple
 
-import aiofiles  # type: ignore
-
-from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
 from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
@@ -20,15 +14,12 @@ from syncr_backend.external_interface.store_exceptions import (
     IncompleteConfigError
 )
 from syncr_backend.external_interface.store_exceptions import (
-    MissingConfigError
-)
-from syncr_backend.external_interface.store_exceptions import (
     UnsupportedOptionError
 )
 from syncr_backend.external_interface.tracker_util import (
     send_request_to_tracker
 )
-from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.fileio_util import load_config_file
 from syncr_backend.util.log_util import get_logger
 
 
@@ -41,15 +32,7 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     on config file
     :return: PublicKeyStore
     """
-    init_directory = get_full_init_directory(None)
-    pks_config_path = os.path.join(init_directory, DEFAULT_PKS_CONFIG_FILE)
-
-    if not os.path.isfile(pks_config_path):
-        raise MissingConfigError()
-
-    async with aiofiles.open(pks_config_path) as f:
-        config = await f.read()
-        config_file = json.loads(config)
+    config_file = await load_config_file()
 
     try:
         logger.debug("Keystore is of type %s", config_file['type'])
@@ -101,24 +84,24 @@ class DHTKeyStore(PublicKeyStore):
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
         """
         self.node_id = node_id
-        self.node_instance = get_dht(bootstrap_list, listen_port)
+        self.node_instance = get_dht()
 
-    def set_key(self, key: bytes):
+    async def set_key(self, key: bytes) -> bool:
         """
         Sets the public key of the this node on the DHT
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
         """
-        loop = asyncio.get_event_loop()
         try:
-            loop.run_until_complete(
-                self.node_instance.set(self.node_id, key),
-            )
+            await self.node_instance.set(self.node_id, key)
             return True
         except Exception:
             return False
 
-    def request_key(self, request_node_id: bytes,):
+    async def request_key(
+        self,
+        request_node_id: bytes,
+    ) -> Tuple[bool, Optional[str]]:
         """
         Asks DHT for the public key of a given node for sake of signature
         verification
@@ -126,14 +109,12 @@ class DHTKeyStore(PublicKeyStore):
         :return: boolean (success of getting key),
                 2048 RSA public key (if boolean is True)
         """
-        loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(
-            self.node_instance.get(request_node_id),
-        )
+
+        result = await self.node_instance.get(request_node_id)
         if result is not None:
             return True, result
         else:
-            return False, []
+            return False, ""
 
 
 class TrackerKeyStore(PublicKeyStore):

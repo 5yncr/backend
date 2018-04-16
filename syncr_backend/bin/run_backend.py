@@ -5,6 +5,7 @@ import threading
 from typing import Any
 from typing import List
 
+from syncr_backend.external_interface.dht_util import initialize_dht
 from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
@@ -13,7 +14,10 @@ from syncr_backend.network.listen_requests import listen_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 from syncr_backend.util import network_util
+from syncr_backend.util.fileio_util import load_config_file
+from syncr_backend.util.log_util import get_logger
 # from syncr_backend.network import send_requests
+logger = get_logger(__name__)
 
 
 def run_backend() -> None:
@@ -49,6 +53,11 @@ def run_backend() -> None:
         type=int,
         help="Set this if the external port is different from the listen port",
     )
+    input_args_parser.add_argument(
+        "--debug_commands",
+        type=str,
+        help="Command file to send debug commands",
+    )
     arguments = input_args_parser.parse_args()
     if arguments.external_address is not None:
         ext_addr = arguments.external_address
@@ -70,14 +79,46 @@ def run_backend() -> None:
             shutdown_flag,
         ],
     )
+    # initilize dht
+    config_file = loop.run_until_complete(load_config_file())
+    ip_port_list = list(
+        zip(
+            config_file['bootstrap_ips'],
+            config_file['bootstrap_ports'],
+        ),
+    )
+    if config_file['type'] == 'dht':
+        initialize_dht(ip_port_list, config_file['listen_port'])
+
     request_listen_thread.start()
     loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
     if not arguments.backendonly:
-        read_cmds_from_cmdline()
+        if arguments.debug_commands is None:
+            read_cmds_from_cmdline()
+        else:
+            run_debug_commands(arguments.debug_commands)
         shutdown_flag.set()
-        network_util.close_socket_thread(arguments.ip[0], arguments.port[0])
+        network_util.close_socket_thread(
+            arguments.ip[0], int(arguments.port[0]),
+        )
         request_listen_thread.join()
+
+
+def run_debug_commands(commands_file: str) -> None:
+    """
+    Read and execute commands a list of semicolon separated commands as input
+    :param commands: list of semicolon separated commands
+    """
+    with open(commands_file) as f:
+        commands = f.read().replace('\n', '')
+
+    commandlist = commands.split(';')
+    for command in commandlist:
+
+        args = command.split(' ')
+        logger.info("Ran Command %s", args)
+        execute_function(args[0], args[1:])
 
 
 def read_cmds_from_cmdline() -> None:
@@ -161,12 +202,12 @@ def execute_function(function_name: str, args: List[str]) -> None:
 
     elif function_name == "drop_update":
         drop_id = crypto_util.b64decode(args[0].encode())
-        drop_util.update_drop(drop_id)
+        asyncio.ensure_future(drop_util.update_drop(drop_id))
 
     elif function_name == "sync_drop":
         drop_id = crypto_util.b64decode(args[0].encode())
         # takes drop_id as b64 and save+directory
-        drop_util.sync_drop(drop_id, args[1])
+        asyncio.ensure_future(drop_util.sync_drop(drop_id, args[1]))
 
     else:
         print("Function [%s] not found" % (function_name))

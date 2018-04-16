@@ -268,6 +268,7 @@ def listen_requests(
     shutdown_flag: threading.Event,
 ) -> None:
     """Run the request server until closing"""
+
     coro = asyncio.start_server(
         async_handle_request, tcp_ip, int(tcp_port), loop=loop,
     )
