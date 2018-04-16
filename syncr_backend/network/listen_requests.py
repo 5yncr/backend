@@ -15,7 +15,6 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.external_interface.dht_util import get_dht
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
@@ -269,7 +268,6 @@ def listen_requests(
     shutdown_flag: threading.Event,
 ) -> None:
     """Run the request server until closing"""
-    logger.debug("pre listen request DHT instance %s", get_dht())
     coro = asyncio.start_server(
         async_handle_request, tcp_ip, int(tcp_port), loop=loop,
     )

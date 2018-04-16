@@ -6,7 +6,6 @@ import time
 from typing import Any
 from typing import List
 
-from syncr_backend.external_interface.dht_util import get_dht
 from syncr_backend.external_interface.dht_util import initialize_dht
 from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
@@ -15,7 +14,6 @@ from syncr_backend.metadata.drop_metadata import send_my_pub_key
 from syncr_backend.network.listen_requests import listen_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
-from syncr_backend.util import network_util
 from syncr_backend.util.fileio_util import load_config_file
 from syncr_backend.util.log_util import get_logger
 # from syncr_backend.network import send_requests
@@ -71,16 +69,7 @@ def run_backend() -> None:
         ext_port = int(arguments.port[0])
 
     loop = asyncio.get_event_loop()
-    loop.create_task(send_my_pub_key())
 
-    shutdown_flag = threading.Event()
-    request_listen_thread = threading.Thread(
-        target=listen_requests,
-        args=[
-            arguments.ip[0], arguments.port[0], loop,
-            shutdown_flag,
-        ],
-    )
     # initilize dht
     config_file = loop.run_until_complete(load_config_file())
     if config_file['type'] == 'dht':
@@ -91,7 +80,18 @@ def run_backend() -> None:
             ),
         )
         initialize_dht(ip_port_list, config_file['listen_port'])
-    logger.debug("run backend DHT instance %s", get_dht())
+
+    loop.create_task(send_my_pub_key())
+
+    shutdown_flag = threading.Event()
+    request_listen_thread = threading.Thread(
+        target=listen_requests,
+        args=[
+            arguments.ip[0], arguments.port[0], loop,
+            shutdown_flag,
+        ],
+    )
+
     request_listen_thread.start()
     loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
@@ -101,9 +101,11 @@ def run_backend() -> None:
         else:
             run_debug_commands(arguments.debug_commands)
         shutdown_flag.set()
-        network_util.close_socket_thread(
-            arguments.ip[0], int(arguments.port[0]),
-        )
+        loop = asyncio.get_event_loop()
+        # network_util.close_socket_thread(
+        #     arguments.ip[0], int(arguments.port[0]),
+        # )
+        loop.stop()
         request_listen_thread.join()
 
 
@@ -214,6 +216,7 @@ def execute_function(function_name: str, args: List[str]) -> None:
         # takes drop_id as b64 and save+directory
 
         async def sync_wrapper(drop_id: bytes, save_dir: str) -> None:
+
             await drop_util.sync_drop(drop_id, save_dir)
 
         task = loop.create_task(sync_wrapper(drop_id, args[1]))

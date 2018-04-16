@@ -40,6 +40,7 @@ services:
             - /share
             - ./ext:/ext:ro
     hostnode_dht:
+        hostname: hostnode
         environment:
           - USE_DHT=yes
         build:
@@ -52,6 +53,7 @@ services:
             - /share
             - ./ext:/ext:ro
     syncnode_dht:
+        hostname: syncnode
         environment:
           - USE_DHT=yes
         build:
