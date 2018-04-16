@@ -12,7 +12,7 @@ while [[ ! "$(cat /share/large)" ]]; do
 done
 
 printf "sync_drop $(cat /share/small) /small;sync_drop $(cat /share/large) /large" > /work/itests/syncnode_debug_commands
-run_backend 0.0.0.0 2345 --external_address syncnode --debug_commands /work/itests/syncnode_debug_commands
+run_backend 0.0.0.0 2345 --external_address $(hostname) --debug_commands /work/itests/syncnode_debug_commands
 
 
 check_drop "$(cat /share/small)"

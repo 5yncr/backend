@@ -30,6 +30,7 @@ services:
         ports:
             - 2345
     hostnode:
+        hostname: hostnode
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
@@ -40,7 +41,7 @@ services:
             - /share
             - ./ext:/ext:ro
     hostnode_dht:
-        hostname: hostnode
+        hostname: hostnode_dht
         environment:
           - USE_DHT=yes
         build:
@@ -53,7 +54,7 @@ services:
             - /share
             - ./ext:/ext:ro
     syncnode_dht:
-        hostname: syncnode
+        hostname: syncnode_dht
         environment:
           - USE_DHT=yes
         build:
@@ -65,6 +66,7 @@ services:
         volumes_from:
             - hostnode_dht:ro
     syncnode:
+        hostname: syncnode
         build:
             context: ../
             dockerfile: ./itests/Dockerfile

@@ -110,8 +110,7 @@ class DHTKeyStore(PublicKeyStore):
                 2048 RSA public key (if boolean is True)
         """
 
-        result = await self.node_instance.get(request_node_id)
-
+        result = str(await self.node_instance.get(request_node_id), 'utf-8')
         if result is not None:
             return True, result
         else:

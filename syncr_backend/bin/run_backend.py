@@ -2,7 +2,6 @@
 import argparse
 import asyncio
 import threading
-import time
 from typing import Any
 from typing import List
 
@@ -81,7 +80,10 @@ def run_backend() -> None:
         )
         initialize_dht(ip_port_list, config_file['listen_port'])
 
-    loop.create_task(send_my_pub_key())
+    asyncio.run_coroutine_threadsafe(
+        send_my_pub_key(),
+        loop,
+    )
 
     shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
@@ -91,9 +93,14 @@ def run_backend() -> None:
             shutdown_flag,
         ],
     )
-
-    request_listen_thread.start()
+    # asyncio.run_coroutine_threadsafe(
+    #    send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
+    #    loop
+    # )
     loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
+    request_listen_thread.start()
+
+    # loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
     if not arguments.backendonly:
         if arguments.debug_commands is None:
@@ -207,9 +214,14 @@ def execute_function(function_name: str, args: List[str]) -> None:
 
     elif function_name == "drop_update":
         drop_id = crypto_util.b64decode(args[0].encode())
-        task = loop.create_task(drop_util.update_drop(drop_id))
-        while not task.done():
-            time.sleep(10)
+        task = asyncio.run_coroutine_threadsafe(
+            drop_util.update_drop(drop_id),
+            loop,
+        )
+        task.result()
+        # loop.call_soon_threadsafe(task)
+        # while not task.done():
+        #     time.sleep(10)
 
     elif function_name == "sync_drop":
         drop_id = crypto_util.b64decode(args[0].encode())
@@ -219,9 +231,11 @@ def execute_function(function_name: str, args: List[str]) -> None:
 
             await drop_util.sync_drop(drop_id, save_dir)
 
-        task = loop.create_task(sync_wrapper(drop_id, args[1]))
-        while not task.done():
-            time.sleep(10)
+        task = asyncio.run_coroutine_threadsafe(
+            sync_wrapper(drop_id, args[1]),
+            loop,
+        )
+        task.result()
 
     else:
         print("Function [%s] not found" % (function_name))

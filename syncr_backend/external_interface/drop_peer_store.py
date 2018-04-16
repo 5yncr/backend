@@ -1,5 +1,6 @@
 """Functionality to get peers from a peer store"""
 import asyncio
+import pickle
 import threading
 from abc import ABC
 from abc import abstractmethod
@@ -126,20 +127,19 @@ class DHTPeerStore(DropPeerStore):
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
         """
+        logger.debug("addingdrop peers %s %s %s", drop_id, ip, port)
         current_peers = await self.node_instance.get(drop_id)
         if current_peers is None:
-            current_peers = []
+            current_peers = frozenset()
         else:
-            current_peers = list(current_peers)
-        in_current_peers = False
-        for i in range(len(current_peers)):
-            if current_peers[i][0] == self.node_id:
-                in_current_peers = True
-                current_peers[i] = (self.node_id, ip, port)
-        if not in_current_peers:
-            current_peers.append((self.node_id, ip, port))
-        logger.debug("Setting: %s", str(tuple(current_peers)))
-        await self.node_instance.set(drop_id, tuple(current_peers))
+            current_peers = pickle.loads(current_peers)
+        new_peers = current_peers.union(
+            frozenset([(self.node_id, ip, port), ]),
+        )
+        await self.node_instance.set(
+            drop_id,
+            pickle.dumps(new_peers),
+        )
 
         logger.debug("DHT added drop peer : %s", str((ip, port)))
         return True
@@ -148,10 +148,13 @@ class DHTPeerStore(DropPeerStore):
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
 
+        logger.debug("requesting drop peers %s", drop_id)
+        # result is bytes representation of frozen set of peers
         result = await self.node_instance.get(drop_id)
         if result is not None:
-            logger.debug("DHT get drop peer : %s", str(result))
-            return True, result
+            logger.debug("DHT get drop peer : %s", pickle.loads(result))
+            # return list of contents of frozenset
+            return True, list(pickle.loads(result))
         else:
             logger.debug("DHT failed get drop peer, drop_id: %s", str(drop_id))
             return False, []

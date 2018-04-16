@@ -1,15 +1,12 @@
 import asyncio
-import time
-from collections import OrderedDict
+import pickle
 from typing import Any
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 from kademlia.network import Server  # type: ignore
-from kademlia.storage import IStorage  # type: ignore
+from kademlia.storage import ForgetfulStorage  # type: ignore
 
-from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.util.log_util import get_logger
 
 
@@ -67,79 +64,18 @@ def initialize_dht(
     _node_instance = node
 
 
-class DropPeerDHTStorage(IStorage):
-    def __init__(self, ttl: int=TRACKER_DROP_AVAILABILITY_TTL) -> None:
-        """
-        Creates a new DropPeerDHTStorage module to plug into the dht
-        :param ttl: ttl of entries in the dht
-        """
-        self.data = OrderedDict()  # type: OrderedDict[bytes, Any]
-        self.ttl = ttl
+class DropPeerDHTStorage(ForgetfulStorage):
+    def __setitem__(self, key: Any, value: Any) -> None:
 
-    def __setitem__(self, key: bytes, value: Tuple[bytes, str, int]) -> None:
-        self.cull_entry(key)
-        if key in self.data:
-            self.data[key].append((int(time.monotonic()), value))
-        else:
-            self.data[key] = [(int(time.monotonic()), value)]
-        logger.debug("Set new drop peer value to: %s", str(self.data[key]))
+        if type(value) == frozenset and key in self.data:
+            try:
+                current_set = pickle.loads(self.data[key][1])
+                if type(current_set) == frozenset:
+                    new_value = pickle.dumps(current_set.union(value))
+                    super().__setitem__(key, new_value)
+                    return
 
-    def cull_entry(self, key: bytes) -> None:
-        if key not in self.data:
-            return
-        old_data = self.data[key]
-        new_data = []  # type: List[Tuple[bytes, str, int]]
-        logger.debug("culled entry %s", old_data)
-        for entry in old_data:
-            if (entry[0] + self.ttl > time.monotonic() and
-                    entry[0] < time.monotonic()):
-                new_data += entry
+            except pickle.UnpicklingError:
+                print("Could not unpickle current data")
 
-        self.data[key] = new_data
-
-    def get(
-        self,
-        key: bytes,
-        default: Optional[Any]=[],
-    ) -> Optional[Any]:
-
-        if key in self.data:
-            return self.__getitem__(key)
-        return default
-
-    def __getitem__(self, key: bytes) -> List[Tuple[bytes, str, int]]:
-        if key in self.data:
-            self.cull_entry(key)
-            return list(map(lambda x: x[1], self.data[key]))
-        raise KeyError("Key not found")
-
-    def __iter__(self) -> Any:
-        return iter(self.data)
-
-    def __repr__(self) -> Any:
-        return repr(self.data)
-
-    def items(self) -> Any:
-        ikeys = self.data.keys()
-        ivalues = list(
-            map(lambda x: map(lambda y: y[1], x), self.data.values()),
-        )
-        return zip(ikeys, ivalues)
-
-    # def _tripleIterable(self):
-        # ikeys = self.data.keys()
-        # ibirthday = map(operator.itemgetter(0), self.data.values())
-        # ivalues = map(operator.itemgetter(1), self.data.values())
-        # return zip(ikeys, ibirthday, ivalues)
-
-    def iteritemsOlderThan(self, secondsOld: int) -> List[Any]:
-        """
-        This method is unnesessary due to the setting method culling inputs
-        and that the default ttl is less than 1 hour. The kademlia paper calls
-        for refreshing entries are 1 hour old, but there are no entries older
-        than 1 hour
-        """
-        # minBirthday = time.monotonic() - secondsOld
-        # zipped = self._tripleIterable()
-        # matches = takewhile(lambda r: minBirthday >= r[1], zipped)
-        return []
+        super().__setitem__(key, value)
