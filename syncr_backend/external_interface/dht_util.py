@@ -50,7 +50,7 @@ def initialize_dht(
 
     logger.debug("set up DHT: %s", str(bootstrap_ip_port_pair_list))
 
-    node = Server()
+    node = Server(storage=DropPeerDHTStorage())
     node.listen(listen_port)
     loop = asyncio.get_event_loop()
     if len(bootstrap_ip_port_pair_list) > 0:
@@ -64,18 +64,29 @@ def initialize_dht(
     _node_instance = node
 
 
+def unpickle_pickled_frozenset(pickled_bytes: bytes):
+    try:
+        pickled_value = pickle.loads(pickled_bytes)
+        if type(pickled_value) == frozenset:
+            return pickled_value
+        else:
+            return None
+    except pickle.PickleError:
+        return None
+
+
 class DropPeerDHTStorage(ForgetfulStorage):
     def __setitem__(self, key: Any, value: Any) -> None:
+        frozenset_value = unpickle_pickled_frozenset(value)
+        if frozenset_value is not None:
+            if key in self.data:
+                current_set = unpickle_pickled_frozenset(self.data[key][1])
+                if current_set is not None:
+                    new_pickled_frozenset = pickle.dumps(
+                        current_set.union(frozenset_value),
+                    )
+                    return super().__setitem__(key, new_pickled_frozenset)
 
-        if type(value) == frozenset and key in self.data:
-            try:
-                current_set = pickle.loads(self.data[key][1])
-                if type(current_set) == frozenset:
-                    new_value = pickle.dumps(current_set.union(value))
-                    super().__setitem__(key, new_value)
-                    return
+            return super().__setitem__(key, pickle.dumps(frozenset_value))
 
-            except pickle.UnpicklingError:
-                print("Could not unpickle current data")
-
-        super().__setitem__(key, value)
+        return super().__setitem__(key, value)

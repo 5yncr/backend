@@ -128,7 +128,7 @@ class DHTPeerStore(DropPeerStore):
         :param port: port to recieve requests regarging drop on
         """
         logger.debug("addingdrop peers %s %s %s", drop_id, ip, port)
-        current_peers = await self.node_instance.get(drop_id)
+        """current_peers = await self.node_instance.get(drop_id)
         if current_peers is None:
             current_peers = frozenset()
         else:
@@ -139,8 +139,11 @@ class DHTPeerStore(DropPeerStore):
         await self.node_instance.set(
             drop_id,
             pickle.dumps(new_peers),
+        )"""
+        await self.node_instance.set(
+            drop_id,
+            pickle.dumps(frozenset([(self.node_id, ip, port), ])),
         )
-
         logger.debug("DHT added drop peer : %s", str((ip, port)))
         return True
 

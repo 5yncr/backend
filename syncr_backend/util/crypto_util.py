@@ -70,6 +70,17 @@ def b64decode(b: bytes) -> bytes:
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
 
 
+def bencode_frozenset(fs: frozenset) -> bytes:
+    return bencode.encode(list(fs))
+
+
+def bdecode_frozenset(efs: bytes) -> bytes:
+    try:
+        return frozenset(bencode.decoded(efs))
+    except Exception:
+        return None
+
+
 def random_bytes() -> bytes:
     """Generate 32 random bytes
 
