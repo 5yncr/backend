@@ -1,6 +1,5 @@
 """Functionality to get peers from a peer store"""
 import asyncio
-import pickle
 import threading
 from abc import ABC
 from abc import abstractmethod
@@ -132,17 +131,19 @@ class DHTPeerStore(DropPeerStore):
         if current_peers is None:
             current_peers = frozenset()
         else:
-            current_peers = pickle.loads(current_peers)
+            current_peers = crypto_util.decode_frozenset(current_peers)
         new_peers = current_peers.union(
             frozenset([(self.node_id, ip, port), ]),
         )
         await self.node_instance.set(
             drop_id,
-            pickle.dumps(new_peers),
+            crypto_util.encode_frozenset(new_peers),
         )"""
         await self.node_instance.set(
             drop_id,
-            pickle.dumps(frozenset([(self.node_id, ip, port), ])),
+            crypto_util.encode_frozenset(
+                frozenset([(self.node_id, ip, port), ]),
+            ),
         )
         logger.debug("DHT added drop peer : %s", str((ip, port)))
         return True
@@ -155,9 +156,15 @@ class DHTPeerStore(DropPeerStore):
         # result is bytes representation of frozen set of peers
         result = await self.node_instance.get(drop_id)
         if result is not None:
-            logger.debug("DHT get drop peer : %s", pickle.loads(result))
+            logger.debug(
+                "DHT get drop peer : %s",
+                crypto_util.decode_frozenset(result),
+            )
             # return list of contents of frozenset
-            return True, list(pickle.loads(result))
+            decoded_frozenset = crypto_util.decode_frozenset(result)
+            if decoded_frozenset is None:
+                return False, []
+            return True, list(decoded_frozenset)
         else:
             logger.debug("DHT failed get drop peer, drop_id: %s", str(drop_id))
             return False, []

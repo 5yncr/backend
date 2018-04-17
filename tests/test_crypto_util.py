@@ -3,6 +3,14 @@ import asyncio
 from syncr_backend.util import crypto_util
 
 
+def test_encode_frozenset() -> None:
+
+    f = frozenset([('12', 123, '1234'), ('asdf', 123, 'asdf'), ])
+    ef = crypto_util.encode_frozenset(f)
+    df = crypto_util.decode_frozenset(ef)
+    assert f == df
+
+
 def test_signature() -> None:
     loop = asyncio.get_event_loop()
     rsa_private_key = loop.run_until_complete(

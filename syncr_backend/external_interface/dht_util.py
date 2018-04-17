@@ -1,5 +1,4 @@
 import asyncio
-import pickle
 from typing import Any
 from typing import List
 from typing import Tuple
@@ -7,6 +6,7 @@ from typing import Tuple
 from kademlia.network import Server  # type: ignore
 from kademlia.storage import ForgetfulStorage  # type: ignore
 
+from syncr_backend.util import crypto_util
 from syncr_backend.util.log_util import get_logger
 
 
@@ -64,29 +64,21 @@ def initialize_dht(
     _node_instance = node
 
 
-def unpickle_pickled_frozenset(pickled_bytes: bytes):
-    try:
-        pickled_value = pickle.loads(pickled_bytes)
-        if type(pickled_value) == frozenset:
-            return pickled_value
-        else:
-            return None
-    except pickle.PickleError:
-        return None
-
-
 class DropPeerDHTStorage(ForgetfulStorage):
     def __setitem__(self, key: Any, value: Any) -> None:
-        frozenset_value = unpickle_pickled_frozenset(value)
+        frozenset_value = crypto_util.decode_frozenset(value)
         if frozenset_value is not None:
             if key in self.data:
-                current_set = unpickle_pickled_frozenset(self.data[key][1])
+                current_set = crypto_util.decode_frozenset(self.data[key][1])
                 if current_set is not None:
-                    new_pickled_frozenset = pickle.dumps(
+                    new_encoded_frozenset = crypto_util.encode_frozenset(
                         current_set.union(frozenset_value),
                     )
-                    return super().__setitem__(key, new_pickled_frozenset)
+                    return super().__setitem__(key, new_encoded_frozenset)
 
-            return super().__setitem__(key, pickle.dumps(frozenset_value))
+            return super().__setitem__(
+                key,
+                crypto_util.encode_frozenset(frozenset_value),
+            )
 
         return super().__setitem__(key, value)

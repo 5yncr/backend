@@ -5,6 +5,7 @@ import hashlib
 import os
 from typing import Any
 from typing import Dict
+from typing import Optional
 
 import bencode  # type: ignore
 from cryptography.exceptions import InvalidSignature  # type: ignore
@@ -70,13 +71,15 @@ def b64decode(b: bytes) -> bytes:
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
 
 
-def bencode_frozenset(fs: frozenset) -> bytes:
+def encode_frozenset(fs: frozenset) -> bytes:
     return bencode.encode(list(fs))
 
 
-def bdecode_frozenset(efs: bytes) -> bytes:
+def decode_frozenset(efs: bytes) -> Optional[frozenset]:
     try:
-        return frozenset(bencode.decoded(efs))
+        fslist = bencode.decode(efs)
+        fslist = list(map(lambda x: tuple(x), fslist))
+        return frozenset(fslist)
     except Exception:
         return None
 
