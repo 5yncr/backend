@@ -86,7 +86,9 @@ def run_backend() -> None:
     listen_server = loop.run_until_complete(
         start_listen_server(arguments.ip[0], arguments.port[0]),
     )
-    loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
+    dps_send = loop.create_task(
+        send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
+    )
 
     if not arguments.backendonly:
         if arguments.debug_commands is None:
@@ -97,12 +99,15 @@ def run_backend() -> None:
                 args=[arguments.debug_commands, loop],
             )
             t.start()
-    loop.run_forever()
-    shutdown_flag.set()
-    listen_server.close()
-    loop = asyncio.get_event_loop()
-    loop.stop()
-    loop.close()
+    try:
+        loop.run_forever()
+    finally:
+        shutdown_flag.set()
+        listen_server.close()
+        dps_send.cancel()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.stop()
+        loop.close()
 
 
 def run_debug_commands(
