@@ -32,7 +32,7 @@ def main() -> None:
         try:
             iplist = [x.split(':')[0] for x in peerlist]
 
-            portlist = [x.split(':')[1] for x in peerlist]
+            portlist = [int(x.split(':')[1]) for x in peerlist]
 
         except IndexError:
             print("Must have at least 1 bootstrap ip")
