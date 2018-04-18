@@ -106,7 +106,7 @@ def run_backend() -> None:
 
 
 def run_debug_commands(
-    commands_file: str, loop: asyncio.BaseEventLoop,
+    commands_file: str, loop: asyncio.AbstractEventLoop,
 ) -> None:
     """
     Read and execute commands a list of semicolon separated commands as input
@@ -158,7 +158,7 @@ def parse_cmd(
 
 
 def execute_function(
-    function_name: str, args: List[str], loop: asyncio.BaseEventLoop,
+    function_name: str, args: List[str], loop: asyncio.AbstractEventLoop,
 ) -> None:
     """
     Runs a function with the given args
