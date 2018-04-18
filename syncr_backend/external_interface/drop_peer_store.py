@@ -127,21 +127,10 @@ class DHTPeerStore(DropPeerStore):
         :param port: port to recieve requests regarging drop on
         """
         logger.debug("addingdrop peers %s %s %s", drop_id, ip, port)
-        """current_peers = await self.node_instance.get(drop_id)
-        if current_peers is None:
-            current_peers = frozenset()
-        else:
-            current_peers = crypto_util.decode_frozenset(current_peers)
-        new_peers = current_peers.union(
-            frozenset([(self.node_id, ip, port), ]),
-        )
+
         await self.node_instance.set(
             drop_id,
-            crypto_util.encode_frozenset(new_peers),
-        )"""
-        await self.node_instance.set(
-            drop_id,
-            crypto_util.encode_frozenset(
+            crypto_util.encode_peerlist_frozenset(
                 frozenset([(self.node_id, ip, port), ]),
             ),
         )
@@ -158,10 +147,10 @@ class DHTPeerStore(DropPeerStore):
         if result is not None:
             logger.debug(
                 "DHT get drop peer : %s",
-                crypto_util.decode_frozenset(result),
+                crypto_util.decode_peerlist_frozenset(result),
             )
             # return list of contents of frozenset
-            decoded_frozenset = crypto_util.decode_frozenset(result)
+            decoded_frozenset = crypto_util.decode_peerlist_frozenset(result)
             if decoded_frozenset is None:
                 return False, []
             return True, list(decoded_frozenset)

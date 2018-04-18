@@ -71,13 +71,22 @@ def b64decode(b: bytes) -> bytes:
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
 
 
-def encode_frozenset(fs: frozenset) -> bytes:
-    return bencode.encode(list(fs))
+encode_frozenset_prefix = b'type:frozenset'
 
 
-def decode_frozenset(efs: bytes) -> Optional[frozenset]:
+def encode_peerlist_frozenset(fs: frozenset) -> bytes:
+    return encode_frozenset_prefix + bencode.encode(list(fs))
+
+
+def decode_peerlist_frozenset(rawefs: bytes) -> Optional[frozenset]:
+
+    if rawefs[:len(encode_frozenset_prefix)] == encode_frozenset_prefix:
+        efs = rawefs[len(encode_frozenset_prefix):]
+    else:
+        return None
     try:
         fslist = bencode.decode(efs)
+
         fslist = list(map(lambda x: tuple(x), fslist))
         return frozenset(fslist)
     except Exception:

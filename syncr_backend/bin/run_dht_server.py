@@ -30,9 +30,9 @@ def main() -> None:
     if args.bootstrap_peers is not None:
         peerlist = args.bootstrap_peers.split(',')
         try:
-            iplist = list(map(lambda x: x.split(':')[0], peerlist))
+            iplist = [x.split(':')[0] for x in peerlist]
 
-            portlist = list(map(lambda x: int(x.split(':')[1]), peerlist))
+            portlist = [x.split(':')[1] for x in peerlist]
 
         except IndexError:
             print("Must have at least 1 bootstrap ip")

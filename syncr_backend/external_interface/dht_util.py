@@ -66,19 +66,22 @@ def initialize_dht(
 
 class DropPeerDHTStorage(ForgetfulStorage):
     def __setitem__(self, key: Any, value: Any) -> None:
-        frozenset_value = crypto_util.decode_frozenset(value)
+        frozenset_value = crypto_util.decode_peerlist_frozenset(value)
         if frozenset_value is not None:
             if key in self.data:
-                current_set = crypto_util.decode_frozenset(self.data[key][1])
+                current_set = crypto_util.decode_peerlist_frozenset(
+                    self.data[key][1],
+                )
                 if current_set is not None:
-                    new_encoded_frozenset = crypto_util.encode_frozenset(
-                        current_set.union(frozenset_value),
-                    )
+                    new_encoded_frozenset = \
+                        crypto_util.encode_peerlist_frozenset(
+                            current_set.union(frozenset_value),
+                        )
                     return super().__setitem__(key, new_encoded_frozenset)
 
             return super().__setitem__(
                 key,
-                crypto_util.encode_frozenset(frozenset_value),
+                crypto_util.encode_peerlist_frozenset(frozenset_value),
             )
 
         return super().__setitem__(key, value)
