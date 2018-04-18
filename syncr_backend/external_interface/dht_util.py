@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any
+from typing import Dict  # NOQA
 from typing import List
 from typing import Tuple
 
@@ -18,13 +19,11 @@ _node_instance = None
 def get_dht() -> Server:
     """
     returns the node_instance of the dht
-    if no node instance has been created it
-    connects to the distributed hash table
-    if no bootstrap ip port pair list is given, it starts a new dht
     :param bootstrap_ip_port_pair_list:
     list of ip port tuples to connect to the dht
     :param listen_port: port to listen on
     :return: instance of server
+    Throws TypeError if DHT has not been initialized
     """
     global _node_instance
     if _node_instance is None:
@@ -65,23 +64,42 @@ def initialize_dht(
 
 
 class DropPeerDHTStorage(ForgetfulStorage):
+    """
+    Extension of the default kademlia storage module
+    It is different in that when given a list of bytes, it checks to see if
+    it is an encoded set. If it is, it unions it with the rest of the
+    sets
+    """
+
+    def __init__(self) -> None:
+        """
+
+        """
+        self.timeouts = {}  # type: Dict[Tuple[Any, int, str], int]
+
+        super().__init__()
+
     def __setitem__(self, key: Any, value: Any) -> None:
-        frozenset_value = crypto_util.decode_peerlist_frozenset(value)
-        if frozenset_value is not None:
+        """
+        :param key: key to look up in dht
+        :param value: value to put in dht under key
+        """
+        valuepeer = crypto_util.decode_peerlist(value)
+        if valuepeer is not None:
             if key in self.data:
-                current_set = crypto_util.decode_peerlist_frozenset(
+                peerlist = crypto_util.decode_peerlist(
                     self.data[key][1],
                 )
-                if current_set is not None:
-                    new_encoded_frozenset = \
-                        crypto_util.encode_peerlist_frozenset(
-                            current_set.union(frozenset_value),
+                if peerlist is not None:
+                    new_peerlist = \
+                        crypto_util.encode_peerlist(
+                            (peerlist + valuepeer),
                         )
-                    return super().__setitem__(key, new_encoded_frozenset)
+                    return super().__setitem__(key, new_peerlist)
 
             return super().__setitem__(
                 key,
-                crypto_util.encode_peerlist_frozenset(frozenset_value),
+                crypto_util.encode_peerlist(valuepeer),
             )
 
         return super().__setitem__(key, value)

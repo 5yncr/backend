@@ -4,20 +4,20 @@ import os
 from syncr_backend.util import crypto_util
 
 
-def test_encode_frozenset_bad_input() -> None:
+def test_encode_bad_input() -> None:
     f = os.urandom(12)
-    fs = crypto_util.encode_frozenset_prefix + f
-    decoded_frozenset = crypto_util.decode_peerlist_frozenset(f)
-    decoded_frozenset2 = crypto_util.decode_peerlist_frozenset(fs)
-    assert decoded_frozenset is None and decoded_frozenset2 is None
+    fs = crypto_util.encode_peerlist_prefix + f
+    dpl = crypto_util.decode_peerlist(f)
+    dpl2 = crypto_util.decode_peerlist(fs)
+    assert dpl is None and dpl2 is None
 
 
-def test_encode_peerlist_frozenset() -> None:
+def test_encode_frozenset() -> None:
 
-    f = frozenset([('12', 123, '1234'), ('asdf', 123, 'asdf'), ])
-    ef = crypto_util.encode_peerlist_frozenset(f)
-    df = crypto_util.decode_peerlist_frozenset(ef)
-    assert f == df
+    f = [('12', '1234', 123), ('asdf', 'asdf', 123), ]
+    epl = crypto_util.encode_peerlist(f)
+    dpl = crypto_util.decode_peerlist(epl)
+    assert f == dpl
 
 
 def test_signature() -> None:

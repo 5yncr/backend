@@ -130,8 +130,8 @@ class DHTPeerStore(DropPeerStore):
 
         await self.node_instance.set(
             drop_id,
-            crypto_util.encode_peerlist_frozenset(
-                frozenset([(self.node_id, ip, port), ]),
+            crypto_util.encode_peerlist(
+                [(self.node_id, ip, port), ],
             ),
         )
         logger.debug("DHT added drop peer : %s", str((ip, port)))
@@ -147,13 +147,13 @@ class DHTPeerStore(DropPeerStore):
         if result is not None:
             logger.debug(
                 "DHT get drop peer : %s",
-                crypto_util.decode_peerlist_frozenset(result),
+                crypto_util.decode_peerlist(result),
             )
             # return list of contents of frozenset
-            decoded_frozenset = crypto_util.decode_peerlist_frozenset(result)
-            if decoded_frozenset is None:
+            decoded_peerlist = crypto_util.decode_peerlist(result)
+            if decoded_peerlist is None:
                 return False, []
-            return True, list(decoded_frozenset)
+            return True, decoded_peerlist
         else:
             logger.debug("DHT failed get drop peer, drop_id: %s", str(drop_id))
             return False, []

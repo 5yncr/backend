@@ -5,7 +5,9 @@ import hashlib
 import os
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Tuple
 
 import bencode  # type: ignore
 from cryptography.exceptions import InvalidSignature  # type: ignore
@@ -71,24 +73,32 @@ def b64decode(b: bytes) -> bytes:
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
 
 
-encode_frozenset_prefix = b'type:frozenset'
+encode_peerlist_prefix = b'type:peerlist'
 
 
-def encode_peerlist_frozenset(fs: frozenset) -> bytes:
-    return encode_frozenset_prefix + bencode.encode(list(fs))
+def encode_peerlist(
+    peerlist: List[Tuple[Any, str, int]],
+) -> bytes:
+    """
+    encodes peerlist into bytes to put in dht
+    :param peerlist: list of dht peers
+    """
+    return encode_peerlist_prefix + bencode.encode(list(peerlist))
 
 
-def decode_peerlist_frozenset(rawefs: bytes) -> Optional[frozenset]:
-
-    if rawefs[:len(encode_frozenset_prefix)] == encode_frozenset_prefix:
-        efs = rawefs[len(encode_frozenset_prefix):]
+def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
+    """
+    decodes peerlist from bytes representation to list
+    :param rawpl: bytes form of peerlist
+    """
+    if rawpl[:len(encode_peerlist_prefix)] == encode_peerlist_prefix:
+        peerlist = rawpl[len(encode_peerlist_prefix):]
     else:
         return None
     try:
-        fslist = bencode.decode(efs)
+        declist = bencode.decode(peerlist)
 
-        fslist = list(map(lambda x: tuple(x), fslist))
-        return frozenset(fslist)
+        return list(map(lambda x: tuple(x), declist))
     except Exception:
         return None
 
