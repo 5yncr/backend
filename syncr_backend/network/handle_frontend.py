@@ -865,20 +865,6 @@ async def _tcp_handle_request() -> asyncio.events.AbstractServer:
         port=FRONTEND_TCP_ADDRESS[1],
     )
 
-#    while True:
-#        conn, addr = s.accept()
-#
-#        # Read request from frontend
-#        request = b''
-#        while True:
-#            data = conn.recv(4096)
-#            if not data:
-#                break
-#            else:
-#                request += data
-#
-#        handle_frontend_request(bencode.decode(request), conn)
-
 
 async def _unix_handle_request() -> asyncio.events.AbstractServer:
     """
@@ -895,25 +881,6 @@ async def _unix_handle_request() -> asyncio.events.AbstractServer:
     return await asyncio.start_unix_server(
         async_handle_request, path=FRONTEND_UNIX_ADDRESS,
     )
-
-#    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-#    s.bind(FRONTEND_UNIX_ADDRESS)
-#
-#    s.listen(1)
-#
-#    while True:
-#        conn, addr = s.accept()
-#
-#        # Read request from frontend
-#        request = b''
-#        while True:
-#            data = conn.recv(4096)
-#            if not data:
-#                break
-#            else:
-#                request += data
-#
-#        handle_frontend_request(bencode.decode(request), conn)
 
 
 if __name__ == '__main__':
