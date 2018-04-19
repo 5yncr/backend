@@ -19,10 +19,6 @@ _node_instance = None
 def get_dht() -> Server:
     """
     returns the node_instance of the dht
-    :param bootstrap_ip_port_pair_list:
-    list of ip port tuples to connect to the dht
-    :param listen_port: port to listen on
-    :return: instance of server
     Throws TypeError if DHT has not been initialized
     """
     global _node_instance
