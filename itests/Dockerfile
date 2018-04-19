@@ -1,15 +1,12 @@
-FROM python:alpine
-
-RUN apk add --update build-base openssl-dev libffi-dev linux-headers git wget jq && \
-    rm -rf /var/cache/apk/*
+FROM syncrbase:latest
 
 WORKDIR /work
 
-ADD requirements.txt /work/
+ADD requirements.txt /work
 RUN pip install -r requirements.txt
 
-ADD . /work/
-RUN pip install -e /work/
+ADD . /work
+RUN pip install -e /work
 
 ENV LOG_LEVEL=INFO
 ENV PYTHONASYNCIODEBUG=1

@@ -1,7 +1,4 @@
-FROM python:alpine
-
-RUN apk add --update build-base git openssl-dev libffi-dev linux-headers && \
-    rm -rf /var/cache/apk/*
+FROM python:3
 
 WORKDIR /work
 

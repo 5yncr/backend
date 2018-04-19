@@ -1,0 +1,40 @@
+image: Visual Studio 2017
+environment:
+
+  matrix:
+
+    # For Python versions available on Appveyor, see
+    # http://www.appveyor.com/docs/installed-software#python
+    # The list here is complete (excluding Python 2.6, which
+    # isn't covered by this document) at the time of writing.
+
+    - PYTHON: "C:\\Python36-x64"
+      TOXPYTHON: C:\Python36-x64\python.exe
+      PYTHON_HOME: C:\Python36-x64
+      PYTHON_VERSION: '3.6'
+      PYTHON_ARCH: '64'
+
+install:
+  # We need wheel installed to build wheels
+  - "%PYTHON%\\python.exe -m pip install wheel"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "python -m pip install --disable-pip-version-check -U pip"
+  - "pip install -U tox"
+  - "docker version"
+  - docker-compose version
+
+build: off
+
+test_script:
+  # Put your test command here.
+  # If you don't need to build C extensions on 64-bit Python 3.3 or 3.4,
+  # you can remove "build.cmd" from the front of the command, as it's
+  # only needed to support those cases.
+  # Note that you must use the environment variable %PYTHON% to refer to
+  # the interpreter you're using - Appveyor does not do anything special
+  # to put the Python version you want to use on PATH.
+  - ls C:\Python36-x64\scripts
+  - C:\Python36-x64\scripts\tox -e lint,py3,coverage,mypy
+  - C:\Python36-x64\scripts\tox -e itests_simple-win32
+  - C:\Python36-x64\scripts\tox -e itests_complex-win32
+  - C:\Python36-x64\scripts\tox -e itests_dht-win32
