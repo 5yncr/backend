@@ -92,89 +92,115 @@ def test_handle_frontend_request() -> None:
         request = {
             'action': ACTION_ADD_FILE,
         }
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_add_file.assert_called_once()
 
         request = {
             'action': ACTION_ADD_OWNER,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_add_owner.assert_called_once()
 
         request = {
             'action': ACTION_DELETE_DROP,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_delete_drop.assert_called_once()
 
         request = {
             'action': ACTION_GET_OWNED_DROPS,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_get_owned_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SUB_DROPS,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_get_subscribed_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SELECT_DROPS,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_get_selected_drops.assert_called_once()
 
         request = {
             'action': ACTION_INPUT_DROP_TO_SUBSCRIBE_TO,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_input_subscribe_drop.assert_called_once()
 
         request = {
             'action': ACTION_INITIALIZE_DROP,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_initialize_drop.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_FILE,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_remove_file.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_OWNER,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_remove_owner.assert_called_once()
 
         request = {
             'action': ACTION_SHARE_DROP,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_share_drop.assert_called_once()
 
         request = {
             'action': ACTION_TRANSFER_OWNERSHIP,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_transfer_ownership.assert_called_once()
 
         request = {
             'action': ACTION_UNSUBSCRIBE,
         }
 
-        asyncio.ensure_future(handle_frontend_request(request, conn))
+        asyncio.get_event_loop().run_until_complete(
+            handle_frontend_request(request, conn),
+        )
         mock_handle_unsubscribe.assert_called_once()
