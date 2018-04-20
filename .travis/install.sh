@@ -9,10 +9,4 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     brew link --overwrite tox
     python --version
 
-else
-
-    sudo apt-get update
-    sudo apt-get install python
-    sudo pip install tox flake8
-
 fi
