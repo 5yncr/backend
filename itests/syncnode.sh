@@ -11,8 +11,9 @@ while [[ ! "$(cat /share/large)" ]]; do
     sleep 5
 done
 
-sync_drop "$(cat /share/small)" /small | grep "Drop successfully synced"
-sync_drop "$(cat /share/large)" /large | grep "Drop successfully synced"
+printf "sync_drop $(cat /share/small) /small;sync_drop $(cat /share/large) /large" > /work/itests/syncnode_debug_commands
+run_backend 0.0.0.0 2345 --external_address $(hostname) --debug_commands /work/itests/syncnode_debug_commands
+
 
 check_drop "$(cat /share/small)"
 check_drop "$(cat /share/large)"

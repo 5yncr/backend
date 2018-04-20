@@ -1,7 +1,10 @@
+import asyncio
 import os
 import platform
 import socket
 from typing import Any
+from typing import Awaitable  # noqa
+from typing import Callable  # noqa
 from typing import Dict
 
 import bencode  # type: ignore
@@ -31,10 +34,14 @@ from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
+from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import get_owned_drops_metadata
+from syncr_backend.util.drop_util import get_subscribed_drops_metadata
+from syncr_backend.util.drop_util import simple_get_drop_metadata
 from syncr_backend.util.drop_util import update_drop
-from syncr_backend.util.network_util import send_response
+from syncr_backend.util.network_util import sync_send_response as send_response
 
 
 def handle_frontend_request(
@@ -63,7 +70,7 @@ def handle_frontend_request(
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_VIEW_CONFLICTS: handle_view_conflicts,
         ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
-    }
+    }  # type: Dict[str, Callable[[Dict[str, Any], socket.socket], Awaitable[None]]]  # noqa
 
     action = request['action']
     handle_function = function_map.get(action)
@@ -75,10 +82,12 @@ def handle_frontend_request(
         }
         send_response(conn, response)
     else:
-        handle_function(request, conn)
+        asyncio.get_event_loop().run_until_complete(
+            handle_function(request, conn),
+        )
 
 
-def handle_accept_changes(
+async def handle_accept_changes(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -110,7 +119,7 @@ def handle_accept_changes(
     send_response(conn, response)
 
 
-def handle_transfer_ownership(
+async def handle_transfer_ownership(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -142,7 +151,7 @@ def handle_transfer_ownership(
     send_response(conn, response)
 
 
-def handle_accept_conflict_file(
+async def handle_accept_conflict_file(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -173,7 +182,7 @@ def handle_accept_conflict_file(
     send_response(conn, response)
 
 
-def handle_add_file(
+async def handle_add_file(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -204,8 +213,8 @@ def handle_add_file(
             add_file=request['file_path'],
         )
 
-        peers = get_drop_peers(request['drop_id'])
-        meta = get_drop_metadata(request['drop_id'], peers)
+        peers = await get_drop_peers(request['drop_id'])
+        meta = await get_drop_metadata(request['drop_id'], peers)
 
         if os.path.basename(request['file_path']) not in meta.files:
             response = {
@@ -218,7 +227,7 @@ def handle_add_file(
     send_response(conn, response)
 
 
-def handle_add_owner(
+async def handle_add_owner(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -238,18 +247,27 @@ def handle_add_owner(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to add owner to owner list.
-        # TODO: Test if given drop_id and owner_id are valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'owner successfully added',
         }
 
+        update_drop(
+            request['drop_id'],
+            add_secondary_owner=request['owner_id'],
+        )
+
+        md = await simple_get_drop_metadata(request['drop_id'])
+
+        if request['owner_id'] not in md.other_owners:
+            response['result'] = 'failure'
+            response['message'] = 'unable to add owner to drop'
+
     send_response(conn, response)
 
 
-def handle_decline_changes(
+async def handle_decline_changes(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -280,7 +298,7 @@ def handle_decline_changes(
     send_response(conn, response)
 
 
-def handle_decline_conflict_file(
+async def handle_decline_conflict_file(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -311,7 +329,7 @@ def handle_decline_conflict_file(
     send_response(conn, response)
 
 
-def handle_delete_drop(
+async def handle_delete_drop(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -341,7 +359,7 @@ def handle_delete_drop(
     send_response(conn, response)
 
 
-def handle_get_conflicting_files(
+async def handle_get_conflicting_files(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -372,7 +390,7 @@ def handle_get_conflicting_files(
     send_response(conn, response)
 
 
-def handle_get_owned_drops(
+async def handle_get_owned_drops(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -385,17 +403,22 @@ def handle_get_owned_drops(
     :return: None
     """
 
-    # TODO: backend logic to retrieve owned drops.
+    owned_drops = await get_owned_drops_metadata()
+    drop_dictionaries = []
+    for drop in owned_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
+
     response = {
         'status': 'ok',
         'result': 'success',
+        'requested_drops': drop_dictionaries,
         'message': 'owned drops retrieved',
     }
 
     send_response(conn, response)
 
 
-def handle_get_selected_drops(
+async def handle_get_selected_drops(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -415,18 +438,28 @@ def handle_get_selected_drops(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to retrieve info on selected drop.
-        # TODO: Test if given drop_id is valid.
+        md = await simple_get_drop_metadata(request['drop_id'])
+        drop = drop_metadata_to_response(md)
+
         response = {
             'status': 'ok',
             'result': 'success',
+            'requested_drops': drop,
             'message': 'selected files retrieved',
         }
+
+        if drop is None:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'requested_drops': {},
+                'message': 'drop retrieval failed',
+            }
 
     send_response(conn, response)
 
 
-def handle_get_subscribed_drops(
+async def handle_get_subscribed_drops(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -439,17 +472,22 @@ def handle_get_subscribed_drops(
     :return: None
     """
 
-    # TODO: backend logic to retrieve subscribed drops.
+    subscribed_drops = await get_subscribed_drops_metadata()
+    drop_dictionaries = []
+    for drop in subscribed_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
+
     response = {
         'status': 'ok',
         'result': 'success',
+        'requested_drops': drop_dictionaries,
         'message': 'subscribed drops retrieved',
     }
 
     send_response(conn, response)
 
 
-def handle_input_subscribe_drop(
+async def handle_input_subscribe_drop(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -479,7 +517,7 @@ def handle_input_subscribe_drop(
     send_response(conn, response)
 
 
-def handle_initialize_drop(
+async def handle_initialize_drop(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -514,7 +552,7 @@ def handle_initialize_drop(
     else:
 
         try:
-            initialize_drop(directory)
+            await initialize_drop(directory)
         except RuntimeError:
             message = 'Error in initializing drop.'
         else:
@@ -531,7 +569,7 @@ def handle_initialize_drop(
     send_response(conn, response)
 
 
-def handle_remove_file(
+async def handle_remove_file(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -562,8 +600,8 @@ def handle_remove_file(
             remove_file=os.path.basename(request['file_path']),
         )
 
-        peers = get_drop_peers(request['drop_id'])
-        meta = get_drop_metadata(request['drop_id'], peers)
+        peers = await get_drop_peers(request['drop_id'])
+        meta = await get_drop_metadata(request['drop_id'], peers)
 
         if os.path.basename(request['file_path']) in meta.files:
             response = {
@@ -576,7 +614,7 @@ def handle_remove_file(
     send_response(conn, response)
 
 
-def handle_remove_owner(
+async def handle_remove_owner(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -597,18 +635,27 @@ def handle_remove_owner(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: Backend logic to remove owner.
-        # TODO: Handle if drop_id or owner_id is not valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'owner successfully removed',
         }
 
+        await update_drop(
+            request['drop_id'],
+            remove_secondary_owner=request['owner_id'],
+        )
+
+        md = await simple_get_drop_metadata(request['drop_id'])
+
+        if request['owner_id'] in md.other_owners:
+            response['result'] = 'failure'
+            response['message'] = 'unable to remove owner from drop'
+
     send_response(conn, response)
 
 
-def handle_request_change(
+async def handle_request_change(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -639,7 +686,7 @@ def handle_request_change(
     send_response(conn, response)
 
 
-def handle_share_drop(
+async def handle_share_drop(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -669,7 +716,7 @@ def handle_share_drop(
     send_response(conn, response)
 
 
-def handle_unsubscribe(
+async def handle_unsubscribe(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -699,7 +746,7 @@ def handle_unsubscribe(
     send_response(conn, response)
 
 
-def handle_view_conflicts(
+async def handle_view_conflicts(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -729,7 +776,7 @@ def handle_view_conflicts(
     send_response(conn, response)
 
 
-def handle_view_pending_changes(
+async def handle_view_pending_changes(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -759,10 +806,30 @@ def handle_view_pending_changes(
     send_response(conn, response)
 
 
+# Helper functions for structure of responses
+def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
+    """
+    Converts dropMetadata object into frontend readable dictionary.
+    :param md: DropMetadata object
+    :return: Dictionary for frontend
+    """
+    response = {
+        'drop_id': md.id,
+        'name': md.name,
+        'version': md.version,
+        'previous_versions': md.previous_versions,
+        'primary_owner': md.owner,
+        'other_owners': md.other_owners,
+        'signed_by': md.signed_by,
+        'files': md.files,
+        'sig': md.sig,
+    }
+
+    return response
+
+
 # Functions for handling incoming frontend requests
-
-
-def handle_request():
+def handle_request() -> None:
     """
     Listens for request from frontend and then sends response
     :return:
@@ -775,7 +842,7 @@ def handle_request():
         _unix_handle_request()
 
 
-def _tcp_handle_request():
+def _tcp_handle_request() -> None:
     """
     Listens for request from frontend and sends response over tcp socket
     :return:
@@ -800,7 +867,7 @@ def _tcp_handle_request():
         handle_frontend_request(bencode.decode(request), conn)
 
 
-def _unix_handle_request():
+def _unix_handle_request() -> None:
     """
     Listens for request from frontend and sends response over unix socket
     :return:

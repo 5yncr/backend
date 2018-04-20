@@ -1,9 +1,13 @@
 """Functions for dealing with hashes/keys/ids in a consistant manner"""
+import asyncio
 import base64
 import hashlib
 import os
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import bencode  # type: ignore
 from cryptography.exceptions import InvalidSignature  # type: ignore
@@ -26,24 +30,29 @@ class VerificationException(Exception):
     pass
 
 
-def hash(b: bytes) -> bytes:
+async def hash(b: bytes) -> bytes:
     """Default hash function
 
     :param b: The bytes to hash
     :return: The hash of b
     """
+    loop = asyncio.get_event_loop()
     logger.debug("hashing bytes of len %s", len(b))
+    return await loop.run_in_executor(None, _hash, b)
+
+
+def _hash(b: bytes) -> bytes:
     return hashlib.sha256(b).digest()
 
 
-def hash_dict(d: Dict[str, Any]) -> bytes:
+async def hash_dict(d: Dict[str, Any]) -> bytes:
     """Hash a dictionary, by first bencoding it
 
     :param b: The dictionary to hash
     :return: The hash of bencode(b)
     """
     logger.debug("hashing dict of len %s", len(d))
-    return hash(bencode.encode(d))
+    return await hash(bencode.encode(d))
 
 
 def b64encode(b: bytes) -> bytes:
@@ -62,6 +71,36 @@ def b64decode(b: bytes) -> bytes:
     :return: The decoded bytes
     """
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
+
+
+encode_peerlist_prefix = b'type:peerlist'
+
+
+def encode_peerlist(
+    peerlist: List[Tuple[Any, str, int]],
+) -> bytes:
+    """
+    encodes peerlist into bytes to put in dht
+    :param peerlist: list of dht peers
+    """
+    return encode_peerlist_prefix + bencode.encode(list(peerlist))
+
+
+def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
+    """
+    decodes peerlist from bytes representation to list
+    :param rawpl: bytes form of peerlist
+    """
+    if rawpl[:len(encode_peerlist_prefix)] == encode_peerlist_prefix:
+        peerlist = rawpl[len(encode_peerlist_prefix):]
+    else:
+        return None
+    try:
+        declist = bencode.decode(peerlist)
+
+        return list(map(lambda x: tuple(x), declist))
+    except Exception:
+        return None
 
 
 def random_bytes() -> bytes:
@@ -127,7 +166,7 @@ def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
     )
 
 
-def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
+async def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     """Generate a node id from a public key
     It uses the default dump, and hashes that
 
@@ -135,24 +174,29 @@ def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     :return: The nodeid, as bytes
     """
     key_serial = dump_public_key(key)
-    return hash(key_serial)
+    return await hash(key_serial)
 
 
-def generate_private_key() -> rsa.RSAPrivateKey:
+async def generate_private_key() -> rsa.RSAPrivateKey:
     """Generate a public and private key
 
     :return: A new RSAPrivateKey
     """
-    private_key = rsa.generate_private_key(
+    loop = asyncio.get_event_loop()
+    private_key = await loop.run_in_executor(None, _generate_private_key)
+
+    return private_key
+
+
+def _generate_private_key() -> rsa.RSAPrivateKey:
+    return rsa.generate_private_key(
         public_exponent=65537,
         key_size=4048,
         backend=default_backend(),
     )
 
-    return private_key
 
-
-def sign_dictionary(
+async def sign_dictionary(
     private_key: rsa.RSAPrivateKey,
     dictionary: Dict[str, Any],
 ) -> bytes:
@@ -171,11 +215,11 @@ def sign_dictionary(
         hashes.SHA256(),
     )
 
-    signature_interface.update(hash(bencode.encode(dictionary)))
+    signature_interface.update(await hash(bencode.encode(dictionary)))
     return signature_interface.finalize()
 
 
-def verify_signed_dictionary(
+async def verify_signed_dictionary(
     public_key: rsa.RSAPublicKey,
     signature: bytes,
     dictionary: Dict[str, Any],
@@ -197,20 +241,20 @@ def verify_signed_dictionary(
         ),
         hashes.SHA256(),
     )
-    verifier.update(hash(bencode.encode(dictionary)))
+    verifier.update(await hash(bencode.encode(dictionary)))
     try:
         verifier.verify()
     except InvalidSignature:
         raise VerificationException()
 
 
-def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
+async def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
     """Wrapper to get the node id from the private key"""
-    return node_id_from_public_key(key.public_key())
+    return await node_id_from_public_key(key.public_key())
 
 
-def verify_node_id(key: rsa.RSAPublicKey, node_id: bytes) -> bool:
+async def verify_node_id(key: rsa.RSAPublicKey, node_id: bytes) -> bool:
     """Verify a node id from a public key"""
     # TODO: BUG: use something better than == here (something constant time
     #  and secure)
-    return node_id_from_public_key(key) == node_id
+    return await node_id_from_public_key(key) == node_id
