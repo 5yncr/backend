@@ -1,7 +1,6 @@
 import asyncio
 import os
 import platform
-import socket
 from typing import Any
 from typing import Awaitable  # noqa
 from typing import Callable  # noqa
@@ -42,11 +41,11 @@ from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import simple_get_drop_metadata
 from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
-from syncr_backend.util.network_util import sync_send_response as send_response
+from syncr_backend.util.network_util import send_response
 
 
 async def handle_frontend_request(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
 
     function_map = {
@@ -71,7 +70,7 @@ async def handle_frontend_request(
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_VIEW_CONFLICTS: handle_view_conflicts,
         ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
-    }  # type: Dict[str, Callable[[Dict[str, Any], socket.socket], Awaitable[None]]]  # noqa
+    }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
     handle_function = function_map.get(action)
@@ -81,15 +80,13 @@ async def handle_frontend_request(
             'status': 'error',
             'error': ERR_INVINPUT,
         }
-        send_response(conn, response)
+        await send_response(conn, response)
     else:
-        asyncio.get_event_loop().run_until_complete(
-            handle_function(request, conn),
-        )
+        await handle_function(request, conn)
 
 
 async def handle_accept_changes(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to accept changes in a file.
@@ -121,7 +118,7 @@ async def handle_accept_changes(
 
 
 async def handle_transfer_ownership(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to transfer ownership from one drop to
@@ -149,11 +146,11 @@ async def handle_transfer_ownership(
             'message': 'Primary Ownership transferred to ' + new_owner,
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_accept_conflict_file(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to accept a file that is in conflict with another.
@@ -180,11 +177,11 @@ async def handle_accept_conflict_file(
             'message': 'file accepted',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_add_file(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to add a file to a drop.
@@ -225,11 +222,11 @@ async def handle_add_file(
 
             }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_add_owner(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to an owner to a drop
@@ -265,11 +262,11 @@ async def handle_add_owner(
             response['result'] = 'failure'
             response['message'] = 'unable to add owner to drop'
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_decline_changes(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to decline changes in a file.
@@ -296,11 +293,11 @@ async def handle_decline_changes(
             'message': 'changes declined',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_decline_conflict_file(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to decline a file that is in conflict with another.
@@ -327,11 +324,11 @@ async def handle_decline_conflict_file(
             'message': 'conflicting file declined',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_delete_drop(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to delete a drop.
@@ -357,11 +354,11 @@ async def handle_delete_drop(
             'message': 'drop successfully deleted',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_get_conflicting_files(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to view files in drop that conflict each other.
@@ -388,11 +385,11 @@ async def handle_get_conflicting_files(
             'message': 'conflicting files retrieved',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_get_owned_drops(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve drops owned by individual.
@@ -416,11 +413,11 @@ async def handle_get_owned_drops(
         'message': 'owned drops retrieved',
     }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_get_selected_drops(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to a drop selected by user.
@@ -457,11 +454,11 @@ async def handle_get_selected_drops(
                 'message': 'drop retrieval failed',
             }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_get_subscribed_drops(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve drops that user is subscribed to.
@@ -485,11 +482,11 @@ async def handle_get_subscribed_drops(
         'message': 'subscribed drops retrieved',
     }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_input_subscribe_drop(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to subscribe to drop that user specifies.
@@ -526,11 +523,11 @@ async def handle_input_subscribe_drop(
                 'message': 'Cannot subscribe to drop!',
             }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_initialize_drop(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to create drop whose name is specified by user.
@@ -578,11 +575,11 @@ async def handle_initialize_drop(
         'message': message,
     }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_remove_file(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to remove file from drop.
@@ -623,11 +620,11 @@ async def handle_remove_file(
 
             }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_remove_owner(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to remove an owner from a drop
@@ -664,11 +661,11 @@ async def handle_remove_owner(
             response['result'] = 'failure'
             response['message'] = 'unable to remove owner from drop'
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_request_change(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to request a change in the drop.
@@ -695,11 +692,11 @@ async def handle_request_change(
             'message': 'pending changes submitted',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_share_drop(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve id that can be shared with other nodes.
@@ -725,11 +722,11 @@ async def handle_share_drop(
             'message': 'drop information retrieved',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_unsubscribe(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to unsubscribe from a subscribed drop.
@@ -755,11 +752,11 @@ async def handle_unsubscribe(
             'message': 'unsubscribed from drop ' + request['drop_id'],
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_view_conflicts(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to view conflicting files in drop.
@@ -785,11 +782,11 @@ async def handle_view_conflicts(
             'message': 'conflicting files retrieved',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 async def handle_view_pending_changes(
-        request: Dict[str, Any], conn: socket.socket,
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to view pending changes in the drop.
@@ -815,7 +812,7 @@ async def handle_view_pending_changes(
             'message': 'pending changes retrieved',
         }
 
-    send_response(conn, response)
+    await send_response(conn, response)
 
 
 # Helper functions for structure of responses
@@ -841,7 +838,7 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
 
 
 # Functions for handling incoming frontend requests
-def handle_request() -> None:
+async def setup_frontend_server() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and then sends response
     :return:
@@ -849,37 +846,39 @@ def handle_request() -> None:
 
     op_sys = platform.system()
     if op_sys == 'Windows':
-        _tcp_handle_request()
+        return await _tcp_handle_request()
     else:
-        _unix_handle_request()
+        return await _unix_handle_request()
 
 
-def _tcp_handle_request() -> None:
+async def async_handle_request(
+    reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+) -> None:
+    request = b''
+
+    while 1:
+        data = await reader.read()
+        if not data:
+            break
+        else:
+            request += data
+    await handle_frontend_request(bencode.decode(request), writer)
+
+
+async def _tcp_handle_request() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and sends response over tcp socket
     :return:
     """
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(FRONTEND_TCP_ADDRESS)
-    s.listen(1)
-
-    while True:
-        conn, addr = s.accept()
-
-        # Read request from frontend
-        request = b''
-        while True:
-            data = conn.recv(4096)
-            if not data:
-                break
-            else:
-                request += data
-
-        handle_frontend_request(bencode.decode(request), conn)
+    return await asyncio.start_server(
+        async_handle_request,
+        host=FRONTEND_TCP_ADDRESS[0],
+        port=FRONTEND_TCP_ADDRESS[1],
+    )
 
 
-def _unix_handle_request() -> None:
+async def _unix_handle_request() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and sends response over unix socket
     :return:
@@ -891,25 +890,11 @@ def _unix_handle_request() -> None:
         # does not yet exist, do nothing
         pass
 
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.bind(FRONTEND_UNIX_ADDRESS)
-
-    s.listen(1)
-
-    while True:
-        conn, addr = s.accept()
-
-        # Read request from frontend
-        request = b''
-        while True:
-            data = conn.recv(4096)
-            if not data:
-                break
-            else:
-                request += data
-
-        handle_frontend_request(bencode.decode(request), conn)
+    return await asyncio.start_unix_server(
+        async_handle_request, path=FRONTEND_UNIX_ADDRESS,
+    )
 
 
 if __name__ == '__main__':
-    handle_request()
+    asyncio.get_event_loop().run_until_complete(setup_frontend_server())
+    asyncio.get_event_loop().run_forever()
