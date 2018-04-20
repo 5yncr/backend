@@ -826,7 +826,7 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
 
 
 # Functions for handling incoming frontend requests
-async def handle_request() -> asyncio.events.AbstractServer:
+async def setup_frontend_server() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and then sends response
     :return:
@@ -884,4 +884,5 @@ async def _unix_handle_request() -> asyncio.events.AbstractServer:
 
 
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(handle_request())
+    asyncio.get_event_loop().run_until_complete(setup_frontend_server())
+    asyncio.get_event_loop().run_forever()
