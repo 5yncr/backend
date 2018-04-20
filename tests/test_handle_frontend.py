@@ -25,7 +25,7 @@ from unittest.mock import Mock
 # have been fully implemented.
 
 
-async def test_handle_frontend_request():
+def test_handle_frontend_request():
 
     conn = Mock()
     conn.send = MagicMock()
