@@ -24,7 +24,7 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 # have been fully implemented.
 
 
-async def test_handle_frontend_request():
+async def test_handle_frontend_request() -> None:
 
     from syncr_backend.network.handle_frontend import handle_frontend_request
 
