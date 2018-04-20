@@ -188,15 +188,15 @@ class DropMetadata(object):
         save_path = _get_save_path()
         encoded_drop_id = crypto_util.b64encode(self.id).decode('utf-8')
         drop_loc_file = os.path.join(save_path, encoded_drop_id)
-        await self.remove(drop_loc_file)
+        os.remove(drop_loc_file)
 
-    def delete(self) -> None:
+    async def delete(self) -> None:
         """Deletes the drop from the local system and unsubscribes
 
         :return: None
         """
         self.unsubscribe()
-        drop_loc = get_drop_location(self.id)
+        drop_loc = await get_drop_location(self.id)
         self.log.debug("deleteing drop folder: %s", self.id)
         shutil.rmtree(drop_loc)
 
