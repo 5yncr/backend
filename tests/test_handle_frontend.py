@@ -1,0 +1,30 @@
+"""
+from typing import Any
+
+# The following are functionalities are needed.
+from syncr_backend.network.handle_frontend import handle_transfer_ownership
+from syncr_backend.network.handle_frontend import handle_add_file
+from syncr_backend.network.handle_frontend import handle_add_owner
+from syncr_backend.network.handle_frontend import handle_delete_drop
+from syncr_backend.network.handle_frontend import handle_get_owned_drops
+from syncr_backend.network.handle_frontend import handle_get_selected_drops
+from syncr_backend.network.handle_frontend import handle_get_subscribed_drops
+from syncr_backend.network.handle_frontend import handle_input_subscribe_drop
+from syncr_backend.network.handle_frontend import handle_initialize_drop
+from syncr_backend.network.handle_frontend import handle_remove_file
+from syncr_backend.network.handle_frontend import handle_remove_owner
+from syncr_backend.network.handle_frontend import handle_share_drop
+from syncr_backend.network.handle_frontend import handle_unsubscribe
+
+
+# The following are not
+from syncr_backend.network.handle_frontend import handle_accept_changes
+from syncr_backend.network.handle_frontend import handle_accept_conflict_file
+from syncr_backend.network.handle_frontend import handle_decline_changes
+from syncr_backend.network.handle_frontend import handle_decline_conflict_file
+from syncr_backend.network.handle_frontend import handle_get_conflicting_files
+from syncr_backend.network.handle_frontend import handle_request_change
+from syncr_backend.network.handle_frontend import handle_view_conflicts
+from syncr_backend.network.handle_frontend import handle_view_pending_changes
+
+"""
