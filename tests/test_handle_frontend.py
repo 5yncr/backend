@@ -2,20 +2,19 @@ from unittest import mock
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 
-
-# from syncr_backend.constants import ACTION_ADD_FILE
-# from syncr_backend.constants import ACTION_ADD_OWNER
-# from syncr_backend.constants import ACTION_DELETE_DROP
-# from syncr_backend.constants import ACTION_GET_OWNED_DROPS
-# from syncr_backend.constants import ACTION_GET_SELECT_DROPS
-# from syncr_backend.constants import ACTION_GET_SUB_DROPS
-# from syncr_backend.constants import ACTION_INITIALIZE_DROP
-# from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
-# from syncr_backend.constants import ACTION_REMOVE_FILE
-# from syncr_backend.constants import ACTION_REMOVE_OWNER
-# from syncr_backend.constants import ACTION_SHARE_DROP
-# from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
-# from syncr_backend.constants import ACTION_UNSUBSCRIBE
+from syncr_backend.constants import ACTION_ADD_FILE
+from syncr_backend.constants import ACTION_ADD_OWNER
+from syncr_backend.constants import ACTION_DELETE_DROP
+from syncr_backend.constants import ACTION_GET_OWNED_DROPS
+from syncr_backend.constants import ACTION_GET_SELECT_DROPS
+from syncr_backend.constants import ACTION_GET_SUB_DROPS
+from syncr_backend.constants import ACTION_INITIALIZE_DROP
+from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
+from syncr_backend.constants import ACTION_REMOVE_FILE
+from syncr_backend.constants import ACTION_REMOVE_OWNER
+from syncr_backend.constants import ACTION_SHARE_DROP
+from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
+from syncr_backend.constants import ACTION_UNSUBSCRIBE
 # from syncr_backend.network.handle_frontend import handle_frontend_request
 
 
@@ -25,7 +24,9 @@ from unittest.mock import Mock
 # have been fully implemented.
 
 
-def test_handle_frontend_request():
+async def test_handle_frontend_request():
+
+    from syncr_backend.network.handle_frontend import handle_frontend_request
 
     conn = Mock()
     conn.send = MagicMock()
@@ -71,6 +72,7 @@ def test_handle_frontend_request():
         autospec=True,
     ) as mock_handle_unsubscribe:
 
+        """
         mock_handle_add_file.assert_not_called()
         mock_handle_add_owner.assert_not_called()
         mock_handle_delete_drop.assert_not_called()
@@ -84,8 +86,8 @@ def test_handle_frontend_request():
         mock_handle_share_drop.assert_not_called()
         mock_handle_transfer_ownership.assert_not_called()
         mock_handle_unsubscribe.assert_not_called()
-
         """
+
         request = {
             'action': ACTION_ADD_FILE,
         }
@@ -176,4 +178,3 @@ def test_handle_frontend_request():
 
         await handle_frontend_request(request, conn)
         mock_handle_unsubscribe.assert_called_once()
-        """
