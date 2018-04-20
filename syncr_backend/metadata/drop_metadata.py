@@ -188,7 +188,7 @@ class DropMetadata(object):
         save_path = _get_save_path()
         encoded_drop_id = crypto_util.b64encode(self.id).decode('utf-8')
         drop_loc_file = os.path.join(save_path, encoded_drop_id)
-        os.remove(drop_loc_file)
+        await self.remove(drop_loc_file)
 
     def delete(self) -> None:
         """Deletes the drop from the local system and unsubscribes
