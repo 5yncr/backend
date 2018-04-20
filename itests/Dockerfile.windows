@@ -6,5 +6,3 @@ Invoke-WebRequest 'https://github.com/git-for-windows/git/releases/download/v2.1
 RUN Expand-Archive c:\MinGit.zip -DestinationPath c:\MinGit; \
 $env:PATH = $env:PATH + ';C:\MinGit\cmd\;C:\MinGit\cmd'; \
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' -Name Path -Value $env:PATH
-
-RUN git
