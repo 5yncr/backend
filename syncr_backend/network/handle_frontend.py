@@ -509,8 +509,11 @@ async def handle_input_subscribe_drop(
         }
     else:
 
+        drop_id = request['drop_id']
+        file_path = request['file_path']
+
         try:
-            await sync_drop(request['drop_id'], request['file_path'])
+            asyncio.ensure_future(sync_drop(drop_id, file_path))
             response = {
                 'status': 'ok',
                 'result': 'success',
