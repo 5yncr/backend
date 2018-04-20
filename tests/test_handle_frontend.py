@@ -1,4 +1,3 @@
-"""
 import asyncio
 from unittest import mock
 from unittest.mock import MagicMock
@@ -17,7 +16,7 @@ from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
-# from syncr_backend.network.handle_frontend import handle_frontend_request
+from syncr_backend.network.handle_frontend import handle_frontend_request
 
 
 # Bear in mind, the only functions that are going to be tested are the
@@ -27,8 +26,6 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 
 
 def test_handle_frontend_request() -> None:
-
-    from syncr_backend.network.handle_frontend import handle_frontend_request
 
     conn = Mock()
     conn.send = MagicMock()
@@ -74,7 +71,7 @@ def test_handle_frontend_request() -> None:
         autospec=True,
     ) as mock_handle_unsubscribe:
 
-
+        """
         mock_handle_add_file.assert_not_called()
         mock_handle_add_owner.assert_not_called()
         mock_handle_delete_drop.assert_not_called()
@@ -88,7 +85,7 @@ def test_handle_frontend_request() -> None:
         mock_handle_share_drop.assert_not_called()
         mock_handle_transfer_ownership.assert_not_called()
         mock_handle_unsubscribe.assert_not_called()
-
+        """
 
         request = {
             'action': ACTION_ADD_FILE,
@@ -205,4 +202,3 @@ def test_handle_frontend_request() -> None:
             handle_frontend_request(request, conn),
         )
         mock_handle_unsubscribe.assert_called_once()
-"""
