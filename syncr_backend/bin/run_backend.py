@@ -10,8 +10,7 @@ from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata.drop_metadata import send_my_pub_key
-from syncr_backend.network.handle_frontend import handle_request as \
-    handle_frontend_request
+from syncr_backend.network.handle_frontend import setup_frontend_server
 from syncr_backend.network.listen_requests import start_listen_server
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
@@ -89,7 +88,7 @@ def run_backend() -> None:
         start_listen_server(arguments.ip[0], arguments.port[0]),
     )
     frontend_server = loop.run_until_complete(
-        handle_frontend_request(),
+        setup_frontend_server(),
     )
     dps_send = loop.create_task(
         send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
