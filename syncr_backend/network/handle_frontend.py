@@ -40,11 +40,12 @@ from syncr_backend.util.drop_util import get_drop_peers
 from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import simple_get_drop_metadata
+from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.network_util import sync_send_response as send_response
 
 
-async def handle_frontend_request(
+def handle_frontend_request(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
 
@@ -495,24 +496,32 @@ async def handle_input_subscribe_drop(
     :param request:
     {
     "action": string
-    "drop_name": string
+    "drop_id": string
+    "file_path": string
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_name'] is None:
+    if request['drop_id'] is None or request['file_path'] is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to subscribe to drop.
-        # TODO: Test if given drop_name is valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'subscribed to drop ' + request['drop_name'],
-        }
+
+        try:
+            await sync_drop(request['drop_id'], request['file_path'])
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'subscribed to drop ' + request['drop_id'],
+            }
+        except RuntimeError:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'message': 'Cannot subscribe to drop!',
+            }
 
     send_response(conn, response)
 

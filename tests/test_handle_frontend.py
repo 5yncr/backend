@@ -23,7 +23,7 @@ from syncr_backend.network.handle_frontend import handle_frontend_request
 # have been fully implemented.
 
 
-def test_handle_frontend_request():
+async def test_handle_frontend_request():
 
     conn = Mock()
     conn.send = MagicMock()
@@ -73,89 +73,89 @@ def test_handle_frontend_request():
             'action': ACTION_ADD_FILE,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_add_file.assert_called_once()
 
         request = {
             'action': ACTION_ADD_OWNER,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_add_owner.assert_called_once()
 
         request = {
             'action': ACTION_DELETE_DROP,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_delete_drop.assert_called_once()
 
         request = {
             'action': ACTION_GET_OWNED_DROPS,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_get_owned_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SUB_DROPS,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_get_subscribed_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SELECT_DROPS,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_get_selected_drops.assert_called_once()
 
         request = {
             'action': ACTION_INPUT_DROP_TO_SUBSCRIBE_TO,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_input_subscribe_drop.assert_called_once()
 
         request = {
             'action': ACTION_INITIALIZE_DROP,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_initialize_drop.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_FILE,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_remove_file.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_OWNER,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_remove_owner.assert_called_once()
 
         request = {
             'action': ACTION_SHARE_DROP,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_share_drop.assert_called_once()
 
         request = {
             'action': ACTION_TRANSFER_OWNERSHIP,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_transfer_ownership.assert_called_once()
 
         request = {
             'action': ACTION_UNSUBSCRIBE,
         }
 
-        handle_frontend_request(request, conn)
+        await handle_frontend_request(request, conn)
         mock_handle_unsubscribe.assert_called_once()
