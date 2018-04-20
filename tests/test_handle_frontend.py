@@ -1,3 +1,4 @@
+import asyncio
 from unittest import mock
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -24,7 +25,7 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 # have been fully implemented.
 
 
-async def test_handle_frontend_request() -> None:
+def test_handle_frontend_request() -> None:
 
     from syncr_backend.network.handle_frontend import handle_frontend_request
 
@@ -91,90 +92,89 @@ async def test_handle_frontend_request() -> None:
         request = {
             'action': ACTION_ADD_FILE,
         }
-
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_add_file.assert_called_once()
 
         request = {
             'action': ACTION_ADD_OWNER,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_add_owner.assert_called_once()
 
         request = {
             'action': ACTION_DELETE_DROP,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_delete_drop.assert_called_once()
 
         request = {
             'action': ACTION_GET_OWNED_DROPS,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_get_owned_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SUB_DROPS,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_get_subscribed_drops.assert_called_once()
 
         request = {
             'action': ACTION_GET_SELECT_DROPS,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_get_selected_drops.assert_called_once()
 
         request = {
             'action': ACTION_INPUT_DROP_TO_SUBSCRIBE_TO,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_input_subscribe_drop.assert_called_once()
 
         request = {
             'action': ACTION_INITIALIZE_DROP,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_initialize_drop.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_FILE,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_remove_file.assert_called_once()
 
         request = {
             'action': ACTION_REMOVE_OWNER,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_remove_owner.assert_called_once()
 
         request = {
             'action': ACTION_SHARE_DROP,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_share_drop.assert_called_once()
 
         request = {
             'action': ACTION_TRANSFER_OWNERSHIP,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_transfer_ownership.assert_called_once()
 
         request = {
             'action': ACTION_UNSUBSCRIBE,
         }
 
-        await handle_frontend_request(request, conn)
+        asyncio.ensure_future(handle_frontend_request(request, conn))
         mock_handle_unsubscribe.assert_called_once()
