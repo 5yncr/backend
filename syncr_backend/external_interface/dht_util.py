@@ -8,6 +8,7 @@ from typing import Tuple
 from kademlia.network import Server  # type: ignore
 from kademlia.storage import ForgetfulStorage  # type: ignore
 
+from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.util import crypto_util
 from syncr_backend.util.log_util import get_logger
 
@@ -90,14 +91,17 @@ class DropPeerDHTStorage(ForgetfulStorage):
                 filter(
                     lambda x: (
                         ((key, x) not in self.timeouts) or
-                        (current_time - self.timeouts[(key, x)] < 300)
+                        (
+                            current_time - self.timeouts[(key, x)] <
+                            TRACKER_DROP_AVAILABILITY_TTL
+                        )
                     ),
                     itempeerlist,
                 ),
             )
             timeout_key_list = list(
                 filter(
-                    lambda x: self.timeouts[x] < 300,
+                    lambda x: self.timeouts[x] < TRACKER_DROP_AVAILABILITY_TTL,
                     self.timeouts,
                 ),
             )
