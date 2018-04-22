@@ -1,6 +1,6 @@
 import asyncio
 import os
-import platform
+import sys
 from typing import Any
 from typing import Awaitable  # noqa
 from typing import Callable  # noqa
@@ -873,8 +873,7 @@ async def setup_frontend_server() -> asyncio.events.AbstractServer:
     :return:
     """
 
-    op_sys = platform.system()
-    if op_sys == 'Windows':
+    if sys.platform == 'win32':
         return await _tcp_handle_request()
     else:
         return await _unix_handle_request()
@@ -919,9 +918,12 @@ async def _unix_handle_request() -> asyncio.events.AbstractServer:
         # does not yet exist, do nothing
         pass
 
-    return await asyncio.start_unix_server(
-        async_handle_request, path=FRONTEND_UNIX_ADDRESS,
-    )
+    if sys.platform != 'win32':
+        return await asyncio.start_unix_server(
+            async_handle_request, path=FRONTEND_UNIX_ADDRESS,
+        )
+    else:
+        raise Exception("can't do this on windows!")
 
 
 if __name__ == '__main__':
