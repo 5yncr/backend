@@ -40,6 +40,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import sync_drop
@@ -871,7 +872,7 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
         'primary_owner': crypto_util.b64encode(md.owner),
         'other_owners': [crypto_util.b64encode(o) for o in md.other_owners],
         'signed_by': crypto_util.b64encode(md.signed_by),
-        'files': md.files,
+        'files': get_file_names_percent(md.id),
     }
 
     return response
