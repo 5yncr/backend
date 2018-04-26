@@ -17,6 +17,7 @@ from syncr_backend.constants import ACTION_DECLINE_CONFLICT_FILE
 from syncr_backend.constants import ACTION_DELETE_DROP
 from syncr_backend.constants import ACTION_GET_CONFLICTING_FILES
 from syncr_backend.constants import ACTION_GET_OWNED_DROPS
+from syncr_backend.constants import ACTION_GET_OWNED_SUBSCRIBED_DROPS
 from syncr_backend.constants import ACTION_GET_SELECT_DROPS
 from syncr_backend.constants import ACTION_GET_SUB_DROPS
 from syncr_backend.constants import ACTION_INITIALIZE_DROP
@@ -64,6 +65,7 @@ async def handle_frontend_request(
         ACTION_DELETE_DROP: handle_delete_drop,
         ACTION_GET_CONFLICTING_FILES: handle_get_conflicting_files,
         ACTION_GET_OWNED_DROPS: handle_get_owned_drops,
+        ACTION_GET_OWNED_SUBSCRIBED_DROPS: handle_get_owned_subscribed_drops,
         ACTION_GET_SELECT_DROPS: handle_get_selected_drops,
         ACTION_GET_SUB_DROPS: handle_get_subscribed_drops,
         ACTION_INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
@@ -478,6 +480,45 @@ async def handle_get_selected_drops(
                 'requested_drops': {},
                 'message': 'drop retrieval failed',
             }
+
+    await send_response(conn, response)
+
+
+async def handle_get_owned_subscribed_drops(
+        request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    """
+    Handling function to retrieve drops that user owns and is subscribed to
+    :param request:
+    {
+    'action': string
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
+
+    md_tup = await get_owned_subscribed_drops_metadata()
+
+    owned_drop_dictionaries = []
+    subscribed_drop_dictionaries = []
+
+    owned_drops = md_tup[0]
+    subscribed_drops = md_tup[1]
+
+    for drop in owned_drops:
+        owned_drop_dictionaries.append(drop_metadata_to_response(drop))
+
+    for drop in subscribed_drops:
+        subscribed_drop_dictionaries.append(drop_metadata_to_response(drop))
+
+    dict_tup = (owned_drop_dictionaries, subscribed_drop_dictionaries)
+
+    response = {
+        'status': 'ok',
+        'result': 'success',
+        'requested_drops_tuple': dict_tup,
+        'message': 'owned and subscribed drops retrieved.',
+    }
 
     await send_response(conn, response)
 

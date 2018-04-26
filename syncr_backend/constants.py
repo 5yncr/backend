@@ -64,6 +64,7 @@ MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 # Frontend action types
 ACTION_REMOVE_FILE = 'remove_file'
 ACTION_GET_OWNED_DROPS = 'get_owned_drops'
+ACTION_GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
 ACTION_GET_SUB_DROPS = 'get_subscribed_drops'
 ACTION_GET_SELECT_DROPS = 'get_selected_drop'
 ACTION_GET_CONFLICTING_FILES = 'get_conflicting_files'
