@@ -324,53 +324,39 @@ async def verify_version(
                 raise VerificationException()
 
 
-async def get_owned_drops_metadata() -> List[DropMetadata]:
+async def get_owned_subscribed_drops_metadata(
+
+) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
-    Get list of metadata objects for owned drops (primary and secondary)
-    :return: list of metadata objects this node owns
+    Gets the list of metadata objects for both subscribed and owned drops.
+    :return: Tuple of metadata objects for subscribed and owned drops.
+
+    format: (Owned drop metadata, Subscribed drop metadata)
     """
+
     drops = list_drops()
 
-    # Get current nodes id
+    # Get id of current node
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
 
     owned_drops = []
-
-    for drop_id in drops:
-        # Get drop_metadata object for drop
-        md = await get_drop_metadata(drop_id, [])
-        if md.owner == node_id:
-            owned_drops.append(md)
-        else:
-            for owner in md.other_owners:
-                if owner == node_id:
-                    owned_drops.append(md)
-
-    return owned_drops
-
-
-async def get_subscribed_drops_metadata() -> List[DropMetadata]:
-    """
-    Get list of metadata objects for subscribed drops
-    :return: list of metadata objects this node is subscribed to
-    """
-    drops = list_drops()
-
-    # Get current nodes id
-    priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
-
     subscribed_drops = []
 
-    # Subscribed drops are those on the disk that this node does not own
+    # Owned drops are those on the disk that the node owns,
+    # whereas subscribed drops are those on the disk that the
+    # node does not own.
     for drop_id in drops:
-        # Get drop_metadata object for drop
         md = await get_drop_metadata(drop_id, [])
-        if md.owner != node_id and node_id not in md.other_owners:
+
+        if md.owner == node_id or node_id in md.other_owners:
+            owned_drops.append(md)
+        else:
             subscribed_drops.append(md)
 
-    return subscribed_drops
+    md_tup = (owned_drops, subscribed_drops)
+
+    return md_tup
 
 
 async def get_file_metadata(
