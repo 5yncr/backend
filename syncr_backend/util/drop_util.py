@@ -30,6 +30,8 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -419,21 +421,23 @@ async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
     if drop_location is None:
         return None
     drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    if drop_metadata is None:
+        return None
 
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(
             drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = await FileMetadata.make_file_metadata(
+        files[full_name] = await make_file_metadata(
             full_name, drop_id,
         )
 
-    changed_files = files.keys()
+    changed_files = Set(files.keys())
 
     for (name, id) in drop_metadata.files.items():
         if name in changed_files:
-            temp_metadata = await FileMetadata.get_file_metadata_from_drop_id(
+            temp_metadata = await get_file_metadata_from_drop_id(
                 drop_id, id,
             )
             if temp_metadata == files[name]:
@@ -441,9 +445,9 @@ async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
             else:
                 pass  # File is unchanged
         else:
-            changed_files.append(name)  # Add file that no longer exists
+            changed_files.add(name)  # Add file that no longer exists
 
-    return Set(changed_files)
+    return changed_files
 
 
 async def sync_file_contents(

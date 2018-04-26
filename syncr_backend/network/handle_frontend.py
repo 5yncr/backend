@@ -846,7 +846,7 @@ async def handle_view_pending_changes(
             'error': ERR_INVINPUT,
         }
     else:
-        changed_files = check_for_changes(request['drop_id'])
+        changed_files = await check_for_changes(request['drop_id'])
         if changed_files is None:
             response = {
                 'status': 'error',
