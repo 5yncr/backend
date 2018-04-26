@@ -407,6 +407,43 @@ async def get_file_metadata(
     return metadata
 
 
+async def check_for_changes(drop_id: bytes) -> Set[str]:
+    """Checks over the local drop and returns what files have local
+    changes if any
+
+    :param drop_id: the drop to check
+    :return: a set of file names that have local changes
+    """
+    logger.info("Checking for local changes in drop: %s", drop_id)
+    drop_location = await get_drop_location(drop_id)
+    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(
+            drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = await FileMetadata.make_file_metadata(
+            full_name, drop_id,
+        )
+
+    changed_files = files.keys()
+
+    for (name, id) in drop_metadata.files.items():
+        if name in changed_files:
+            temp_metadata = await FileMetadata.get_file_metadata_from_drop_id(
+                drop_id, id,
+            )
+            if temp_metadata == files[name]:
+                changed_files.remove(name)
+            else:
+                pass  # File is unchanged
+        else:
+            changed_files.append(name)  # Add file that no longer exists
+
+    return Set(changed_files)
+
+
 async def sync_file_contents(
     drop_id: bytes, file_id: bytes, file_name: str,
     peers: List[Tuple[str, int]], save_dir: str,

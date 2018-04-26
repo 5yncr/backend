@@ -277,3 +277,21 @@ async def get_file_metadata_from_drop_id(
     )
 
     return request_file_metadata
+
+
+def __eq__(self, other: FileMetadata) -> bool:
+    """
+    Overwriting equals method so that it returns True if they have
+    the same hash and size and filename
+    :param self: FileMetadata of a given file
+    :param other: FileMetadata of another file
+    :return: Boolean based on the above fact
+    """
+    if self.hashes != other.hashes:
+        return False
+    elif self.file_name != other.file_name:
+        return False
+    elif self.file_length != other.file_length:
+        return False
+    else:
+        return True
