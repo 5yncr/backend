@@ -409,15 +409,12 @@ async def get_file_metadata(
 
     return metadata
 
-FileUpdateStatus = NamedTuple(
-    'FileUpdateStatus',
-    [
-        ('added', Set(str)),
-        ('removed', Set(str)),
-        ('changed', Set(str)),
-        ('unchanged', Set(str)),
-    ],
-)
+
+class FileUpdateStatus(NamedTuple):
+    added: Set[str]
+    removed: Set[str]
+    changed: Set[str]
+    unchanged: Set[str]
 
 
 async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
