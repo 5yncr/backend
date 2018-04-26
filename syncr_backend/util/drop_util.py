@@ -426,7 +426,7 @@ async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
 
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(
-            drop_location, [],
+        drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
         files[full_name] = await make_file_metadata(
@@ -443,7 +443,7 @@ async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
             if temp_metadata == files[name]:
                 changed_files.remove(name)
             else:
-                pass  # File is unchanged
+                pass  # File is changed so it will stay in the set
         else:
             changed_files.add(name)  # Add file that no longer exists
 
