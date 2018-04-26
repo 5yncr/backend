@@ -96,7 +96,7 @@ async def handle_frontend_request(
             response = {
                 'status': 'error',
                 'error': ERR_EXCEPTION,
-                'message': e.message,
+                'message': str(e),
             }
             await send_response(conn, response)
 
