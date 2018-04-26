@@ -373,6 +373,41 @@ async def get_subscribed_drops_metadata() -> List[DropMetadata]:
     return subscribed_drops
 
 
+async def get_owned_subscribed_drops_metadata(
+
+) -> (List[DropMetadata], List[DropMetadata]):
+    """
+    Gets the list of metadata objects for both subscribed and owned drops.
+    :return: Tuple of metadata objects for subscribed and owned drops.
+
+    format: (Owned drop metadata, Subscribed drop metadata)
+    """
+
+    drops = list_drops()
+
+    # Get id of current node
+    priv_key = await node_init.load_private_key_from_disk()
+    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+
+    owned_drops = []
+    subscribed_drops = []
+
+    # Owned drops are those on the disk that the node owns,
+    # whereas subscribed drops are those on the disk that the
+    # node does not own.
+    for drop_id in drops:
+        md = await get_drop_metadata(drop_id, [])
+
+        if md.owner == node_id or node_id in md.other_owners:
+            owned_drops.append(md)
+        else:
+            subscribed_drops.append(md)
+
+    md_tup = (owned_drops, subscribed_drops)
+
+    return md_tup
+
+
 async def get_file_metadata(
     drop_id: bytes, file_id: bytes, save_dir: str, file_name: str,
     peers: List[Tuple[str, int]],

@@ -40,8 +40,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
-from syncr_backend.util.drop_util import get_owned_drops_metadata
-from syncr_backend.util.drop_util import get_subscribed_drops_metadata
+from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
 from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.log_util import get_logger
@@ -424,7 +423,9 @@ async def handle_get_owned_drops(
     :return: None
     """
 
-    owned_drops = await get_owned_drops_metadata()
+    md_tup = await get_owned_subscribed_drops_metadata()
+
+    owned_drops = md_tup[0]
     drop_dictionaries = []
     for drop in owned_drops:
         drop_dictionaries.append(drop_metadata_to_response(drop))
@@ -494,7 +495,9 @@ async def handle_get_subscribed_drops(
     :return: None
     """
 
-    subscribed_drops = await get_subscribed_drops_metadata()
+    md_tup = await get_owned_subscribed_drops_metadata()
+
+    subscribed_drops = md_tup[1]
     drop_dictionaries = []
     for drop in subscribed_drops:
         drop_dictionaries.append(drop_metadata_to_response(drop))
