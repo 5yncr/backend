@@ -407,7 +407,7 @@ async def get_file_metadata(
     return metadata
 
 
-async def check_for_changes(drop_id: bytes) -> Set[str]:
+async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
     """Checks over the local drop and returns what files have local
     changes if any
 
@@ -416,6 +416,8 @@ async def check_for_changes(drop_id: bytes) -> Set[str]:
     """
     logger.info("Checking for local changes in drop: %s", drop_id)
     drop_location = await get_drop_location(drop_id)
+    if drop_location is None:
+        return None
     drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
 
     files = {}

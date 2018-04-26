@@ -38,6 +38,7 @@ from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
+from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
 from syncr_backend.util.drop_util import get_owned_drops_metadata
@@ -845,13 +846,26 @@ async def handle_view_pending_changes(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: Backend logic to retrieve pending changes of drop.
-        # TODO: Handle if given drop_id is not valid
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'pending changes retrieved',
-        }
+        changed_files = check_for_changes(request['drop_id'])
+        if changed_files is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+        elif len(changed_files) == 0:
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'no changes found',
+                'pending_files': changed_files,
+            }
+        else:
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'pending changes found',
+                'pending_files': changed_files,
+            }
 
     await send_response(conn, response)
 
