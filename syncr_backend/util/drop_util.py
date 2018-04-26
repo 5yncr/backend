@@ -7,6 +7,7 @@ from typing import Awaitable  # noqa
 from typing import cast
 from typing import Dict  # noqa
 from typing import List
+from typing import NamedTuple
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
@@ -408,8 +409,18 @@ async def get_file_metadata(
 
     return metadata
 
+FileUpdateStatus = NamedTuple(
+    'FileUpdateStatus',
+    [
+        ('added', Set(str)),
+        ('removed', Set(str)),
+        ('changed', Set(str)),
+        ('unchanged', Set(str)),
+    ],
+)
 
-async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
+
+async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     """Checks over the local drop and returns what files have local
     changes if any
 
@@ -433,21 +444,30 @@ async def check_for_changes(drop_id: bytes) -> Optional[Set[str]]:
             full_name, drop_id,
         )
 
-    changed_files = Set(files.keys())
+    changed_files = Set()
+    removed_files = Set()
+    unchanged_files = Set()
+    starting_files = Set(files.keys())
 
     for (name, id) in drop_metadata.files.items():
-        if name in changed_files:
+        if name in starting_files:
             temp_metadata = await get_file_metadata_from_drop_id(
                 drop_id, id,
             )
             if temp_metadata == files[name]:
-                changed_files.remove(name)
+                unchanged_files.add(name)
             else:
-                pass  # File is changed so it will stay in the set
+                changed_files.add(name)
         else:
-            changed_files.add(name)  # Add file that no longer exists
+            removed_files.add(name)  # Add file that no longer exists
+        starting_files.remove(name)
 
-    return changed_files
+    return FileUpdateStatus(
+        added=starting_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
 
 
 async def sync_file_contents(

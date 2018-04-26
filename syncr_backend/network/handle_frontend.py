@@ -846,25 +846,21 @@ async def handle_view_pending_changes(
             'error': ERR_INVINPUT,
         }
     else:
-        changed_files = await check_for_changes(request['drop_id'])
-        if changed_files is None:
+        file_update_status = await check_for_changes(request['drop_id'])
+        if file_update_status is None:
             response = {
                 'status': 'error',
                 'error': ERR_INVINPUT,
-            }
-        elif len(changed_files) == 0:
-            response = {
-                'status': 'ok',
-                'result': 'success',
-                'message': 'no changes found',
-                'pending_files': changed_files,
             }
         else:
             response = {
                 'status': 'ok',
                 'result': 'success',
-                'message': 'pending changes found',
-                'pending_files': changed_files,
+                'message': 'pending changes returned',
+                'added': file_update_status.added,
+                'removed': file_update_status.removed,
+                'changed': file_update_status.changed,
+                'unchanged': file_update_status.unchanged,
             }
 
     await send_response(conn, response)
