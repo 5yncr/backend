@@ -333,7 +333,7 @@ async def get_owned_drops_metadata() -> List[DropMetadata]:
 
     # Get current nodes id
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
 
     owned_drops = []
 
@@ -359,7 +359,7 @@ async def get_subscribed_drops_metadata() -> List[DropMetadata]:
 
     # Get current nodes id
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
 
     subscribed_drops = []
 
@@ -375,7 +375,7 @@ async def get_subscribed_drops_metadata() -> List[DropMetadata]:
 
 async def get_owned_subscribed_drops_metadata(
 
-) -> (List[DropMetadata], List[DropMetadata]):
+) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
     Gets the list of metadata objects for both subscribed and owned drops.
     :return: Tuple of metadata objects for subscribed and owned drops.
@@ -387,7 +387,7 @@ async def get_owned_subscribed_drops_metadata(
 
     # Get id of current node
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
 
     owned_drops = []
     subscribed_drops = []
