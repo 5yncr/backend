@@ -460,7 +460,7 @@ async def handle_unsubscribe(
 
     await send_response(conn, response)
 
-    
+
 # Helper functions for structure of responses
 async def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     """
