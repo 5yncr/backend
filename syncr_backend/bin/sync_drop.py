@@ -22,13 +22,7 @@ def main() -> None:
 
     loop = asyncio.get_event_loop()
 
-    id_prefix = 'dropid:'
-
     id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
-    if id[:len(id_prefix)] == id_prefix:
-        id = id[len(id_prefix):]
-    else:
-        raise ValueError("Id must start with dropid")
 
     done = loop.run_until_complete(drop_util.sync_drop(id, args.directory))
 
