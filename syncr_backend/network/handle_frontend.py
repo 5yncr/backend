@@ -18,6 +18,7 @@ from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
+from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
@@ -27,6 +28,7 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
+from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
 from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
@@ -63,7 +65,15 @@ async def handle_frontend_request(
         }
         await send_response(conn, response)
     else:
-        await handle_function(request, conn)
+        try:
+            await handle_function(request, conn)
+        except Exception as e:
+            response = {
+                'status': 'error',
+                'error': ERR_EXCEPTION,
+                'message': str(e),
+            }
+            await send_response(conn, response)
 
 
 async def handle_add_owner(
@@ -175,7 +185,7 @@ async def handle_get_selected_drops(
     else:
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
-        drop = drop_metadata_to_response(md)
+        drop = await drop_metadata_to_response(md)
 
         response = {
             'status': 'ok',
@@ -445,12 +455,13 @@ async def handle_unsubscribe(
 
 
 # Helper functions for structure of responses
-def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
+async def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     """
     Converts dropMetadata object into frontend readable dictionary.
     :param md: DropMetadata object
     :return: Dictionary for frontend
     """
+    files = await get_file_names_percent(md.id)
     response = {
         'drop_id': crypto_util.b64encode(md.id),
         'name': md.name,
@@ -459,7 +470,7 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
         'primary_owner': crypto_util.b64encode(md.owner),
         'other_owners': [crypto_util.b64encode(o) for o in md.other_owners],
         'signed_by': crypto_util.b64encode(md.signed_by),
-        'files': md.files,
+        'files': {n: int(p*100) for n, p in files.items()},
     }
 
     return response
