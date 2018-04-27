@@ -36,7 +36,7 @@ async def a_main() -> None:
     if drop_id[:len(id_prefix)] == id_prefix:
         drop_id = crypto_util.b64decode(drop_id[len(id_prefix):])
     else:
-        raise ValueError("drop Id must start with prefix dropid:" % (drop_id))
+        raise ValueError("drop Id must start with prefix 'dropid:'")
 
     drop_location = await get_drop_location(drop_id)
     metadata_dir = os.path.join(drop_location, DEFAULT_DROP_METADATA_LOCATION)
