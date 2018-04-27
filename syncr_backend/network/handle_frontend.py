@@ -28,7 +28,6 @@ from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
-from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
@@ -77,7 +76,6 @@ async def handle_frontend_request(
         ACTION_TRANSFER_OWNERSHIP: handle_transfer_ownership,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_VIEW_CONFLICTS: handle_view_conflicts,
-        ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -463,20 +461,26 @@ async def handle_get_selected_drops(
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
         drop = drop_metadata_to_response(md)
-
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'requested_drops': drop,
-            'message': 'selected files retrieved',
-        }
-
-        if drop is None:
+        file_update_status = await check_for_changes(request['drop_id'])
+        if file_update_status is None or drop is None:
             response = {
                 'status': 'error',
                 'result': 'failure',
                 'requested_drops': {},
                 'message': 'drop retrieval failed',
+            }
+        else:
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'selected files retrieved',
+                'requested_drops': drop,
+                'pending_changes': {
+                    'added': file_update_status.added,
+                    'removed': file_update_status.removed,
+                    'changed': file_update_status.changed,
+                    'unchanged': file_update_status.unchanged,
+                },
             }
 
     await send_response(conn, response)
@@ -823,45 +827,6 @@ async def handle_view_conflicts(
             'result': 'success',
             'message': 'conflicting files retrieved',
         }
-
-    await send_response(conn, response)
-
-
-async def handle_view_pending_changes(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to view pending changes in the drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        file_update_status = await check_for_changes(request['drop_id'])
-        if file_update_status is None:
-            response = {
-                'status': 'error',
-                'error': ERR_INVINPUT,
-            }
-        else:
-            response = {
-                'status': 'ok',
-                'result': 'success',
-                'message': 'pending changes returned',
-                'added': file_update_status.added,
-                'removed': file_update_status.removed,
-                'changed': file_update_status.changed,
-                'unchanged': file_update_status.unchanged,
-            }
 
     await send_response(conn, response)
 
