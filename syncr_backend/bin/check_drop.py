@@ -33,7 +33,7 @@ async def a_main() -> None:
     id_prefix = b'dropid:'
 
     drop_id = args.drop_id.encode('utf-8')
-    if drop_id[:len(id_prefix)] == id_prefix:
+    if drop_id.startswith(id_prefix):
         drop_id = crypto_util.b64decode(drop_id[len(id_prefix):])
     else:
         raise ValueError("drop Id must start with prefix 'dropid:'")
