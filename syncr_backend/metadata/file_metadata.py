@@ -193,6 +193,12 @@ class FileMetadata(object):
         all_chunks = {x for x in range(self.num_chunks)}
         return all_chunks - (await self.downloaded_chunks)
 
+    @property
+    async def percent_done(self) -> float:
+        if self.num_chunks == 0:
+            return 1.0
+        return len(await self.downloaded_chunks) / self.num_chunks
+
     async def finish_chunk(self, chunk_id: int) -> None:
         """Mark chunk finished
 
@@ -200,6 +206,25 @@ class FileMetadata(object):
         """
         self.log.debug("finishing chunk %s", chunk_id)
         (await self.downloaded_chunks).add(chunk_id)
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Overwriting equals method so that it returns True if they have
+        the same hash and size and filename
+        :param self: FileMetadata of a given file
+        :param other: another object
+        :return: Boolean based on the above fact
+        """
+        if not isinstance(other, FileMetadata):
+            return False
+        if self.hashes != other.hashes:
+            return False
+        elif self.file_name != other.file_name:
+            return False
+        elif self.file_length != other.file_length:
+            return False
+        else:
+            return True
 
 
 async def file_hashes(

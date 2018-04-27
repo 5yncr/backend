@@ -7,6 +7,7 @@ from typing import Awaitable  # noqa
 from typing import cast
 from typing import Dict  # noqa
 from typing import List
+from typing import NamedTuple
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
@@ -30,6 +31,8 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -110,9 +113,6 @@ async def update_drop(
         drop_id: bytes,
         add_secondary_owner: bytes=None,
         remove_secondary_owner: bytes=None,
-        add_file: bytes=None,
-        remove_file: bytes=None,
-        file_name: str=None,
 ) -> None:
     """
     Update a drop from a directory.
@@ -120,9 +120,6 @@ async def update_drop(
     :param drop_id: The drop_id to update
     :param add_secondary_owner: new secondary owner for a drop
     :param remove_secondary_owner: secondary owner to remove from a drop
-    :param add_file: new file to be added to a drop
-    :param remove_file: file to be removed from a drop
-    :param file_name: name of file to be added/removed.
 
     """
     drop_directory = await get_drop_location(drop_id)
@@ -160,18 +157,6 @@ async def update_drop(
         old_drop_m.other_owners.pop(remove_secondary_owner)
 
     new_drop_m.other_owners = old_drop_m.other_owners
-
-    # Updating current files.
-    if add_file is not None \
-            and add_file not in old_drop_m.files \
-            and file_name is not None:
-        old_drop_m.files.update({file_name: add_file})
-    if remove_file is not None \
-            and remove_file in old_drop_m.files \
-            and file_name is not None:
-        old_drop_m.files.pop(file_name)
-    new_drop_m.files = old_drop_m.files
-
     new_drop_m.previous_versions.append(old_drop_m.version)
     new_drop_m.version = drop_metadata.DropVersion(
         old_drop_m.version.version + 1,
@@ -324,53 +309,39 @@ async def verify_version(
                 raise VerificationException()
 
 
-async def get_owned_drops_metadata() -> List[DropMetadata]:
+async def get_owned_subscribed_drops_metadata(
+
+) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
-    Get list of metadata objects for owned drops (primary and secondary)
-    :return: list of metadata objects this node owns
+    Gets the list of metadata objects for both subscribed and owned drops.
+    :return: Tuple of metadata objects for subscribed and owned drops.
+
+    format: (Owned drop metadata, Subscribed drop metadata)
     """
+
     drops = list_drops()
 
-    # Get current nodes id
+    # Get id of current node
     priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
 
     owned_drops = []
-
-    for drop_id in drops:
-        # Get drop_metadata object for drop
-        md = await get_drop_metadata(drop_id, [])
-        if md.owner == node_id:
-            owned_drops.append(md)
-        else:
-            for owner in md.other_owners:
-                if owner == node_id:
-                    owned_drops.append(md)
-
-    return owned_drops
-
-
-async def get_subscribed_drops_metadata() -> List[DropMetadata]:
-    """
-    Get list of metadata objects for subscribed drops
-    :return: list of metadata objects this node is subscribed to
-    """
-    drops = list_drops()
-
-    # Get current nodes id
-    priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
-
     subscribed_drops = []
 
-    # Subscribed drops are those on the disk that this node does not own
+    # Owned drops are those on the disk that the node owns,
+    # whereas subscribed drops are those on the disk that the
+    # node does not own.
     for drop_id in drops:
-        # Get drop_metadata object for drop
         md = await get_drop_metadata(drop_id, [])
-        if md.owner != node_id and node_id not in md.other_owners:
+
+        if md.owner == node_id or node_id in md.other_owners:
+            owned_drops.append(md)
+        else:
             subscribed_drops.append(md)
 
-    return subscribed_drops
+    md_tup = (owned_drops, subscribed_drops)
+
+    return md_tup
 
 
 async def get_file_metadata(
@@ -393,6 +364,8 @@ async def get_file_metadata(
     )
     if metadata is None:
         logger.debug("file metadata not on disk, getting from network")
+        if not peers:
+            peers = await get_drop_peers(drop_id)
         metadata = await send_requests.do_request(
             request_fun=send_requests.send_file_metadata_request,
             peers=peers,
@@ -405,6 +378,63 @@ async def get_file_metadata(
         await metadata.write_file(metadata_dir)
 
     return metadata
+
+
+class FileUpdateStatus(NamedTuple):
+    added: Set[str]
+    removed: Set[str]
+    changed: Set[str]
+    unchanged: Set[str]
+
+
+async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
+    """Checks over the local drop and returns what files have local
+    changes if any
+
+    :param drop_id: the drop to check
+    :return: a set of file names that have local changes
+    """
+    logger.info("Checking for local changes in drop: %s", drop_id)
+    drop_location = await get_drop_location(drop_id)
+    if drop_location is None:
+        return None
+    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    if drop_metadata is None:
+        return None
+
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = await make_file_metadata(
+            full_name, drop_id,
+        )
+
+    changed_files = Set()
+    removed_files = Set()
+    unchanged_files = Set()
+    starting_files = Set(files.keys())
+
+    for (name, id) in drop_metadata.files.items():
+        if name in starting_files:
+            temp_metadata = await get_file_metadata_from_drop_id(
+                drop_id, id,
+            )
+            if temp_metadata == files[name]:
+                unchanged_files.add(name)
+            else:
+                changed_files.add(name)
+        else:
+            removed_files.add(name)  # Add file that no longer exists
+        starting_files.remove(name)
+
+    return FileUpdateStatus(
+        added=starting_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
 
 
 async def sync_file_contents(
@@ -602,3 +632,17 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
             return crypto_util.b64decode(b.encode('utf-8'))
 
     return None
+
+
+async def get_file_names_percent(drop_id: bytes) -> Dict[str, float]:
+    dm = await get_drop_metadata(drop_id, [])
+    save_dir = await get_drop_location(drop_id)
+
+    ret = {}  # type: Dict[str, float]
+
+    for name, file_id in dm.files.items():
+        fm = await get_file_metadata(drop_id, file_id, save_dir, name, [])
+        done_perc = await fm.percent_done
+        ret[name] = done_perc
+
+    return ret
