@@ -18,8 +18,11 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 project = '5yncr'
-copyright = '2018, Brett Johnson, David Lance, Jack LaRue, Mathew Bentley, Alexander Tryjankowski'
-author = 'Brett Johnson, David Lance, Jack LaRue, Mathew Bentley, Alexander Tryjankowski'
+copyright = '''2018, Alexander Tryjankowski Brett Johnson,
+David Lance, Jack LaRue, Mathew Bentley'''
+
+author = '''Alexander Tryjankowski, Brett Johnson,
+David Lance, Jack LaRue, Mathew Bentley'''
 
 # The short X.Y version
 version = ''
