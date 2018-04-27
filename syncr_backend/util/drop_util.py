@@ -110,9 +110,6 @@ async def update_drop(
         drop_id: bytes,
         add_secondary_owner: bytes=None,
         remove_secondary_owner: bytes=None,
-        add_file: bytes=None,
-        remove_file: bytes=None,
-        file_name: str=None,
 ) -> None:
     """
     Update a drop from a directory.
@@ -120,9 +117,6 @@ async def update_drop(
     :param drop_id: The drop_id to update
     :param add_secondary_owner: new secondary owner for a drop
     :param remove_secondary_owner: secondary owner to remove from a drop
-    :param add_file: new file to be added to a drop
-    :param remove_file: file to be removed from a drop
-    :param file_name: name of file to be added/removed.
 
     """
     drop_directory = await get_drop_location(drop_id)
@@ -160,18 +154,6 @@ async def update_drop(
         old_drop_m.other_owners.pop(remove_secondary_owner)
 
     new_drop_m.other_owners = old_drop_m.other_owners
-
-    # Updating current files.
-    if add_file is not None \
-            and add_file not in old_drop_m.files \
-            and file_name is not None:
-        old_drop_m.files.update({file_name: add_file})
-    if remove_file is not None \
-            and remove_file in old_drop_m.files \
-            and file_name is not None:
-        old_drop_m.files.pop(file_name)
-    new_drop_m.files = old_drop_m.files
-
     new_drop_m.previous_versions.append(old_drop_m.version)
     new_drop_m.version = drop_metadata.DropVersion(
         old_drop_m.version.version + 1,

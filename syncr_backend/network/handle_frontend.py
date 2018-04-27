@@ -8,26 +8,15 @@ from typing import Dict
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import ACTION_ACCEPT_CHANGES
-from syncr_backend.constants import ACTION_ACCEPT_CONFLICT_FILE
-from syncr_backend.constants import ACTION_ADD_FILE
 from syncr_backend.constants import ACTION_ADD_OWNER
-from syncr_backend.constants import ACTION_DECLINE_CHANGES
-from syncr_backend.constants import ACTION_DECLINE_CONFLICT_FILE
 from syncr_backend.constants import ACTION_DELETE_DROP
-from syncr_backend.constants import ACTION_GET_CONFLICTING_FILES
 from syncr_backend.constants import ACTION_GET_OWNED_SUBSCRIBED_DROPS
 from syncr_backend.constants import ACTION_GET_SELECT_DROPS
 from syncr_backend.constants import ACTION_INITIALIZE_DROP
 from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
-from syncr_backend.constants import ACTION_REMOVE_FILE
 from syncr_backend.constants import ACTION_REMOVE_OWNER
-from syncr_backend.constants import ACTION_REQUEST_CHANGE
 from syncr_backend.constants import ACTION_SHARE_DROP
-from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
-from syncr_backend.constants import ACTION_VIEW_CONFLICTS
-from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
@@ -38,7 +27,6 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
-from syncr_backend.util.drop_util import get_drop_peers
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
 from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
@@ -54,26 +42,15 @@ async def handle_frontend_request(
 ) -> None:
 
     function_map = {
-        ACTION_ACCEPT_CHANGES: handle_accept_changes,
-        ACTION_ACCEPT_CONFLICT_FILE: handle_accept_conflict_file,
-        ACTION_ADD_FILE: handle_add_file,
         ACTION_ADD_OWNER: handle_add_owner,
-        ACTION_DECLINE_CHANGES: handle_decline_changes,
-        ACTION_DECLINE_CONFLICT_FILE: handle_decline_conflict_file,
         ACTION_DELETE_DROP: handle_delete_drop,
-        ACTION_GET_CONFLICTING_FILES: handle_get_conflicting_files,
         ACTION_GET_OWNED_SUBSCRIBED_DROPS: handle_get_owned_subscribed_drops,
         ACTION_GET_SELECT_DROPS: handle_get_selected_drops,
         ACTION_INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
         ACTION_INITIALIZE_DROP: handle_initialize_drop,
-        ACTION_REMOVE_FILE: handle_remove_file,
         ACTION_REMOVE_OWNER: handle_remove_owner,
-        ACTION_REQUEST_CHANGE: handle_request_change,
         ACTION_SHARE_DROP: handle_share_drop,
-        ACTION_TRANSFER_OWNERSHIP: handle_transfer_ownership,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
-        ACTION_VIEW_CONFLICTS: handle_view_conflicts,
-        ACTION_VIEW_PENDING_CHANGES: handle_view_pending_changes,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -87,145 +64,6 @@ async def handle_frontend_request(
         await send_response(conn, response)
     else:
         await handle_function(request, conn)
-
-
-async def handle_accept_changes(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to accept changes in a file.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to apply changes to current file.
-        # TODO: Test if given drop_ids and file_paths are valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'changes accepted',
-        }
-
-    send_response(conn, response)
-
-
-async def handle_transfer_ownership(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to transfer ownership from one drop to
-    another.
-    :param request:
-    {
-    'action': string
-    'transfer_owner_id' : string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-
-    if request['transfer_owner_id'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to apply ownership transfer.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'Primary Ownership transferred to ' + 'foo',
-        }
-
-    await send_response(conn, response)
-
-
-async def handle_accept_conflict_file(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to accept a file that is in conflict with another.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to accept a conflict file and decline others.
-        # TODO: Test if given drop_id and file_path are valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'file accepted',
-        }
-
-    await send_response(conn, response)
-
-
-async def handle_add_file(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to add a file to a drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'file added to drop',
-        }
-
-        update_drop(
-            request['drop_id'],
-            add_file=request['file_path'],
-        )
-
-        peers = await get_drop_peers(request['drop_id'])
-        meta = await get_drop_metadata(request['drop_id'], peers)
-
-        if os.path.basename(request['file_path']) not in meta.files:
-            response = {
-                'status': 'error',
-                'result': 'failure',
-                'message': 'file was not added to the drop',
-
-            }
-
-    await send_response(conn, response)
 
 
 async def handle_add_owner(
@@ -266,68 +104,6 @@ async def handle_add_owner(
         if owner_id not in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to add owner to drop'
-
-    await send_response(conn, response)
-
-
-async def handle_decline_changes(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to decline changes in a file.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to decline a change - leaving drop unchanged
-        # TODO: Test if given drop_id and file_path are valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'changes declined',
-        }
-
-    await send_response(conn, response)
-
-
-async def handle_decline_conflict_file(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to decline a file that is in conflict with another.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to decline a file in conflict with others
-        # TODO: Test if given drop_id and file_path are valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'conflicting file declined',
-        }
 
     await send_response(conn, response)
 
@@ -373,37 +149,6 @@ async def handle_delete_drop(
                 'result': 'success',
                 'message': 'drop successfully deleted',
             }
-
-    await send_response(conn, response)
-
-
-async def handle_get_conflicting_files(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to view files in drop that conflict each other.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_path'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: backend logic to retrieve list of conflicting files.
-        # TODO: Test if given drop_id and file_path are valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'conflicting files retrieved',
-        }
 
     await send_response(conn, response)
 
@@ -582,52 +327,6 @@ async def handle_initialize_drop(
     await send_response(conn, response)
 
 
-async def handle_remove_file(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to remove file from drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_name": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None or request['file_name'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        drop_id = crypto_util.b64decode(request['drop_id'])
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'file removed from drop',
-        }
-
-        update_drop(
-            drop_id,
-            remove_file=os.path.basename(request['file_path']),
-        )
-
-        peers = await get_drop_peers(drop_id)
-        meta = await get_drop_metadata(drop_id, peers)
-
-        if os.path.basename(request['file_path']) in meta.files:
-            response = {
-                'status': 'error',
-                'result': 'failure',
-                'message': 'file was not removed from the drop',
-
-            }
-
-    await send_response(conn, response)
-
-
 async def handle_remove_owner(
         request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
@@ -667,37 +366,6 @@ async def handle_remove_owner(
         if owner_id in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to remove owner from drop'
-
-    await send_response(conn, response)
-
-
-async def handle_request_change(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to request a change in the drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-
-    if request['drop_id'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: Add given changes to list of requested changes.
-        # TODO: Handle if given drop_id is not valid
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'pending changes submitted',
-        }
 
     await send_response(conn, response)
 
@@ -772,66 +440,6 @@ async def handle_unsubscribe(
                 'result': 'success',
                 'message': 'unsubscribed from drop ' + request['drop_id'],
             }
-
-    await send_response(conn, response)
-
-
-async def handle_view_conflicts(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to view conflicting files in drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: Backend logic to retrieve conflicting files in drop.
-        # TODO: Handle if given drop_id is not valid
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'conflicting files retrieved',
-        }
-
-    await send_response(conn, response)
-
-
-async def handle_view_pending_changes(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
-) -> None:
-    """
-    Handling function to view pending changes in the drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    }
-    :param conn: socket.accept() connection
-    :return: None
-    """
-    if request['drop_id'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
-    else:
-        # TODO: Backend logic to retrieve pending changes of drop.
-        # TODO: Handle if given drop_id is not valid
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'pending changes retrieved',
-        }
 
     await send_response(conn, response)
 
