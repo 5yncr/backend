@@ -151,7 +151,7 @@ latex_elements = {
 latex_documents = [
     (
         master_doc, '5yncr.tex', '5yncr Documentation',
-        'Brett Johnson, David Lance, Jack LaRue, Mathew Bentley, Alexander Tryjankowski', 'manual',
+        'Matthew Bentley, Brett Johnson, David Lance, Jack LaRue, Alexander Tryjankowski', 'manual',
     ),
 ]
 
