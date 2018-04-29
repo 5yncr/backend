@@ -71,11 +71,13 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
+    no_exceptions = True
     for result in file_results:
         if isinstance(result, BaseException):
             logger.error("Failed to download a file: %s", result)
+            no_exceptions = False
 
-    return all(file_results)
+    return all(file_results) and no_exceptions
 
 
 T = TypeVar('T')
