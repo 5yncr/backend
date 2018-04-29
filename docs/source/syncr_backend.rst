@@ -1,12 +1,16 @@
 syncr\_backend package
 ======================
 
+.. automodule:: syncr_backend
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
-    syncr_backend.bin
     syncr_backend.external_interface
     syncr_backend.init
     syncr_backend.metadata
@@ -16,19 +20,6 @@ Subpackages
 Submodules
 ----------
 
-syncr\_backend.constants module
--------------------------------
+.. toctree::
 
-.. automodule:: syncr_backend.constants
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: syncr_backend
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   syncr_backend.constants

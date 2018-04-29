@@ -13,7 +13,7 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 api-doc:
-	bash -c "sphinx-apidoc -o source/ ../syncr_backend/ -f"
+	bash -c "sphinx-apidoc -M -T -e -f --implicit-namespaces -o source/ ../syncr_backend/ ../syncr_backend/bin/"
 
 .PHONY: help Makefile
 

@@ -1,4 +1,4 @@
-"The dorp metadata object and related functions"""
+"The drop metadata object and related functions"""
 import logging
 import os
 import shutil
