@@ -5,6 +5,7 @@ all:
 	pycodestyle tests syncr_backend"
 
 docs:
+	$(MAKE) -C docs api-doc
 	$(MAKE) -C docs html
 
 .PHONY: all docs

@@ -295,7 +295,7 @@ async def get_file_metadata_from_drop_id(
 
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name
-    :return Optional[FileMetadata] of the given file
+    :return: Optional[FileMetadata] of the given file
     """
     drop_location = await drop_metadata.get_drop_location(drop_id)
     file_metadata_location = os.path.join(
