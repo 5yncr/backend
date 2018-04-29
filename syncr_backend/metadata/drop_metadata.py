@@ -73,20 +73,18 @@ class DropMetadata(object):
         self.sig = sig
         self._protocol_version = protocol_version
         self._files_hash = files_hash
-        self._log = None  # Type: Optional[logging.Logger]
+        self._log = None  # type: Optional[logging.Logger]
 
     @property
     def log(self) -> logging.Logger:
         """A logger for this object"""
-        if self._log is not None:
-            return self._log
-
-        self._log = get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.id).decode('utf-8'),
-            ]),
-        )
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.id).decode('utf-8'),
+                ]),
+            )
         return self._log
 
     @property

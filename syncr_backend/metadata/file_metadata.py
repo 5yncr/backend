@@ -48,15 +48,13 @@ class FileMetadata(object):
     @property
     def log(self) -> logging.Logger:
         """A logger for this object"""
-        if self._log is not None:
-            return self._log
-
-        self._log = get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.file_id).decode('utf-8'),
-            ]),
-        )
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.file_id).decode('utf-8'),
+                ]),
+            )
         return self._log
 
     def encode(self) -> bytes:
