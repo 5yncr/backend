@@ -85,7 +85,7 @@ html_theme_options = {
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': True,
-    'vcs_pageview_mode': '',
+    'vcs_pageview_mode': 'blob',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,
