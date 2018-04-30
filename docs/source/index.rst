@@ -29,18 +29,23 @@ running the tracker.  See `the frontend repo
 <https://github.com/5yncr/frontend>`_ for documentation on running the
 frontend.  Read on for how to use the backend.
 
+Before continuing, please look through the :ref:`terms`.  Then, continue to
+:ref:`usage` for instructions on using 5yncr from the command line.
+
 .. toctree::
-   :maxdepth: 2
+  :maxdepth: 1
+  :caption: Documentation:
+
+  usage
+  terminology
+  itests
+  asyncio
+
+.. toctree::
+   :maxdepth: 1
    :caption: Modules:
 
    modules
-
-.. toctree::
-  :maxdepth: 2
-  :caption: Documentation:
-
-  itests
-  asyncio
 
 
 
