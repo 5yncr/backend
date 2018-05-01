@@ -18,10 +18,10 @@ import sys
 import time
 from distutils.core import run_setup
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('..'))
 sys.setrecursionlimit(1500)
 
-SETUP = os.path.join(os.path.dirname(__file__), '../..', 'setup.py')
+SETUP = os.path.join(os.path.dirname(__file__), '..', 'setup.py')
 
 distribution = run_setup(SETUP, stop_after='init')
 
@@ -157,6 +157,12 @@ latex_documents = [
     (
         master_doc, 'syncr.tex', 'syncr Documentation', author, 'manual',
         False,
+    ),
+]
+
+rinoh_documents = [
+    (
+        master_doc, 'syncr', 'syncr Documentation', author, 'manual',
     ),
 ]
 
