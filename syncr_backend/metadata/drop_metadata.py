@@ -77,7 +77,11 @@ class DropMetadata(object):
 
     @property
     def log(self) -> logging.Logger:
-        """A logger for this object"""
+        """
+        A logger for this object
+
+        :return: a logger object for this class
+        """
         if self._log is None:
             self._log = get_logger(
                 '.'.join([
@@ -262,6 +266,7 @@ class DropMetadata(object):
 
         :param id: the drop id
         :param metadata_location: where to find it
+        :return: The latest version, or none if not found
         """
         file_name = DropMetadata.make_filename(id, LATEST)
         logger.debug(
@@ -476,6 +481,7 @@ async def send_my_pub_key() -> None:
 async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     Saves the public key to the specified location
+
     :param key_path: absolute path to location of public key
     :param pub_key: bytes to be saved
     """
@@ -484,5 +490,10 @@ async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:
-    """Geterate a drop id"""
+    """
+    Geterate a drop id
+
+    :param first_owner: The initial primary owner
+    :return: A drop id, which is the first owner's ID plus random bytes
+    """
     return first_owner + crypto_util.random_bytes()

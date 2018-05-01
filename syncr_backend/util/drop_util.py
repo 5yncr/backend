@@ -80,6 +80,17 @@ T = TypeVar('T')
 def rotate(l: List[T]) -> List[T]:
     """Puts the first element at the back and return the list
 
+    >>> from syncr_backend.util.drop_util import rotate
+    >>> rotate([1,2,3,4])
+    [2, 3, 4, 1]
+
+    Zero and one length lists are not changed
+
+    >>> rotate([])
+    []
+    >>> rotate(['foo'])
+    ['foo']
+
     :param l: a list
     :return: that list, with the first element at the back
     """
@@ -125,9 +136,9 @@ class PermissionError(Exception):
 
 
 async def update_drop(
-        drop_id: bytes,
-        add_secondary_owner: bytes=None,
-        remove_secondary_owner: bytes=None,
+    drop_id: bytes,
+    add_secondary_owner: bytes=None,
+    remove_secondary_owner: bytes=None,
 ) -> None:
     """
     Update a drop from a directory.

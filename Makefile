@@ -6,6 +6,7 @@ all:
 
 docs:
 	$(MAKE) -C docs api-doc
+	$(MAKE) -C docs doctest
 	$(MAKE) -C docs html
 
 .PHONY: all docs
