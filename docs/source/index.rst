@@ -37,6 +37,7 @@ Before continuing, please look through the :ref:`terms`.  Then, continue to
   :caption: Documentation:
 
   usage
+  cmdline
   terminology
   itests
   asyncio
