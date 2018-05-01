@@ -6,16 +6,6 @@ Usage
 This document describes the command line usage of 5yncr.  For using via the
 frontend, please see (TODO: write frontend docs).
 
-Usage follows several steps:
-
-- :ref:`node-init`
-- :ref:`drop-init`
-- :ref:`dps-configs`
-- :ref:`run-backend`
-- :ref:`adding-a-drop`
-- :ref:`update-owned-drop`
-- :ref:`update-other-drop`
-
 .. _node-init:
 
 One time node initialization
