@@ -44,7 +44,7 @@ Before continuing, please look through the :ref:`terms`.  Then, continue to
 
 .. toctree::
    :maxdepth: 1
-   :caption: Modules:
+   :caption: API docs:
 
    modules
 
