@@ -23,12 +23,13 @@ One time node initialization
 Before first use, a user must initialize their node.  This creates the
 necessary directories [#]_ and key-pair.
 
-Initialize a node with ``node_init`` [warning]_.
+Initialize a node with ``node_init``.
 
+.. warning::
+    The `--direcotry <directory>` parameter is allowed in this script,
+    but may not be recognized in other places
 
 .. [#] Usually ~/.5yncr and subdirectories
-.. [warning] The `--direcotry <directory>` parameter is allowed in this script,
-    but may not be recognized in other places
 
 .. _drop-init:
 

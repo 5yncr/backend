@@ -18,11 +18,9 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 project = '5yncr'
-copyright = '''2018, Matthew Bentley, Brett Johnson, David Lance,
-Jack LaRue, Alexander Tryjankowski'''
-
 author = '''Matthew Bentley, Brett Johnson, David Lance,
 Jack LaRue, Alexander Tryjankowski'''
+copyright = "2018, %s" % author
 
 # The short X.Y version
 version = ''
@@ -44,6 +42,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx.ext.doctest',
+    'rinoh.frontend.sphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,11 +51,9 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_parsers = {
-    '.md': 'recommonmark.parser.CommonMarkParser',
-}
-source_suffix = ['.rst', '.md']
-# source_suffix = '.rst'
+source_parsers = {}
+# source_suffix = ['.rst', '.md']
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -131,11 +128,11 @@ htmlhelp_basename = '5yncrdoc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    # 'pointsize': '10pt',
+    'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
@@ -151,11 +148,12 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        master_doc, '5yncr.tex', '5yncr Documentation',
-        'Matthew Bentley, Brett Johnson, David Lance, Jack LaRue, Alexander Tryjankowski', 'manual',
+        master_doc, 'syncr.tex', 'syncr Documentation', author, 'howto',
+        False,
     ),
 ]
 
+rinoh_template = 'article'
 
 # -- Options for manual page output ------------------------------------------
 
