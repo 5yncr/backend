@@ -32,6 +32,9 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     on config file
 
     :param node_id: This node's node id
+    :raises UnsupportedOptionError: If the config specifies an unknown DPS type
+    :raises IncompleteConfigError: If the config does not have the necessary \
+            values
     :return: PublicKeyStore
     """
     config_file = await load_config_file()

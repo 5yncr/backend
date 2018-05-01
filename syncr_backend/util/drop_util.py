@@ -146,6 +146,7 @@ async def update_drop(
     :param drop_id: The drop_id to update
     :param add_secondary_owner: new secondary owner for a drop
     :param remove_secondary_owner: secondary owner to remove from a drop
+    :raises PermissionError: If this node id is not an owner
     """
     drop_directory = await get_drop_location(drop_id)
     old_drop_m = await DropMetadata.read_file(
@@ -288,6 +289,8 @@ async def verify_version(
 
     :param drop_metadata: A DropMetadata object
     :param peers: List of peers to download metadata objects from
+    :raises VerificationException: If this version or any parent versions \
+            cannot be verified
     """
     if len(drop_metadata.previous_versions) == 0:
         await drop_metadata.verify_header()
@@ -644,6 +647,7 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     Gets the peers that have a drop. Also shuffles the list
 
     :param drop_id: id of drop
+    :raises PeerStoreError: If peers cannot be found
     :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()

@@ -112,6 +112,7 @@ class DropMetadata(object):
 
         Returns None if the hash is OK, throwns a VerificationException if the
         hash is not good or has not been set
+        :raises VerificationException: If the files hash is not found or wrong
         """
         if self._files_hash is None:
             self.log.error("no files hash found when verifying")
@@ -166,6 +167,7 @@ class DropMetadata(object):
 
         If the signature is OK, returns none, if the signature is None or is
         invalid throws a VerificationException
+        :raises VerificationException: If the header signature doesn't match
         """
         if self.sig is None:
             self.log.error("header signature not found when verifying")
@@ -179,6 +181,7 @@ class DropMetadata(object):
         """Get the file name of a file id
 
         :param file_hash: the file id
+        :raises FileNotFoundError: If the file was not found in the metadata
         :return: the file name string
         """
         for (fname, fhash) in self.files.items():
@@ -186,7 +189,7 @@ class DropMetadata(object):
                 return fname
 
         self.log.error("tried to lookup a file that doesn't exist")
-        raise FileNotFoundError
+        raise FileNotFoundError()
 
     async def unsubscribe(self) -> None:
         """Removes the refrence in the .5yncr folder therefore preventing
@@ -432,6 +435,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     PublicKeyStore
 
     :param node_id: bytes for the node you want public key of
+    :raises VerificationException: If the pub key cannot be retrieved
     :return: PublicKey
     """
     init_directory = get_full_init_directory(None)

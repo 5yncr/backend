@@ -63,6 +63,9 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     on config file
 
     :param node_id: bytes of the node id for this node
+    :raises UnsupportedOptionError: If the config specifies an unknown DPS type
+    :raises IncompleteConfigError: If the config does not have the necessary \
+            values
     :return: DropPeerStore
     """
     config_file = await load_config_file()

@@ -268,6 +268,7 @@ async def verify_signed_dictionary(
     :param public_key: RSA public_key
     :param signature: the signature of the dictionary
     :param dictionary: the actual dictionary
+    :raises VerificationException: If the verification fails
     :return: None
     """
     verifier = public_key.verifier(
