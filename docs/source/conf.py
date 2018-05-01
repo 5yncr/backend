@@ -16,6 +16,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
+sys.setrecursionlimit(1500)
 
 project = '5yncr'
 author = '''Matthew Bentley, Brett Johnson, David Lance,
@@ -43,7 +44,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.doctest',
     'rinoh.frontend.sphinx',
-    'sphinxarg.ext',
+    'sphinxcontrib.autoprogram',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
