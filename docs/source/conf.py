@@ -15,18 +15,23 @@
 # -- Project information -----------------------------------------------------
 import os
 import sys
+import time
+from distutils.core import run_setup
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.setrecursionlimit(1500)
 
-project = '5yncr'
-author = '''Matthew Bentley, Brett Johnson, David Lance,
-Jack LaRue, Alexander Tryjankowski'''
-copyright = "2018, %s" % author
+SETUP = os.path.join(os.path.dirname(__file__), '../..', 'setup.py')
+
+distribution = run_setup(SETUP, stop_after='init')
+
+author = distribution.get_author()
+copyright = "%s, %s" % (time.strftime('%Y'), author)
 
 # The short X.Y version
-version = ''
+release = version = distribution.get_version()
 # The full version, including alpha/beta/rc tags
-release = ''
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -150,7 +155,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        master_doc, 'syncr.tex', 'syncr Documentation', author, 'howto',
+        master_doc, 'syncr.tex', 'syncr Documentation', author, 'manual',
         False,
     ),
 ]
