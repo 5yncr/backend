@@ -46,8 +46,7 @@ Before continuing, please look through the :ref:`terms`.  Then, continue to
    :maxdepth: 1
    :caption: API docs:
 
-   modules
-
+   generated/syncr_backend
 
 
 Indices and tables

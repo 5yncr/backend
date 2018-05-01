@@ -25,6 +25,7 @@ SETUP = os.path.join(os.path.dirname(__file__), '..', 'setup.py')
 
 distribution = run_setup(SETUP, stop_after='init')
 
+project = distribution.get_name()
 author = distribution.get_author()
 copyright = "%s, %s" % (time.strftime('%Y'), author)
 
