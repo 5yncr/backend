@@ -1,6 +1,8 @@
 import asyncio
 import os
 import platform
+import sys
+import traceback
 from typing import Any
 from typing import Awaitable  # noqa
 from typing import Callable  # noqa
@@ -11,9 +13,10 @@ import bencode  # type: ignore
 from syncr_backend.constants import ACTION_ADD_OWNER
 from syncr_backend.constants import ACTION_DELETE_DROP
 from syncr_backend.constants import ACTION_GET_OWNED_SUBSCRIBED_DROPS
-from syncr_backend.constants import ACTION_GET_SELECT_DROPS
+from syncr_backend.constants import ACTION_GET_SELECT_DROP
 from syncr_backend.constants import ACTION_INITIALIZE_DROP
 from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
+from syncr_backend.constants import ACTION_NEW_VERSION
 from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
@@ -53,12 +56,13 @@ async def handle_frontend_request(
         ACTION_ADD_OWNER: handle_add_owner,
         ACTION_DELETE_DROP: handle_delete_drop,
         ACTION_GET_OWNED_SUBSCRIBED_DROPS: handle_get_owned_subscribed_drops,
-        ACTION_GET_SELECT_DROPS: handle_get_selected_drops,
+        ACTION_GET_SELECT_DROP: handle_get_selected_drop,
         ACTION_INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
         ACTION_INITIALIZE_DROP: handle_initialize_drop,
         ACTION_REMOVE_OWNER: handle_remove_owner,
         ACTION_SHARE_DROP: handle_share_drop,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
+        ACTION_NEW_VERSION: handle_update_drop,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -79,6 +83,9 @@ async def handle_frontend_request(
                 'error': ERR_EXCEPTION,
                 'message': str(e),
             }
+            ex_type, ex, tb = sys.exc_info()
+            logger.error("Error handling request: %s", e)
+            traceback.print_exc()
             await send_response(conn, response)
 
 
@@ -110,7 +117,7 @@ async def handle_add_owner(
         drop_id = crypto_util.b64decode(request['drop_id'])
         owner_id = crypto_util.b64decode(request['owner_id'])
 
-        update_drop(
+        await update_drop(
             drop_id,
             add_secondary_owner=owner_id,
         )
@@ -124,8 +131,30 @@ async def handle_add_owner(
     await send_response(conn, response)
 
 
+async def handle_update_drop(
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    if request['drop_id'] is None:
+        response = {
+            'status': 'error',
+            'error': ERR_INVINPUT,
+        }
+    else:
+        drop_id = crypto_util.b64decode(request['drop_id'])
+
+        await update_drop(drop_id)
+
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': 'new version created',
+        }
+
+    await send_response(conn, response)
+
+
 async def handle_delete_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to delete a drop.
@@ -169,7 +198,7 @@ async def handle_delete_drop(
     await send_response(conn, response)
 
 
-async def handle_get_selected_drops(
+async def handle_get_selected_drop(
         request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
@@ -191,8 +220,8 @@ async def handle_get_selected_drops(
     else:
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
-        drop = drop_metadata_to_response(md)
-        file_update_status = await check_for_changes(request['drop_id'])
+        drop = await drop_metadata_to_response(md)
+        file_update_status = await check_for_changes(drop_id)
         if file_update_status is None or drop is None:
             response = {
                 'status': 'error',
@@ -205,12 +234,14 @@ async def handle_get_selected_drops(
                 'status': 'ok',
                 'result': 'success',
                 'message': 'selected files retrieved',
-                'requested_drops': drop,
-                'pending_changes': {
-                    'added': file_update_status.added,
-                    'removed': file_update_status.removed,
-                    'changed': file_update_status.changed,
-                    'unchanged': file_update_status.unchanged,
+                'requested_drops': {
+                    'drop': drop,
+                    'pending_changes': {
+                        'added': list(file_update_status.added),
+                        'removed': list(file_update_status.removed),
+                        'changed': list(file_update_status.changed),
+                        'unchanged': list(file_update_status.unchanged),
+                    },
                 },
             }
 
@@ -239,10 +270,12 @@ async def handle_get_owned_subscribed_drops(
     subscribed_drops = md_tup[1]
 
     for drop in owned_drops:
-        owned_drop_dictionaries.append(drop_metadata_to_response(drop))
+        owned_drop_dictionaries.append(await drop_metadata_to_response(drop))
 
     for drop in subscribed_drops:
-        subscribed_drop_dictionaries.append(drop_metadata_to_response(drop))
+        subscribed_drop_dictionaries.append(
+            await drop_metadata_to_response(drop),
+        )
 
     dict_tup = (owned_drop_dictionaries, subscribed_drop_dictionaries)
 

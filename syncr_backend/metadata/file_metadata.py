@@ -167,11 +167,14 @@ class FileMetadata(object):
         full_name = os.path.join((await self.save_dir), file_name)
         downloaded_chunks = set()  # type: Set[int]
         for chunk_idx in range(self.num_chunks):
-            _, h = await fileio_util.read_chunk(
-                filepath=full_name,
-                position=chunk_idx,
-                chunk_size=self.chunk_size,
-            )
+            try:
+                _, h = await fileio_util.read_chunk(
+                    filepath=full_name,
+                    position=chunk_idx,
+                    chunk_size=self.chunk_size,
+                )
+            except FileNotFoundError:
+                return set()
             if h == self.hashes[chunk_idx]:
                 downloaded_chunks.add(chunk_idx)
         self.log.debug("calculated downloaded chunks: %s", downloaded_chunks)

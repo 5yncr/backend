@@ -125,9 +125,9 @@ class PermissionError(Exception):
 
 
 async def update_drop(
-        drop_id: bytes,
-        add_secondary_owner: bytes=None,
-        remove_secondary_owner: bytes=None,
+    drop_id: bytes,
+    add_secondary_owner: bytes=None,
+    remove_secondary_owner: bytes=None,
 ) -> None:
     """
     Update a drop from a directory.
@@ -195,6 +195,8 @@ async def update_drop(
         await f_m.write_file(
             os.path.join(drop_directory, DEFAULT_FILE_METADATA_LOCATION),
         )
+
+    DropMetadata.read_file.cache_clear()  # type: ignore
 
 
 async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
@@ -425,14 +427,15 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
         drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = await make_file_metadata(
+        rel_name = os.path.relpath(full_name, drop_location)
+        files[rel_name] = await make_file_metadata(
             full_name, drop_id,
         )
 
-    changed_files = Set()
-    removed_files = Set()
-    unchanged_files = Set()
-    starting_files = Set(files.keys())
+    changed_files = set()
+    removed_files = set()
+    unchanged_files = set()
+    starting_files = set(files.keys())
 
     for (name, id) in drop_metadata.files.items():
         if name in starting_files:
@@ -443,9 +446,9 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
                 unchanged_files.add(name)
             else:
                 changed_files.add(name)
+            starting_files.remove(name)
         else:
             removed_files.add(name)  # Add file that no longer exists
-        starting_files.remove(name)
 
     return FileUpdateStatus(
         added=starting_files,
