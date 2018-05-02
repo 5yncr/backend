@@ -36,7 +36,7 @@ from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
-from syncr_backend.util.drop_util import sync_drop
+from syncr_backend.util.drop_util import queue_sync
 from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
@@ -337,7 +337,7 @@ async def handle_input_subscribe_drop(
         file_path = request['file_path']
 
         try:
-            asyncio.ensure_future(sync_drop(drop_id, file_path))
+            await queue_sync(drop_id, file_path)
             response = {
                 'status': 'ok',
                 'result': 'success',
