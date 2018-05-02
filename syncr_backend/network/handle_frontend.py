@@ -7,6 +7,7 @@ from typing import Any
 from typing import Awaitable  # noqa
 from typing import Callable  # noqa
 from typing import Dict
+from typing import List  # noqa
 
 import bencode  # type: ignore
 
@@ -238,16 +239,18 @@ async def _handle_selected_drop(
         drop = await drop_metadata_to_response(md)
         if get_pending_changes:
             file_update_status = await check_for_changes(drop_id)
-            pending_changes = {
-                'added': list(file_update_status.added),
-                'removed': list(file_update_status.removed),
-                'changed': list(file_update_status.changed),
-                'unchanged': list(file_update_status.unchanged),
-            }
+            if file_update_status is None:
+                pending_changes = {}  # type: Dict[str, List[str]]
+            else:
+                pending_changes = {
+                    'added': list(file_update_status.added),
+                    'removed': list(file_update_status.removed),
+                    'changed': list(file_update_status.changed),
+                    'unchanged': list(file_update_status.unchanged),
+                }
         else:
-            file_update_status = True
             pending_changes = {}
-        if file_update_status is None or drop is None:
+        if drop is None:
             response = {
                 'status': 'error',
                 'result': 'failure',
