@@ -17,6 +17,7 @@ from syncr_backend.constants import ACTION_GET_SELECT_DROP
 from syncr_backend.constants import ACTION_INITIALIZE_DROP
 from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
 from syncr_backend.constants import ACTION_NEW_VERSION
+from syncr_backend.constants import ACTION_PENDING_CHANGES
 from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_SHARE_DROP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
@@ -63,6 +64,7 @@ async def handle_frontend_request(
         ACTION_SHARE_DROP: handle_share_drop,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_NEW_VERSION: handle_update_drop,
+        ACTION_PENDING_CHANGES: handle_pending_changes,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -199,7 +201,20 @@ async def handle_delete_drop(
 
 
 async def handle_get_selected_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    await _handle_selected_drop(False, request, conn)
+
+
+async def handle_pending_changes(
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    await _handle_selected_drop(True, request, conn)
+
+
+async def _handle_selected_drop(
+    get_pending_changes: bool, request: Dict[str, Any],
+    conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to a drop selected by user.
@@ -221,7 +236,17 @@ async def handle_get_selected_drop(
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
         drop = await drop_metadata_to_response(md)
-        file_update_status = await check_for_changes(drop_id)
+        if get_pending_changes:
+            file_update_status = await check_for_changes(drop_id)
+            pending_changes = {
+                'added': list(file_update_status.added),
+                'removed': list(file_update_status.removed),
+                'changed': list(file_update_status.changed),
+                'unchanged': list(file_update_status.unchanged),
+            }
+        else:
+            file_update_status = True
+            pending_changes = {}
         if file_update_status is None or drop is None:
             response = {
                 'status': 'error',
@@ -236,12 +261,7 @@ async def handle_get_selected_drop(
                 'message': 'selected files retrieved',
                 'requested_drops': {
                     'drop': drop,
-                    'pending_changes': {
-                        'added': list(file_update_status.added),
-                        'removed': list(file_update_status.removed),
-                        'changed': list(file_update_status.changed),
-                        'unchanged': list(file_update_status.unchanged),
-                    },
+                    'pending_changes': pending_changes,
                 },
             }
 
@@ -249,7 +269,7 @@ async def handle_get_selected_drop(
 
 
 async def handle_get_owned_subscribed_drops(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve drops that user owns and is subscribed to
@@ -456,7 +476,7 @@ async def handle_share_drop(
 
 
 async def handle_unsubscribe(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to unsubscribe from a subscribed drop.

@@ -89,7 +89,7 @@ class FileMetadata(object):
             await f.write(self.encode())
 
     @staticmethod
-    @async_cache(maxsize=1024)
+    @async_cache(maxsize=1024*1024)
     async def read_file(
         file_id: bytes,
         metadata_location: str,

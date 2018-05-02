@@ -73,6 +73,7 @@ ACTION_REMOVE_OWNER = 'remove_owner'
 ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_NEW_VERSION = 'new_version'
+ACTION_PENDING_CHANGES = 'get_pending_changes'
 
 # Frontend connection settings
 FRONTEND_TCP_ADDRESS = ('localhost', 12345)
