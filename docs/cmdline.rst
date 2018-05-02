@@ -27,7 +27,7 @@ Command line
     :prog: node_init
 
 .. warning::
-    The `--direcotry <directory>` parameter is allowed in this script,
+    The ``--direcotry <directory>`` parameter is allowed in this script,
     but may not be recognized in other places
 
 .. _run_backend:
