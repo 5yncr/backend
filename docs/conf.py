@@ -156,14 +156,8 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        master_doc, 'syncr.tex', 'syncr Documentation', author, 'manual',
+        master_doc, 'syncr.tex', 'syncr Documentation', author, 'howto',
         False,
-    ),
-]
-
-rinoh_documents = [
-    (
-        master_doc, 'syncr', 'syncr Documentation', author, 'manual',
     ),
 ]
 

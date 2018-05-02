@@ -4,7 +4,7 @@ Usage
 =====
 
 This document describes the command line usage of 5yncr.  For using via the
-frontend, please see (TODO: write frontend docs).
+frontend, please see :ref:`the frontend docs <frontend:index>`.
 
 One time node initialization
 ----------------------------
