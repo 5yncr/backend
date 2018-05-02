@@ -210,7 +210,7 @@ async def queue_sync(
 ) -> None:
     """
     Queue a drop to be synced.  This will just put it in the sync queue that is
-    run by ``process_sync_queue
+    run by ``process_sync_queue``
 
     :param drop_id: The drop id
     :param save_dir: The drop's save directory
