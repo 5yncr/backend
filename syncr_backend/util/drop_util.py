@@ -418,7 +418,12 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     drop_location = await get_drop_location(drop_id)
     if drop_location is None:
         return None
-    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    drop_metadata = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=os.path.join(
+            drop_location, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
     if drop_metadata is None:
         return None
 
