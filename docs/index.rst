@@ -10,7 +10,7 @@ Welcome to 5yncr's documentation!
 program.  "Drops" are synced in a peer-to-peer manner similar to bittorrent,
 but may also be updated by the original creator or designated secondary owners.
 
-5yncr's Python implementation  is currently **alpha** software.  The protocol
+5yncr's Python implementation is currently **alpha** software.  The protocol
 and file formats are likely to change in backward incompatible ways without
 warning, and the only supported method of running is by pulling all the repos
 from github and running it manually.  The Python implementation is designed as
@@ -24,10 +24,9 @@ sent to the frontend.  The frontend is simply a flask app that creates a UI to
 be used in a web browser.  It communicates over a network or unix socket to the
 backend.  The tracker is similar to a tracker in bittorrent: it keeps track of
 which nodes are syncing which drops, and acts as a key server for public keys.
-See `the tracker repo <https://github.com/5yncr/tracker>`_ for documentation on
-running the tracker.  See `the frontend repo
-<https://github.com/5yncr/frontend>`_ for documentation on running the
-frontend.  Read on for how to use the backend.
+See :ref:`the tracker docs <tracker:index>` for documentation on running the
+tracker.  See :ref:`the frontend docs <frontend:index>` for documentation on
+running the frontend.  Read on for how to use the backend.
 
 Before continuing, please look through the :ref:`terms`.  Then, continue to
 :ref:`usage` for instructions on using 5yncr from the command line.

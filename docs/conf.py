@@ -200,4 +200,20 @@ texinfo_documents = [
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+
+frontend_branch = os.environ.get('FRONTEND_BRANCH') or 'latest'
+tracker_branch = os.environ.get('TRACKER_BRANCH') or 'latest'
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/', None),
+    'frontend': (
+        'https://syncr.readthedocs.io/projects/frontend/en/%s/'
+        % frontend_branch,
+        None,
+    ),
+    'tracker': (
+        'https://syncr.readthedocs.io/projects/tracker/en/%s/'
+        % tracker_branch,
+        None,
+    ),
+}
