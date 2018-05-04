@@ -58,6 +58,8 @@ async def sync_drop(
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
+    :param version: optional version to sync, otherwise will use the version \
+            on the filesystem or find the most recent one
     :return: a tuple of true if syncing finished and the drop_id
     """
     lock = sync_locks[drop_id]
