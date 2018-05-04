@@ -12,15 +12,18 @@ from typing import Optional
 from typing import Tuple
 
 import aiofiles  # type: ignore
+import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
+from syncr_backend.constants import DEFAULT_TIMESTAMP_LOCATION
 from syncr_backend.external_interface.store_exceptions import \
     MissingConfigError
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.util import crypto_util
+from syncr_backend.util.drop_util import FileUpdateStatus
 from syncr_backend.util.log_util import get_logger
 
 
@@ -48,6 +51,81 @@ async def load_config_file() -> Dict[str, Any]:
         config_file = json.loads(config_txt)
 
     return config_file
+
+
+async def scan_current_files(
+    drop_location: str,
+) -> Dict[str, int]:
+    """
+    """
+    files = {}
+    for (dirpath, filename) in walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = int(os.path.gettmtime(full_name))
+    return files
+
+
+async def read_timestamp_file() -> Dict[str, int]:
+    """
+    Reads the timestamp file and returns it as a dict
+    :return: dictionary of filepath and timestamp
+    """
+
+    await write_locks[DEFAULT_TIMESTAMP_LOCATION].acquire()
+    async with aiofiles.open(DEFAULT_TIMESTAMP_LOCATION, 'rb') as f:
+        filedata = await f.read()
+    return bencode.decode(filedata)
+
+
+async def write_timestamp_file(
+    current_files: Dict[str, int],
+) -> None:
+    """
+    Write the timestamp file as the passed in dict
+    :param current_files: Dictionary of filepath and timestamp
+    """
+    filedata = bencode.encode(current_files)
+    await write_locks[DEFAULT_TIMESTAMP_LOCATION].acquire()
+    async with aiofiles.open(DEFAULT_TIMESTAMP_LOCATION, 'rb') as f:
+        f.write(filedata)
+
+
+async def diff_timestamp_file(
+    current_files: Dict[str, int]
+) -> FileUpdateStatus:
+    """
+    Reads the timestamp file and compares it to the current files
+    :param current_files: Dictionary that stores filepath and timestamp
+    :return: FileUpdateStatus constructed from the difference of the \
+    current_files Dictionary and the loaded Dictionary from the timestamp file
+    """
+
+    timestamp_files = await read_timestamp_file()
+    # current is the set of currently existing filepaths
+    current = set(current_files.keys())
+    # old is the set of previous existing filepaths
+    old = set(timestamp_files.keys())
+    # files that are in current but not in old are added files
+    added_files = current - old
+    # files that are in the old but not in current have been removed
+    removed_files = old - current
+    # files that are in both old and current could have been changed
+    # get all unchanged files
+    unchanged_files = [
+        filepath for filepath in (current.intersection(old))
+        if timestamp_files[filepath] == current_files[filepath]
+    ]
+    # files that are in both old and current and not unchanged are changed
+    changed_files = current.intersection(old) - unchanged_files
+
+    return FileUpdateStatus(
+        added=added_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
 
 
 async def write_chunk(
