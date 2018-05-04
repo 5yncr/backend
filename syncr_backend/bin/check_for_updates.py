@@ -45,7 +45,7 @@ def main() -> None:
 
     # TODO: print a list of what's changed
     md, update_avail = loop.run_until_complete(
-        drop_util.check_for_updates(drop_id),
+        drop_util.check_for_update(drop_id),
     )
     if update_avail:
         print("Update available: %s. Run update_drop" % md.version.version)

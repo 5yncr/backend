@@ -51,7 +51,9 @@ def main() -> None:
         print("No update available, exiting")
         exit(0)
 
-    drop_dir = drop_metadata.get_drop_location(drop_id)
+    drop_dir = loop.run_until_complete(
+        drop_metadata.get_drop_location(drop_id),
+    )
 
     done, _ = loop.run_until_complete(
         drop_util.sync_drop(drop_id, drop_dir, md.version),
