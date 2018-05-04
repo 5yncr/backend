@@ -89,6 +89,7 @@ async def sync_drop(
         scanned_files = await fileio_util.scan_current_files(drop_location)
         await fileio_util.write_timestamp_file(
             scanned_files,
+            drop_location,
         )
 
     lock.release()
@@ -640,11 +641,12 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
 
     files = await fileio_util.scan_current_files(drop_location)
 
-    return await diff_timestamp_file(files)
+    return await diff_timestamp_file(files, drop_location)
 
 
 async def diff_timestamp_file(
-    current_files: Dict[str, int]
+    current_files: Dict[str, int],
+    drop_location: str,
 ) -> FileUpdateStatus:
     """
     Reads the timestamp file and compares it to the current files
@@ -654,7 +656,7 @@ async def diff_timestamp_file(
     current_files Dictionary and the loaded Dictionary from the timestamp file
     """
 
-    timestamp_files = await fileio_util.read_timestamp_file()
+    timestamp_files = await fileio_util.read_timestamp_file(drop_location)
     # current is the set of currently existing filepaths
     current = set(current_files.keys())
     # old is the set of previous existing filepaths
