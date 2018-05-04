@@ -43,15 +43,23 @@ class FileMetadata(object):
         self.drop_id = drop_id
         self._save_dir = None  # type: Optional[str]
         self.file_name = file_name
+        self._log = None  # type: Optional[logging.Logger]
 
     @property
     def log(self) -> logging.Logger:
-        return get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.file_id).decode('utf-8'),
-            ]),
-        )
+        """
+        A logger for this object
+
+        :return: a logger object for this class
+        """
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.file_id).decode('utf-8'),
+                ]),
+            )
+        return self._log
 
     def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
@@ -195,6 +203,11 @@ class FileMetadata(object):
 
     @property
     async def percent_done(self) -> float:
+        """
+        How done the file is, in range [0,1]
+
+        :return: The percent done, in range [0,1]
+        """
         if self.num_chunks == 0:
             return 1.0
         return len(await self.downloaded_chunks) / self.num_chunks
@@ -206,6 +219,26 @@ class FileMetadata(object):
         """
         self.log.debug("finishing chunk %s", chunk_id)
         (await self.downloaded_chunks).add(chunk_id)
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Overwriting equals method so that it returns True if they have
+        the same hash and size and filename
+
+        :param self: FileMetadata of a given file
+        :param other: another object
+        :return: Boolean based on the above fact
+        """
+        if not isinstance(other, FileMetadata):
+            return False
+        if self.hashes != other.hashes:
+            return False
+        elif self.file_name != other.file_name:
+            return False
+        elif self.file_length != other.file_length:
+            return False
+        else:
+            return True
 
 
 async def file_hashes(
@@ -268,9 +301,10 @@ async def get_file_metadata_from_drop_id(
 ) -> Optional[FileMetadata]:
     """
     Gets the file metadata of a file in a drop
+
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name
-    :return Optional[FileMetadata] of the given file
+    :return: Optional[FileMetadata] of the given file
     """
     drop_location = await drop_metadata.get_drop_location(drop_id)
     file_metadata_location = os.path.join(

@@ -7,6 +7,7 @@ from typing import Awaitable  # noqa
 from typing import cast
 from typing import Dict  # noqa
 from typing import List
+from typing import NamedTuple
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
@@ -30,6 +31,8 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -47,6 +50,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
+    :return: true if syncing finished, false otherwise
     """
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
@@ -58,7 +62,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
                 drop_id=drop_id,
                 file_name=file_name,
                 file_id=file_id,
-                # call rotate(drop_peers) so each file starts with a new peer
+                # callrotate(drop_peers) so each file starts with a new peer
                 peers=rotate(drop_peers),
                 save_dir=save_dir,
             ) for file_name, file_id in drop_metadata.files.items()
@@ -75,6 +79,18 @@ T = TypeVar('T')
 
 def rotate(l: List[T]) -> List[T]:
     """Puts the first element at the back and return the list
+
+    >>> from syncr_backend.util.drop_util import rotate
+    >>> rotate([1,2,3,4])
+    [2, 3, 4, 1]
+
+    Zero and one length lists are not changed
+
+    >>> rotate([])
+    []
+    >>> rotate(['foo'])
+    ['foo']
+
     :param l: a list
     :return: that list, with the first element at the back
     """
@@ -88,6 +104,18 @@ async def sync_and_finish_file(
     drop_id: bytes, file_name: str, file_id: bytes,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> bool:
+    """
+    Sync a file from peers, returning whether it finished. If finished, mark it
+    done in the filesystem
+
+    :param drop_id: Drop ID
+    :param file_name: The file name. Both name and ID are needed to account \
+            for identical files
+    :param file_id: The file ID
+    :param peers: Peers to ownload from
+    :param save_dir: The top level directory of the drop
+    :return: True if the file is finished, false otherwise
+    """
     remaining_chunks = await sync_file_contents(
         drop_id=drop_id,
         file_name=file_name,
@@ -103,13 +131,14 @@ async def sync_and_finish_file(
 
 
 class PermissionError(Exception):
+    """Raised if update drop tries to modify a drop it doesn't own"""
     pass
 
 
 async def update_drop(
-        drop_id: bytes,
-        add_secondary_owner: bytes=None,
-        remove_secondary_owner: bytes=None,
+    drop_id: bytes,
+    add_secondary_owner: bytes=None,
+    remove_secondary_owner: bytes=None,
 ) -> None:
     """
     Update a drop from a directory.
@@ -117,7 +146,7 @@ async def update_drop(
     :param drop_id: The drop_id to update
     :param add_secondary_owner: new secondary owner for a drop
     :param remove_secondary_owner: secondary owner to remove from a drop
-
+    :raises PermissionError: If this node id is not an owner
     """
     drop_directory = await get_drop_location(drop_id)
     old_drop_m = await DropMetadata.read_file(
@@ -256,7 +285,12 @@ async def verify_version(
     """Verify the DropMetadata version recursively
 
     If this version and all prior versions leading up to it are legitimate
-    returns none, otherwise throws an exception
+    returns none, otherwise throws a VerificationException
+
+    :param drop_metadata: A DropMetadata object
+    :param peers: List of peers to download metadata objects from
+    :raises VerificationException: If this version or any parent versions \
+            cannot be verified
     """
     if len(drop_metadata.previous_versions) == 0:
         await drop_metadata.verify_header()
@@ -307,13 +341,13 @@ async def verify_version(
 
 
 async def get_owned_subscribed_drops_metadata(
-
 ) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
     Gets the list of metadata objects for both subscribed and owned drops.
-    :return: Tuple of metadata objects for subscribed and owned drops.
 
     format: (Owned drop metadata, Subscribed drop metadata)
+
+    :return: Tuple of metadata objects for subscribed and owned drops.
     """
 
     drops = list_drops()
@@ -375,6 +409,64 @@ async def get_file_metadata(
         await metadata.write_file(metadata_dir)
 
     return metadata
+
+
+class FileUpdateStatus(NamedTuple):
+    """Four sets for keeping track of which files are in what status"""
+    added: Set[str]
+    removed: Set[str]
+    changed: Set[str]
+    unchanged: Set[str]
+
+
+async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
+    """Checks over the local drop and returns what files have local
+    changes if any
+
+    :param drop_id: the drop to check
+    :return: a set of file names that have local changes
+    """
+    logger.info("Checking for local changes in drop: %s", drop_id)
+    drop_location = await get_drop_location(drop_id)
+    if drop_location is None:
+        return None
+    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    if drop_metadata is None:
+        return None
+
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = await make_file_metadata(
+            full_name, drop_id,
+        )
+
+    changed_files = Set()
+    removed_files = Set()
+    unchanged_files = Set()
+    starting_files = Set(files.keys())
+
+    for (name, id) in drop_metadata.files.items():
+        if name in starting_files:
+            temp_metadata = await get_file_metadata_from_drop_id(
+                drop_id, id,
+            )
+            if temp_metadata == files[name]:
+                unchanged_files.add(name)
+            else:
+                changed_files.add(name)
+        else:
+            removed_files.add(name)  # Add file that no longer exists
+        starting_files.remove(name)
+
+    return FileUpdateStatus(
+        added=starting_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
 
 
 async def sync_file_contents(
@@ -487,6 +579,16 @@ async def peers_and_chunks(
 async def get_chunk_list(
     ip: str, port: int, drop_id: bytes, file_id: bytes,
 ) -> Set[int]:
+    """
+    Get the list of chunks (ip, port) has.  This function exists so the result
+    can be cached.
+
+    :param ip: IP to connect to
+    :param port: Port to connect to
+    :param drop_id: Drop ID
+    :param file_id: File ID to get chunks for
+    :return: Set of chunk indexes
+    """
     return set(await send_requests.send_chunk_list_request(
         ip=ip,
         port=port,
@@ -536,13 +638,16 @@ async def download_chunk_form_peer(
 
 
 class PeerStoreError(Exception):
+    """Raised if get_drop_peers fails to get peers"""
     pass
 
 
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop. Also shuffles the list
+
     :param drop_id: id of drop
+    :raises PeerStoreError: If peers cannot be found
     :return: A list of peers in format (ip, port)
     """
     priv_key = await node_init.load_private_key_from_disk()
@@ -562,6 +667,12 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
 
 
 def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
+    """
+    Figure out the drop ID from a directory
+
+    :param save_dir: The directory to check
+    :return: The drop ID or none
+    """
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
     files = os.listdir(metadata_dir)
 
@@ -575,6 +686,12 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
 
 
 async def get_file_names_percent(drop_id: bytes) -> Dict[str, float]:
+    """
+    Get dict from file names to percent done (in range [0,1])
+
+    :param drop_id: Drop to get files for
+    :return: Dict from file name to percent done
+    """
     dm = await get_drop_metadata(drop_id, [])
     save_dir = await get_drop_location(drop_id)
 

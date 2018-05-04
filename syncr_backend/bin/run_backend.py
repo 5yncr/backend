@@ -2,7 +2,6 @@
 import argparse
 import asyncio
 import threading
-from typing import Any
 from typing import List
 
 from syncr_backend.external_interface.dht_util import initialize_dht
@@ -20,11 +19,11 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def run_backend() -> None:
-    """
-    Runs the backend
-    """
-    input_args_parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    input_args_parser = argparse.ArgumentParser(
+        description="Run the backend, listening for incomming requests and "
+        "periodically making necessary outgoing requests",
+    )
     input_args_parser.add_argument(
         "ip",
         type=str,
@@ -58,7 +57,14 @@ def run_backend() -> None:
         type=str,
         help="Command file to send debug commands",
     )
-    arguments = input_args_parser.parse_args()
+    return input_args_parser
+
+
+def run_backend() -> None:
+    """
+    Runs the backend
+    """
+    arguments = parser().parse_args()
     if arguments.external_address is not None:
         ext_addr = arguments.external_address
     else:
@@ -120,6 +126,7 @@ def run_debug_commands(
 ) -> None:
     """
     Read and execute commands a list of semicolon separated commands as input
+
     :param commands: list of semicolon separated commands
     """
     with open(commands_file) as f:
@@ -135,50 +142,18 @@ def run_debug_commands(
     loop.stop()
 
 
-def parse_cmd(
-    command: List[str],
-    return_list: List[Any],
-) -> None:
-    """
-    Parse command given in arguments
-    :param command: str command to run
-    :param return_list: for when calling in a thread, the return list is
-    modified to be the return value of the function
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "function",
-        type=str,
-        nargs=1,
-        help="string name of the function to be ran",
-    )
-
-    parser.add_argument(
-        "--args",
-        type=str,
-        nargs='*',
-        help='arguments for the function to be ran',
-    )
-    args = parser.parse_args(args=command)
-    return_list[0] = args.function[0]
-    if args.args is not None:
-        return_list[1] = args.args
-    else:
-        return_list[1] = []
-
-
 def execute_function(
     function_name: str, args: List[str], loop: asyncio.AbstractEventLoop,
 ) -> None:
     """
     Runs a function with the given args
-    TODO: add real drop/metadata request commands that interface
-    with the filesystem
-    TODO: handle exceptions for real
 
     :param function_name: string name of the function to run
     :param args: arguments for the function to run
     """
+    # TODO: add real drop/metadata request commands that interface
+    #  with the filesystem
+    # TODO: handle exceptions for real
     # for functions that create or destroy the init directory
     if function_name == "node_init":
         node_init.initialize_node(*args)

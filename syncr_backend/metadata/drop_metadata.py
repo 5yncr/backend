@@ -1,4 +1,4 @@
-"The dorp metadata object and related functions"""
+"The drop metadata object and related functions"""
 import logging
 import os
 import shutil
@@ -52,6 +52,7 @@ class DropVersion(object):
 
 
 class DropMetadata(object):
+    """Representation of a drop's metadata file"""
 
     def __init__(
         self, drop_id: bytes, name: str, version: DropVersion,
@@ -72,15 +73,23 @@ class DropMetadata(object):
         self.sig = sig
         self._protocol_version = protocol_version
         self._files_hash = files_hash
+        self._log = None  # type: Optional[logging.Logger]
 
     @property
     def log(self) -> logging.Logger:
-        return get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.id).decode('utf-8'),
-            ]),
-        )
+        """
+        A logger for this object
+
+        :return: a logger object for this class
+        """
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.id).decode('utf-8'),
+                ]),
+            )
+        return self._log
 
     @property
     async def files_hash(self) -> bytes:
@@ -101,8 +110,9 @@ class DropMetadata(object):
     async def verify_files_hash(self) -> None:
         """Verify the file hash in this object
 
-        Returns None if the hash is OK, throwns an exception if the hash is not
-        good or has not been set
+        Returns None if the hash is OK, throwns a VerificationException if the
+        hash is not good or has not been set
+        :raises VerificationException: If the files hash is not found or wrong
         """
         if self._files_hash is None:
             self.log.error("no files hash found when verifying")
@@ -156,7 +166,8 @@ class DropMetadata(object):
         """Verify the signature in the header
 
         If the signature is OK, returns none, if the signature is None or is
-        invalid throws an exception
+        invalid throws a VerificationException
+        :raises VerificationException: If the header signature doesn't match
         """
         if self.sig is None:
             self.log.error("header signature not found when verifying")
@@ -170,6 +181,7 @@ class DropMetadata(object):
         """Get the file name of a file id
 
         :param file_hash: the file id
+        :raises FileNotFoundError: If the file was not found in the metadata
         :return: the file name string
         """
         for (fname, fhash) in self.files.items():
@@ -177,7 +189,7 @@ class DropMetadata(object):
                 return fname
 
         self.log.error("tried to lookup a file that doesn't exist")
-        raise FileNotFoundError
+        raise FileNotFoundError()
 
     async def unsubscribe(self) -> None:
         """Removes the refrence in the .5yncr folder therefore preventing
@@ -204,6 +216,7 @@ class DropMetadata(object):
     def make_filename(
         id: bytes, version: Union[str, DropVersion],
     ) -> str:
+        """Make the filename for a drop metadata"""
         return "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
@@ -256,6 +269,7 @@ class DropMetadata(object):
 
         :param id: the drop id
         :param metadata_location: where to find it
+        :return: The latest version, or none if not found
         """
         file_name = DropMetadata.make_filename(id, LATEST)
         logger.debug(
@@ -396,6 +410,11 @@ async def get_drop_location(drop_id: bytes) -> str:
 
 
 def list_drops() -> List[bytes]:
+    """
+    List the drops on this node
+
+    :return: List of drop IDs
+    """
     save_path = _get_save_path()
     names = os.listdir(save_path)
 
@@ -414,7 +433,9 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     """
     Gets the public key from disk if possible otherwise request it from
     PublicKeyStore
+
     :param node_id: bytes for the node you want public key of
+    :raises VerificationException: If the pub key cannot be retrieved
     :return: PublicKey
     """
     init_directory = get_full_init_directory(None)
@@ -447,6 +468,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 
 async def send_my_pub_key() -> None:
+    """Send the pub key for this node the the Key Store"""
     this_node_id = await node_id_from_private_key(
         await load_private_key_from_disk(),
     )
@@ -463,6 +485,7 @@ async def send_my_pub_key() -> None:
 async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
     Saves the public key to the specified location
+
     :param key_path: absolute path to location of public key
     :param pub_key: bytes to be saved
     """
@@ -471,5 +494,10 @@ async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:
-    """Geterate a drop id"""
+    """
+    Geterate a drop id
+
+    :param first_owner: The initial primary owner
+    :return: A drop id, which is the first owner's ID plus random bytes
+    """
     return first_owner + crypto_util.random_bytes()

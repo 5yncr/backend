@@ -31,6 +31,12 @@ write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
 
 
 async def load_config_file() -> Dict[str, Any]:
+    """
+    Read and parse the Drop Peer Store config
+
+    :raises MissingConfigError: If the dps config cannot be found
+    :return: Parsed dict of config file contents
+    """
     init_directory = get_full_init_directory(None)
     dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)
 
@@ -48,7 +54,8 @@ async def write_chunk(
     filepath: str, position: int, contents: bytes, chunk_hash: bytes,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
-    """Takes a filepath, position, contents, and contents hash and writes it to
+    """
+    Takes a filepath, position, contents, and contents hash and writes it to
     a file correctly.  Assumes the file has been created.  Will check the hash,
     and raise a VerificationException if the provided chunk_hash doesn't match.
     May raise relevant IO exceptions.
@@ -59,8 +66,10 @@ async def write_chunk(
     :param position: the posiiton in the file to write to
     :param contents: the contents to write
     :param chunk_hash: the expected hash of contents
-    :param chunk_size: (optional) override the chunk size, used to calculate
+    :param chunk_size: (optional) override the chunk size, used to calculate \
     the position in the file
+    :raises crypto_util.VerificationException: When the hash of the provided \
+            bytes does not match the provided hash
     :return: None
     """
     if is_complete(filepath):
@@ -103,6 +112,8 @@ async def read_chunk(
     :param position: where to read from
     :param file_hash: if provided, will check the file hash
     :param chunk_size: (optional) override the chunk size
+    :raises crypto_util.VerificationException: If the hash of the bytes read \
+            does not match the provided hash
     :return: a double of (contents, hash), both bytes
     """
     if not is_complete(filepath):
@@ -179,6 +190,7 @@ def is_complete(filepath: str) -> bool:
     Raises FileNotFoundError if neither exists
 
     :param filepath: The path to check for completion
+    :raises FileNotFoundError: If neither the file nor .part file is found
     :return: Whether the file is downloaded, based on its extension
     """
     unfinished_path = filepath + DEFAULT_INCOMPLETE_EXT

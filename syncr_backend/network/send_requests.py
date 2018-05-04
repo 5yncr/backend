@@ -37,11 +37,12 @@ async def do_request(
     """Helper function for sending a request to many peers.  Will try calling
     request_fun with fun_args for peers in peers until one succeeds
 
-    :param request_fun: The request function.  Must take an ip, port, and some
-    number of kwargs
+    :param request_fun: The request function.  Must take an ip, port, and \
+    some number of kwargs
     :param peers: A list of peers to try to talk to
     :param fun_args: The arguments to pass to request_fun for each peer
-    :return: The return of a successful call to request_fun
+    :raises network_util.NoPeersException: If no peers are provided
+    :return: The result of a successful call to request_fun
     """
     result = None
     last_err = Exception("This shouldn't happen")
@@ -74,6 +75,7 @@ async def send_drop_metadata_request(
 ) -> DropMetadata:
     """
     Sends drop metadata request to node at ip and port
+
     :param ip: ip address of node
     :param port: port of the node
     :param drop_id: drop_id of the requested drop
@@ -108,6 +110,7 @@ async def send_file_metadata_request(
 ) -> FileMetadata:
     """
     Sends file metadata request to node at ip and port
+
     :param ip: ip address of node
     :param port: port of the node
     :param drop_id: the drop id
@@ -140,6 +143,7 @@ async def send_chunk_list_request(
 ) -> List[int]:
     """
     Sends chunk list request to node at ip and port
+
     :param ip: ip address of node
     :param port: port of the node
     :param drop_id: the drop id
@@ -173,6 +177,7 @@ async def send_chunk_request(
 ) -> bytes:
     """
     Sends chunk request to node at ip and port
+
     :param ip: ip address of node
     :param port: port of the node
     :param drop_id: the drop id
@@ -207,6 +212,7 @@ async def send_request_to_node(
     """
     Creates a connection a node and sends a given request to the
     node and returns the response
+
     :param port: port where node is serving
     :param ip: ip of node
     :param request: Dictionary of a request as specified in the Spec Document

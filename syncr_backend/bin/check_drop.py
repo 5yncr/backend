@@ -20,17 +20,31 @@ def main() -> None:
     loop.run_until_complete(a_main())
 
 
-async def a_main() -> None:
-    """Lots to await on, so call this whole function in a run_until_complete"""
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Check the contents of a drop, returning status 0 if all "
+        "the files are downloaded and correct, 1 otherwise (with a message).",
+    )
     parser.add_argument(
         "drop_id",
         type=str,
         help="b64 encoded Drop ID",
     )
-    args = parser.parse_args()
+    return parser
 
-    drop_id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
+
+async def a_main() -> None:
+    """Lots to await on, so call this whole function in a run_until_complete"""
+    args = parser().parse_args()
+
+    id_prefix = b'dropid:'
+
+    drop_id = args.drop_id.encode('utf-8')
+    if drop_id.startswith(id_prefix):
+        drop_id = crypto_util.b64decode(drop_id[len(id_prefix):])
+    else:
+        raise ValueError("drop Id must start with prefix 'dropid:'")
+
     drop_location = await get_drop_location(drop_id)
     metadata_dir = os.path.join(drop_location, DEFAULT_DROP_METADATA_LOCATION)
     file_metadata_dir = os.path.join(
