@@ -23,7 +23,6 @@ from syncr_backend.external_interface.store_exceptions import \
     MissingConfigError
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.util import crypto_util
-from syncr_backend.util.drop_util import FileUpdateStatus
 from syncr_backend.util.log_util import get_logger
 
 
@@ -90,42 +89,6 @@ async def write_timestamp_file(
     await write_locks[DEFAULT_TIMESTAMP_LOCATION].acquire()
     async with aiofiles.open(DEFAULT_TIMESTAMP_LOCATION, 'rb') as f:
         f.write(filedata)
-
-
-async def diff_timestamp_file(
-    current_files: Dict[str, int]
-) -> FileUpdateStatus:
-    """
-    Reads the timestamp file and compares it to the current files
-    :param current_files: Dictionary that stores filepath and timestamp
-    :return: FileUpdateStatus constructed from the difference of the \
-    current_files Dictionary and the loaded Dictionary from the timestamp file
-    """
-
-    timestamp_files = await read_timestamp_file()
-    # current is the set of currently existing filepaths
-    current = set(current_files.keys())
-    # old is the set of previous existing filepaths
-    old = set(timestamp_files.keys())
-    # files that are in current but not in old are added files
-    added_files = current - old
-    # files that are in the old but not in current have been removed
-    removed_files = old - current
-    # files that are in both old and current could have been changed
-    # get all unchanged files
-    unchanged_files = {
-        filepath for filepath in (current.intersection(old))
-        if timestamp_files[filepath] == current_files[filepath]
-    }
-    # files that are in both old and current and not unchanged are changed
-    changed_files = current.intersection(old) - unchanged_files
-
-    return FileUpdateStatus(
-        added=added_files,
-        removed=removed_files,
-        changed=changed_files,
-        unchanged=unchanged_files,
-    )
 
 
 async def write_chunk(
