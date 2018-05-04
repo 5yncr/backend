@@ -45,7 +45,7 @@ def main() -> None:
         print("Drop ID not found")
         exit(1)
 
-    loop.run_until_complete(drop_util.update_drop(drop_id))
+    loop.run_until_complete(drop_util.make_new_version(drop_id))
 
 
 if __name__ == '__main__':

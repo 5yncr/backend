@@ -26,7 +26,7 @@ setup(
             'node_init = syncr_backend.bin.node_init:main',
             'run_backend = syncr_backend.bin.run_backend:run_backend',
             'run_dht_server = syncr_backend.bin.run_dht_server:main',
-            'update_drop = syncr_backend.bin.update_drop:main',
+            'new_version = syncr_backend.bin.new_version:main',
         ],
     },
     scripts=[
