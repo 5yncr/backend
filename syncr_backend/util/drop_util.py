@@ -566,6 +566,8 @@ async def find_changes_in_new_version(
     )
 
     assert drop_id == new_metadata.id, "Matching drop_ids required"
+    if drop_metadata is None:
+        return None
     assert drop_metadata.version < new_metadata.version, "New version require"
 
     added_files = set()
