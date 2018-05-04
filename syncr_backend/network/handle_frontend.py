@@ -251,11 +251,12 @@ async def _handle_selected_drop(
                     'unchanged': list(file_update_status.unchanged),
                 }
 
-            update_check = await check_for_update(request['drop_id'])
+            new_metadata, new_version_available = \
+                await check_for_update(request['drop_id'])
             remote_pending_changes = {}  # type: Dict[str, List[str]]
-            if update_check[1]:
+            if new_version_available:
                 remote_update_status = await find_changes_in_new_version(
-                    request['drop_id'], update_check[0],
+                    request['drop_id'], new_metadata,
                 )
                 if remote_update_status is not None:
                     remote_pending_changes = {
