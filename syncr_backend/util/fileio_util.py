@@ -81,7 +81,7 @@ async def read_timestamp_file(drop_location: str) -> Dict[str, int]:
     await write_locks[timestamp_dir].acquire()
     async with aiofiles.open(timestamp_dir, 'rb') as f:
         filedata = await f.read()
-    await write_locks[timestamp_dir].release()
+    write_locks[timestamp_dir].release()
     return bencode.decode(filedata)
 
 
@@ -97,9 +97,9 @@ async def write_timestamp_file(
     filedata = bencode.encode(current_files)
     timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
     await write_locks[timestamp_dir].acquire()
-    async with aiofiles.open(timestamp_dir, 'rb') as f:
+    async with aiofiles.open(timestamp_dir, 'wb') as f:
         f.write(filedata)
-    await write_locks[timestamp_dir].release()
+    write_locks[timestamp_dir].release()
 
 
 async def write_chunk(
