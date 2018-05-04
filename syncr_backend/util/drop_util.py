@@ -85,10 +85,10 @@ async def sync_drop(
         task_timeout=1,
     )
     if all(file_results):
+        drop_location = await get_drop_location(drop_id)
+        scanned_files = await fileio_util.scan_current_files(drop_location)
         await fileio_util.write_timestamp_file(
-            await fileio_util.scan_current_files(
-                await get_drop_location(drop_id),
-            ),
+            scanned_files,
         )
 
     lock.release()
@@ -648,6 +648,7 @@ async def diff_timestamp_file(
 ) -> FileUpdateStatus:
     """
     Reads the timestamp file and compares it to the current files
+
     :param current_files: Dictionary that stores filepath and timestamp
     :return: FileUpdateStatus constructed from the difference of the \
     current_files Dictionary and the loaded Dictionary from the timestamp file
