@@ -544,7 +544,7 @@ async def find_changes_in_new_version(
     drop_id: bytes, new_metadata: DropMetadata,
 ) -> Optional[FileUpdateStatus]:
     """
-    Creates a FileUpdateStatus object for the changes between the current /
+    Creates a FileUpdateStatus object for the changes between the current
     and the most provided version
 
     :param drop_id: the drop to look over
@@ -568,7 +568,7 @@ async def find_changes_in_new_version(
     assert drop_id == new_metadata.id, "Matching drop_ids required"
     if drop_metadata is None:
         return None
-    assert drop_metadata.version < new_metadata.version, "New version require"
+    assert drop_metadata.version < new_metadata.version, "New version required"
 
     added_files = set()
     changed_files = set()
