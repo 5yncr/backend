@@ -36,8 +36,8 @@ from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
+from syncr_backend.util.drop_util import make_new_version
 from syncr_backend.util.drop_util import queue_sync
-from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
 
@@ -64,7 +64,7 @@ async def handle_frontend_request(
         ACTION_REMOVE_OWNER: handle_remove_owner,
         ACTION_SHARE_DROP: handle_share_drop,
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
-        ACTION_NEW_VERSION: handle_update_drop,
+        ACTION_NEW_VERSION: handle_make_new_version,
         ACTION_PENDING_CHANGES: handle_pending_changes,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
@@ -120,7 +120,7 @@ async def handle_add_owner(
         drop_id = crypto_util.b64decode(request['drop_id'])
         owner_id = crypto_util.b64decode(request['owner_id'])
 
-        await update_drop(
+        await make_new_version(
             drop_id,
             add_secondary_owner=owner_id,
         )
@@ -134,7 +134,7 @@ async def handle_add_owner(
     await send_response(conn, response)
 
 
-async def handle_update_drop(
+async def handle_make_new_version(
     request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     if request['drop_id'] is None:
@@ -145,7 +145,7 @@ async def handle_update_drop(
     else:
         drop_id = crypto_util.b64decode(request['drop_id'])
 
-        await update_drop(drop_id)
+        await make_new_version(drop_id)
 
         response = {
             'status': 'ok',
@@ -434,7 +434,7 @@ async def handle_remove_owner(
             'message': 'owner successfully removed',
         }
 
-        await update_drop(
+        await make_new_version(
             drop_id,
             remove_secondary_owner=owner_id,
         )

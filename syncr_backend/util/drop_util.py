@@ -188,10 +188,12 @@ async def check_for_update(
     if old_v == new_v:
         return (metadata, False)
 
+    # equal versions but not nonces
     if new_v.version == old_v.version:
         # TODO: handle conflicts here
         raise VerificationException(
-            "Found new version with same version num", new_v, old_v,
+            "Found version with same version but difference nonce", new_v,
+            old_v,
         )
 
     if new_v > old_v:
@@ -249,7 +251,7 @@ async def process_sync_queue() -> None:
         return
 
 
-async def update_drop(
+async def make_new_version(
     drop_id: bytes,
     add_secondary_owner: bytes=None,
     remove_secondary_owner: bytes=None,
