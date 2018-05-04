@@ -56,6 +56,9 @@ async def scan_current_files(
     drop_location: str,
 ) -> Dict[str, int]:
     """
+    Scans the drop_location and collects files found into a dictionary
+
+    :return: dictionary of filepath,timestamp
     """
     files = {}
     for (dirpath, filename) in walk_with_ignore(
@@ -69,6 +72,7 @@ async def scan_current_files(
 async def read_timestamp_file() -> Dict[str, int]:
     """
     Reads the timestamp file and returns it as a dict
+
     :return: dictionary of filepath and timestamp
     """
 
@@ -83,6 +87,7 @@ async def write_timestamp_file(
 ) -> None:
     """
     Write the timestamp file as the passed in dict
+
     :param current_files: Dictionary of filepath and timestamp
     """
     filedata = bencode.encode(current_files)
