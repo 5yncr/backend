@@ -47,7 +47,11 @@ class FileMetadata(object):
 
     @property
     def log(self) -> logging.Logger:
-        """A logger for this object"""
+        """
+        A logger for this object
+
+        :return: a logger object for this class
+        """
         if self._log is None:
             self._log = get_logger(
                 '.'.join([
@@ -89,7 +93,7 @@ class FileMetadata(object):
             await f.write(self.encode())
 
     @staticmethod
-    @async_cache(maxsize=1024)
+    @async_cache(maxsize=1024*1024)
     async def read_file(
         file_id: bytes,
         metadata_location: str,
@@ -167,11 +171,14 @@ class FileMetadata(object):
         full_name = os.path.join((await self.save_dir), file_name)
         downloaded_chunks = set()  # type: Set[int]
         for chunk_idx in range(self.num_chunks):
-            _, h = await fileio_util.read_chunk(
-                filepath=full_name,
-                position=chunk_idx,
-                chunk_size=self.chunk_size,
-            )
+            try:
+                _, h = await fileio_util.read_chunk(
+                    filepath=full_name,
+                    position=chunk_idx,
+                    chunk_size=self.chunk_size,
+                )
+            except FileNotFoundError:
+                return set()
             if h == self.hashes[chunk_idx]:
                 downloaded_chunks.add(chunk_idx)
         self.log.debug("calculated downloaded chunks: %s", downloaded_chunks)
@@ -199,7 +206,11 @@ class FileMetadata(object):
 
     @property
     async def percent_done(self) -> float:
-        """How done the file is, in range [0,1]"""
+        """
+        How done the file is, in range [0,1]
+
+        :return: The percent done, in range [0,1]
+        """
         if self.num_chunks == 0:
             return 1.0
         return len(await self.downloaded_chunks) / self.num_chunks
@@ -216,6 +227,7 @@ class FileMetadata(object):
         """
         Overwriting equals method so that it returns True if they have
         the same hash and size and filename
+
         :param self: FileMetadata of a given file
         :param other: another object
         :return: Boolean based on the above fact
@@ -295,7 +307,7 @@ async def get_file_metadata_from_drop_id(
 
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name
-    :return Optional[FileMetadata] of the given file
+    :return: Optional[FileMetadata] of the given file
     """
     drop_location = await drop_metadata.get_drop_location(drop_id)
     file_metadata_location = os.path.join(
