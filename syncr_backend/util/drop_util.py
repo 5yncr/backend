@@ -245,6 +245,7 @@ async def process_sync_queue() -> None:
             done, drop_id = await sync_out_queue.get()
 
             if not done:
+                # TODO: add exponential backoff for failures
                 drop_directory = await get_drop_location(drop_id)
                 coro = sync_drop(drop_id, drop_directory)
                 await _sync_in_queue.put(coro)
