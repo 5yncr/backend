@@ -65,25 +65,29 @@ async def scan_current_files(
         drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = int(os.path.getmtime(full_name))
+        rel_name = os.path.relpath(full_name, drop_location)
+        files[rel_name] = int(os.path.getmtime(full_name))
     return files
 
 
-async def read_timestamp_file() -> Dict[str, int]:
+async def read_timestamp_file(drop_location: str) -> Dict[str, int]:
     """
     Reads the timestamp file and returns it as a dict
 
     :return: dictionary of filepath and timestamp
     """
 
-    await write_locks[DEFAULT_TIMESTAMP_LOCATION].acquire()
-    async with aiofiles.open(DEFAULT_TIMESTAMP_LOCATION, 'rb') as f:
+    timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
+    await write_locks[timestamp_dir].acquire()
+    async with aiofiles.open(timestamp_dir, 'rb') as f:
         filedata = await f.read()
+    await write_locks[timestamp_dir].release()
     return bencode.decode(filedata)
 
 
 async def write_timestamp_file(
     current_files: Dict[str, int],
+    drop_location: str,
 ) -> None:
     """
     Write the timestamp file as the passed in dict
@@ -91,9 +95,11 @@ async def write_timestamp_file(
     :param current_files: Dictionary of filepath and timestamp
     """
     filedata = bencode.encode(current_files)
-    await write_locks[DEFAULT_TIMESTAMP_LOCATION].acquire()
-    async with aiofiles.open(DEFAULT_TIMESTAMP_LOCATION, 'rb') as f:
+    timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
+    await write_locks[timestamp_dir].acquire()
+    async with aiofiles.open(timestamp_dir, 'rb') as f:
         f.write(filedata)
+    await write_locks[timestamp_dir].release()
 
 
 async def write_chunk(
