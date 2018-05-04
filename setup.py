@@ -27,6 +27,8 @@ setup(
             'run_backend = syncr_backend.bin.run_backend:run_backend',
             'run_dht_server = syncr_backend.bin.run_dht_server:main',
             'new_version = syncr_backend.bin.new_version:main',
+            'update_drop = syncr_backend.bin.update_drop:main',
+            'check_for_updates = syncr_backend.bin.check_for_updates:main',
         ],
     },
     scripts=[
