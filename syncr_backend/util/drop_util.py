@@ -31,13 +31,12 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
-from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
-from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
 from syncr_backend.util.crypto_util import VerificationException
+from syncr_backend.util.fileio_util import diff_timestamp_file
 from syncr_backend.util.log_util import get_logger
 
 
@@ -70,6 +69,12 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
+    if all(file_results):
+        await fileio_util.write_timestamp_file(
+            await fileio_util.scan_current_files(
+                await get_drop_location(drop_id),
+            ),
+        )
 
     return all(file_results)
 
@@ -434,39 +439,9 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     if drop_metadata is None:
         return None
 
-    files = {}
-    for (dirpath, filename) in fileio_util.walk_with_ignore(
-        drop_location, [],
-    ):
-        full_name = os.path.join(dirpath, filename)
-        files[full_name] = await make_file_metadata(
-            full_name, drop_id,
-        )
+    files = await fileio_util.scan_current_files(drop_location)
 
-    changed_files = Set()
-    removed_files = Set()
-    unchanged_files = Set()
-    starting_files = Set(files.keys())
-
-    for (name, id) in drop_metadata.files.items():
-        if name in starting_files:
-            temp_metadata = await get_file_metadata_from_drop_id(
-                drop_id, id,
-            )
-            if temp_metadata == files[name]:
-                unchanged_files.add(name)
-            else:
-                changed_files.add(name)
-        else:
-            removed_files.add(name)  # Add file that no longer exists
-        starting_files.remove(name)
-
-    return FileUpdateStatus(
-        added=starting_files,
-        removed=removed_files,
-        changed=changed_files,
-        unchanged=unchanged_files,
-    )
+    return await diff_timestamp_file(files)
 
 
 async def sync_file_contents(
