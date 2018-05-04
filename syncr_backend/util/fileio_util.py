@@ -63,7 +63,7 @@ async def scan_current_files(
         drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = int(os.path.gettmtime(full_name))
+        files[full_name] = int(os.path.getmtime(full_name))
     return files
 
 
@@ -113,10 +113,10 @@ async def diff_timestamp_file(
     removed_files = old - current
     # files that are in both old and current could have been changed
     # get all unchanged files
-    unchanged_files = [
+    unchanged_files = {
         filepath for filepath in (current.intersection(old))
         if timestamp_files[filepath] == current_files[filepath]
-    ]
+    }
     # files that are in both old and current and not unchanged are changed
     changed_files = current.intersection(old) - unchanged_files
 
