@@ -220,7 +220,7 @@ async def queue_sync(
     :param save_dir: The drop's save directory
     :param version: Optional version, to download that version
     """
-    global sync_in_queue
+    global _sync_in_queue
 
     coro = sync_drop(drop_id, save_dir, version)
     await _sync_in_queue.put(coro)
