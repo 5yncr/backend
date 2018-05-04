@@ -241,7 +241,7 @@ async def process_sync_queue() -> None:
     """
     global _sync_in_queue
 
-    sync_out_queue = asyncio.Queue()  # type: asyncio.Queue[Tuple[bool, bytes]]
+    sync_out_queue = asyncio.Queue()  # type: asyncio.Queue[Union[Tuple[bool, bytes], BaseException]]  # noqa
 
     processor = asyncio.ensure_future(
         async_util.process_queue_with_limit(
@@ -250,7 +250,12 @@ async def process_sync_queue() -> None:
     )
     try:
         while True:
-            done, drop_id = await sync_out_queue.get()
+            out = await sync_out_queue.get()
+            if isinstance(out, BaseException):
+                logger.error("Faied to sync a drop, can't try again", out)
+                continue
+
+            done, drop_id = out
 
             if not done:
                 # TODO: add exponential backoff for failures
