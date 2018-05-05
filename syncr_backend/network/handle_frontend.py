@@ -21,10 +21,12 @@ from syncr_backend.constants import ACTION_NEW_VERSION
 from syncr_backend.constants import ACTION_PENDING_CHANGES
 from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_SHARE_DROP
+from syncr_backend.constants import ACTION_SYNC_UPDATE
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INVINPUT
+from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
@@ -34,6 +36,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import check_for_update
+from syncr_backend.util.drop_util import cleanup_drop
 from syncr_backend.util.drop_util import do_metadata_request
 from syncr_backend.util.drop_util import find_changes_in_new_version
 from syncr_backend.util.drop_util import get_drop_metadata
@@ -69,6 +72,7 @@ async def handle_frontend_request(
         ACTION_UNSUBSCRIBE: handle_unsubscribe,
         ACTION_NEW_VERSION: handle_make_new_version,
         ACTION_PENDING_CHANGES: handle_pending_changes,
+        ACTION_SYNC_UPDATE: handle_sync_update,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -199,6 +203,66 @@ async def handle_delete_drop(
                 'status': 'ok',
                 'result': 'success',
                 'message': 'drop successfully deleted',
+            }
+
+    await send_response(conn, response)
+
+
+async def handle_sync_update(
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    """
+    Handles updating the drop to a newer versions
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
+    }
+    :param conn: asyncio StreamWriter connection
+    :return: None
+    """
+    drop_id = request.get('drop_id')
+    if drop_id is None:
+        response = {
+            'status': 'error',
+            'error': ERR_INVINPUT,
+        }
+    else:
+        drop_id = crypto_util.b64decode(drop_id)
+        file_location = await get_drop_location(drop_id)
+        drop_metadata_location = os.path.join(
+            file_location,
+            DEFAULT_DROP_METADATA_LOCATION,
+        )
+        drop_metadata = await DropMetadata.read_file(
+            id=drop_id,
+            metadata_location=drop_metadata_location,
+        )
+
+        new_metadata = await do_metadata_request(
+            drop_id, [],
+        )
+        if new_metadata is None or drop_metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_NEXIST,
+            }
+        elif new_metadata.version > drop_metadata.version:
+            await queue_sync(
+                drop_id, file_location, new_metadata.version,
+            )
+            await cleanup_drop(
+                drop_id, drop_metadata, new_metadata,
+            )
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'drop successfully deleted',
+            }
+        else:
+            response = {
+                'status': 'error',
+                'error': 'New version was not found',
             }
 
     await send_response(conn, response)
