@@ -354,6 +354,24 @@ async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     await save_drop_location(drop_id, save_dir)
 
 
+async def do_metadata_request(
+    drop_id: bytes, peers: List[Tuple[str, int]],
+    version: Optional[DropVersion]=None,
+) -> Optional[DropMetadata]:
+    if not peers:
+        peers = await get_drop_peers(drop_id)
+    args = {
+        'drop_id': drop_id,
+        'drop_version': version,
+    }
+    metadata = await send_requests.do_request(
+        request_fun=send_requests.send_drop_metadata_request,
+        peers=peers,
+        fun_args=args,
+    )
+    return metadata
+
+
 async def get_drop_metadata(
     drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
     version: Optional[DropVersion]=None,
@@ -378,17 +396,7 @@ async def get_drop_metadata(
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
-        if not peers:
-            peers = await get_drop_peers(drop_id)
-        args = {
-            'drop_id': drop_id,
-            'drop_version': version,
-        }
-        metadata = await send_requests.do_request(
-            request_fun=send_requests.send_drop_metadata_request,
-            peers=peers,
-            fun_args=args,
-        )
+        metadata = await do_metadata_request(drop_id, peers, version)
         # mypy can't figure out that this won't be None
         metadata = cast(DropMetadata, metadata)
 
