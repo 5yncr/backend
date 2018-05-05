@@ -255,7 +255,7 @@ async def _handle_selected_drop(
             new_metadata, new_version_available = \
                 await check_for_update(drop_id)
             remote_pending_changes = {}  # type: Dict[str, List[str]]
-            if new_version_available:
+            if new_version_available and new_metadata is not None:
                 remote_update_status = await find_changes_in_new_version(
                     drop_id, new_metadata,
                 )
