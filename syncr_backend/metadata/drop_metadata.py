@@ -216,7 +216,7 @@ class DropMetadata(object):
         save_path = _get_save_path()
         encoded_drop_id = crypto_util.b64encode(self.id).decode('utf-8')
         drop_loc_file = os.path.join(save_path, encoded_drop_id)
-        logger.info("removing file: ", drop_loc_file)
+        logger.info("removing file: %s", drop_loc_file)
         os.remove(drop_loc_file)
 
     async def delete(self) -> None:
@@ -224,10 +224,11 @@ class DropMetadata(object):
 
         :return: None
         """
-        self.unsubscribe()
         drop_loc = await get_drop_location(self.id)
+        self.log.info("deleting %s", str(drop_loc))
         self.log.debug("deleteing drop folder: %s", self.id)
         shutil.rmtree(drop_loc)
+        self.unsubscribe()
 
     @staticmethod
     def make_filename(
