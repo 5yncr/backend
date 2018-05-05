@@ -19,6 +19,7 @@ from cachetools import TTLCache  # type: ignore
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.constants import DEFAULT_TIMESTAMP_LOCATION
 from syncr_backend.constants import MAX_CHUNKS_PER_PEER
 from syncr_backend.constants import MAX_CONCURRENT_CHUNK_DOWNLOADS
 from syncr_backend.constants import MAX_CONCURRENT_FILE_DOWNLOADS
@@ -87,13 +88,21 @@ async def sync_drop(
         task_timeout=1,
     )
 
-    lock.release()
-
     no_exceptions = True
     for result in file_results:
         if isinstance(result, BaseException):
             logger.error("Failed to download a file: %s", result)
             no_exceptions = False
+
+    if all(file_results) and no_exceptions:
+        drop_location = await get_drop_location(drop_id)
+        scanned_files = await fileio_util.scan_current_files(drop_location)
+        await fileio_util.write_timestamp_file(
+            scanned_files,
+            drop_location,
+        )
+
+    lock.release()
 
     return all(file_results) and no_exceptions, drop_id
 
@@ -341,6 +350,12 @@ async def make_new_version(
         )
 
     DropMetadata.read_file.cache_clear()  # type: ignore
+
+    scanned_files = await fileio_util.scan_current_files(drop_directory)
+    await fileio_util.write_timestamp_file(
+        scanned_files,
+        drop_directory,
+    )
 
 
 async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
@@ -650,6 +665,7 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     """
     logger.info("Checking for local changes in drop: %s", drop_id)
     drop_location = await get_drop_location(drop_id)
+
     if drop_location is None:
         return None
     drop_metadata = await DropMetadata.read_file(
@@ -660,6 +676,33 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     )
     if drop_metadata is None:
         return None
+
+    if not os.path.exists(
+            os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION),
+    ):
+        return await fallback_check_for_changes(
+            drop_id,
+            drop_metadata,
+        )
+
+    files = await fileio_util.scan_current_files(drop_location)
+
+    return await diff_timestamp_file(files, drop_location)
+
+
+async def fallback_check_for_changes(
+    drop_id: bytes,
+    drop_metadata: DropMetadata,
+) -> Optional[FileUpdateStatus]:
+    """Checks over the local drop and returns what files have local
+    changes if any. Fallback for normal function when no timestamp is found.
+
+    :param drop_id: the drop to check
+    :param drop_metadata: drop metadata of drop
+    :return: a set of file names that have local changes
+    """
+    logger.info("Checking for local changes in drop (fallback): %s", drop_id)
+    drop_location = await get_drop_location(drop_id)
 
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(
@@ -691,6 +734,44 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
 
     return FileUpdateStatus(
         added=starting_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
+
+
+async def diff_timestamp_file(
+    current_files: Dict[str, int],
+    drop_location: str,
+) -> FileUpdateStatus:
+    """
+    Reads the timestamp file and compares it to the current files
+
+    :param current_files: Dictionary that stores filepath and timestamp
+    :return: FileUpdateStatus constructed from the difference of the \
+    current_files Dictionary and the loaded Dictionary from the timestamp file
+    """
+
+    timestamp_files = await fileio_util.read_timestamp_file(drop_location)
+    # current is the set of currently existing filepaths
+    current = set(current_files.keys())
+    # old is the set of previous existing filepaths
+    old = set(timestamp_files.keys())
+    # files that are in current but not in old are added files
+    added_files = current - old
+    # files that are in the old but not in current have been removed
+    removed_files = old - current
+    # files that are in both old and current could have been changed
+    # get all unchanged files
+    unchanged_files = {
+        filepath for filepath in (current.intersection(old))
+        if timestamp_files[filepath] == current_files[filepath]
+    }
+    # files that are in both old and current and not unchanged are changed
+    changed_files = current.intersection(old) - unchanged_files
+
+    return FileUpdateStatus(
+        added=added_files,
         removed=removed_files,
         changed=changed_files,
         unchanged=unchanged_files,
