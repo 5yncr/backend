@@ -373,7 +373,7 @@ async def handle_input_subscribe_drop(
             response = {
                 'status': 'ok',
                 'result': 'success',
-                'message': 'subscribed to drop ' + request['drop_id'],
+                'message': 'subscribed to drop ' + name,
             }
         except RuntimeError:
             response = {
