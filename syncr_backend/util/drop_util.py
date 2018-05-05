@@ -32,8 +32,6 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
-from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
-from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -85,10 +83,16 @@ async def sync_drop(
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
+
+    if all(file_results):
+        drop_location = await get_drop_location(drop_id)
+        scanned_files = await fileio_util.scan_current_files(drop_location)
+        await fileio_util.write_timestamp_file(
+            scanned_files,
+            drop_location,
+        )
     lock.release()
-
     return all(file_results), drop_id
-
 
 T = TypeVar('T')
 
@@ -560,36 +564,43 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     if drop_metadata is None:
         return None
 
-    files = {}
-    for (dirpath, filename) in fileio_util.walk_with_ignore(
-        drop_location, [],
-    ):
-        full_name = os.path.join(dirpath, filename)
-        rel_name = os.path.relpath(full_name, drop_location)
-        files[rel_name] = await make_file_metadata(
-            full_name, drop_id,
-        )
+    files = await fileio_util.scan_current_files(drop_location)
 
-    changed_files = set()
-    removed_files = set()
-    unchanged_files = set()
-    starting_files = set(files.keys())
+    return await diff_timestamp_file(files, drop_location)
 
-    for (name, id) in drop_metadata.files.items():
-        if name in starting_files:
-            temp_metadata = await get_file_metadata_from_drop_id(
-                drop_id, id,
-            )
-            if temp_metadata == files[name]:
-                unchanged_files.add(name)
-            else:
-                changed_files.add(name)
-            starting_files.remove(name)
-        else:
-            removed_files.add(name)  # Add file that no longer exists
+
+async def diff_timestamp_file(
+    current_files: Dict[str, int],
+    drop_location: str,
+) -> FileUpdateStatus:
+    """
+    Reads the timestamp file and compares it to the current files
+
+    :param current_files: Dictionary that stores filepath and timestamp
+    :return: FileUpdateStatus constructed from the difference of the \
+    current_files Dictionary and the loaded Dictionary from the timestamp file
+    """
+
+    timestamp_files = await fileio_util.read_timestamp_file(drop_location)
+    # current is the set of currently existing filepaths
+    current = set(current_files.keys())
+    # old is the set of previous existing filepaths
+    old = set(timestamp_files.keys())
+    # files that are in current but not in old are added files
+    added_files = current - old
+    # files that are in the old but not in current have been removed
+    removed_files = old - current
+    # files that are in both old and current could have been changed
+    # get all unchanged files
+    unchanged_files = {
+        filepath for filepath in (current.intersection(old))
+        if timestamp_files[filepath] == current_files[filepath]
+    }
+    # files that are in both old and current and not unchanged are changed
+    changed_files = current.intersection(old) - unchanged_files
 
     return FileUpdateStatus(
-        added=starting_files,
+        added=added_files,
         removed=removed_files,
         changed=changed_files,
         unchanged=unchanged_files,

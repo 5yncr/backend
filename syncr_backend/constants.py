@@ -43,6 +43,8 @@ DEFAULT_CHUNK_SIZE = 2**23  #: Default chunk size. Don't change this
 DEFAULT_FILE_METADATA_LOCATION = os.path.join(DEFAULT_INIT_DIR, "files")
 #: directory of drop metadata files in the drop
 DEFAULT_DROP_METADATA_LOCATION = os.path.join(DEFAULT_INIT_DIR, "drop")
+#: filename of timestamp file that detects updates
+DEFAULT_TIMESTAMP_LOCATION = os.path.join(DEFAULT_INIT_DIR, "timestamp")
 
 #: Default set of files/folders to ignore when creating/updating a drop
 DEFAULT_IGNORE = [DEFAULT_INIT_DIR]

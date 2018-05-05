@@ -12,11 +12,13 @@ from typing import Optional
 from typing import Tuple
 
 import aiofiles  # type: ignore
+import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
+from syncr_backend.constants import DEFAULT_TIMESTAMP_LOCATION
 from syncr_backend.external_interface.store_exceptions import \
     MissingConfigError
 from syncr_backend.init.node_init import get_full_init_directory
@@ -48,6 +50,56 @@ async def load_config_file() -> Dict[str, Any]:
         config_file = json.loads(config_txt)
 
     return config_file
+
+
+async def scan_current_files(
+    drop_location: str,
+) -> Dict[str, int]:
+    """
+    Scans the drop_location and collects files found into a dictionary
+
+    :return: dictionary of filepath,timestamp
+    """
+    files = {}
+    for (dirpath, filename) in walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        rel_name = os.path.relpath(full_name, drop_location)
+        files[rel_name] = int(os.path.getmtime(full_name))
+    return files
+
+
+async def read_timestamp_file(drop_location: str) -> Dict[str, int]:
+    """
+    Reads the timestamp file and returns it as a dict
+
+    :return: dictionary of filepath and timestamp
+    """
+
+    timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
+    await write_locks[timestamp_dir].acquire()
+    async with aiofiles.open(timestamp_dir, 'rb') as f:
+        filedata = await f.read()
+    write_locks[timestamp_dir].release()
+    return bencode.decode(filedata)
+
+
+async def write_timestamp_file(
+    current_files: Dict[str, int],
+    drop_location: str,
+) -> None:
+    """
+    Write the timestamp file as the passed in dict
+
+    :param current_files: Dictionary of filepath and timestamp
+    """
+    filedata = bencode.encode(current_files)
+    timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
+    await write_locks[timestamp_dir].acquire()
+    async with aiofiles.open(timestamp_dir, 'wb') as f:
+        f.write(filedata)
+    write_locks[timestamp_dir].release()
 
 
 async def write_chunk(
