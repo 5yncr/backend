@@ -87,7 +87,14 @@ async def sync_drop(
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
-    if all(file_results):
+
+    no_exceptions = True
+    for result in file_results:
+        if isinstance(result, BaseException):
+            logger.error("Failed to download a file: %s", result)
+            no_exceptions = False
+
+    if all(file_results) and no_exceptions:
         drop_location = await get_drop_location(drop_id)
         scanned_files = await fileio_util.scan_current_files(drop_location)
         await fileio_util.write_timestamp_file(
@@ -96,12 +103,6 @@ async def sync_drop(
         )
 
     lock.release()
-
-    no_exceptions = True
-    for result in file_results:
-        if isinstance(result, BaseException):
-            logger.error("Failed to download a file: %s", result)
-            no_exceptions = False
 
     return all(file_results) and no_exceptions, drop_id
 
