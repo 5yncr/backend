@@ -15,6 +15,9 @@ class TrackerRequest(IntEnum):
     GET_PEERS = 2  #: Geet peers
     POST_PEER = 3  #: Add a peer
 
+    def __str__(self) -> str:
+        return str(self.name)
+
 
 # Tuple structure for drop availability
 # TODO: make a NamedTuple
@@ -102,6 +105,11 @@ class FrontendAction(StrEnum):
     NEW_VERSION = 'new_version'
     PENDING_CHANGES = 'get_pending_changes'
     SYNC_UPDATE = 'sync_update'
+    SHARE_DROP = 'share_drop'
+    GET_PENDING_CHANGES = 'get_pending_changes'
+
+    def __str__(self) -> str:
+        return(self.value)
 
 
 # Frontend connection settings

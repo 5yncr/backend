@@ -160,7 +160,7 @@ class TrackerKeyStore(PublicKeyStore):
         :return: boolean on success of setting key
         """
         request = {
-            'request_type': TrackerRequest.POST_KEY,
+            'request_type': int(TrackerRequest.POST_KEY),
             'node_id': self.node_id,
             'data': key,
         }
@@ -187,7 +187,7 @@ class TrackerKeyStore(PublicKeyStore):
                 (if boolean is True)
         """
         request = {
-            'request_type': TrackerRequest.GET_KEY,
+            'request_type': int(TrackerRequest.GET_KEY),
             'node_id': request_node_id,
         }
 

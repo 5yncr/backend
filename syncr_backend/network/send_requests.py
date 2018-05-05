@@ -28,6 +28,18 @@ R = TypeVar('R')
 
 logger = get_logger(__name__)
 
+my_ip = ""
+
+
+def set_my_ip(ip: str) -> None:
+    global my_ip
+    my_ip = ip
+
+
+def get_my_ip() -> str:
+    global my_ip
+    return my_ip
+
 
 async def do_request(
     request_fun: Callable[..., Awaitable[R]],
@@ -49,8 +61,13 @@ async def do_request(
     if not peers:
         logger.error("no peers provided to do_request")
         raise network_util.NoPeersException("no peers provided to do_request")
+    if len(peers) == 1 and get_my_ip() in [ip for ip, _ in peers]:
+        logger.error("only peer is yourself!")
+        raise network_util.NoPeersException("only peer found is yourself")
 
     for (ip, port) in peers:
+        if ip == get_my_ip():
+            continue
         try:
             result = await request_fun(ip, port, **fun_args)
         except (TimeoutError, network_util.SyncrNetworkException) as e:

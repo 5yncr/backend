@@ -211,7 +211,7 @@ class TrackerPeerStore(DropPeerStore):
         :return: boolean on success of adding drop peer
         """
         request = {
-            'request_type': TrackerRequest.POST_PEER,
+            'request_type': int(TrackerRequest.POST_PEER),
             'drop_id': drop_id,
             'data': [self.node_id, ip, port],
         }
@@ -237,7 +237,7 @@ class TrackerPeerStore(DropPeerStore):
                 [node_id, ip, port]
         """
         request = {
-            'request_type': TrackerRequest.GET_PEERS,
+            'request_type': int(TrackerRequest.GET_PEERS),
             'drop_id': drop_id,
         }
 
