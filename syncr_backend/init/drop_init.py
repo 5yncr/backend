@@ -50,6 +50,12 @@ async def initialize_drop(directory: str) -> bytes:
     await save_drop_location(drop_m.id, directory)
     logger.info("drop initialized with %s files", len(files_m))
 
+    scanned_files = await fileio_util.scan_current_files(directory)
+    await fileio_util.write_timestamp_file(
+        scanned_files,
+        directory,
+    )
+
     return crypto_util.b64encode(drop_m.id)
 
 
