@@ -92,6 +92,7 @@ ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_NEW_VERSION = 'new_version'
 ACTION_PENDING_CHANGES = 'get_pending_changes'
+ACTION_SYNC_UPDATE = 'sync_update'
 
 # Frontend connection settings
 #: TCP address for frontend communication
