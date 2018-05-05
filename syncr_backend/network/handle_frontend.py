@@ -304,7 +304,7 @@ async def _handle_selected_drop(
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
         drop = await drop_metadata_to_response(md)
-        remote_pending_changes = {}
+        remote_pending_changes = {}  # type: Dict[str, List[str]]
         if get_pending_changes:
             file_update_status = await check_for_changes(drop_id)
             if file_update_status is None:
@@ -319,7 +319,6 @@ async def _handle_selected_drop(
 
             new_metadata, new_version_available = \
                 await check_for_update(drop_id)
-            remote_pending_changes = {}  # type: Dict[str, List[str]]
             if new_version_available:
                 remote_update_status = await find_changes_in_new_version(
                     drop_id, new_metadata,
