@@ -248,7 +248,7 @@ async def handle_sync_update(
                 'error': ERR_NEXIST,
             }
         elif new_metadata.version > drop_metadata.version:
-            queue_sync(
+            await queue_sync(
                 drop_id, file_location, new_metadata.version,
             )
             await cleanup_drop(
