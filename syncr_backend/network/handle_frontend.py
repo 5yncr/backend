@@ -240,7 +240,7 @@ async def handle_sync_update(
         )
 
         new_metadata = await do_metadata_request(
-            request.get('drop_id'), [],
+            drop_id, [],
         )
         if new_metadata is None or drop_metadata is None:
             response = {
@@ -249,10 +249,10 @@ async def handle_sync_update(
             }
         elif new_metadata.version > drop_metadata.version:
             queue_sync(
-                request['drop_id'], file_location, new_metadata.version,
+                drop_id, file_location, new_metadata.version,
             )
             await cleanup_drop(
-                request.get('drop_id'), drop_metadata, new_metadata,
+                drop_id, drop_metadata, new_metadata,
             )
             response = {
                 'status': 'ok',
