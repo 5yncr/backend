@@ -240,6 +240,7 @@ async def _handle_selected_drop(
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
         drop = await drop_metadata_to_response(md)
+        remote_pending_changes = {}
         if get_pending_changes:
             file_update_status = await check_for_changes(drop_id)
             if file_update_status is None:
