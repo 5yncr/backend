@@ -845,7 +845,8 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     )
     success, drop_peers = await drop_peer_store_instance.request_peers(drop_id)
     if not success:
-        raise PeerStoreError("Could not connect to peers")
+        encoded_id = crypto_util.b64encode(drop_id)
+        raise PeerStoreError("No peers found for drop %s" % encoded_id)
 
     peers = [(ip, int(port)) for peer_name, ip, port in drop_peers]
 
