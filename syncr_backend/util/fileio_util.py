@@ -98,7 +98,8 @@ async def write_timestamp_file(
     timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
     await write_locks[timestamp_dir].acquire()
     async with aiofiles.open(timestamp_dir, 'wb') as f:
-        f.write(filedata)
+        await f.write(filedata)
+        await f.flush()
     write_locks[timestamp_dir].release()
 
 
