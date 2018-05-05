@@ -350,6 +350,13 @@ async def make_new_version(
 
     DropMetadata.read_file.cache_clear()  # type: ignore
 
+    drop_location = await get_drop_location(drop_id)
+    scanned_files = await fileio_util.scan_current_files(drop_location)
+    await fileio_util.write_timestamp_file(
+        scanned_files,
+        drop_location,
+    )
+
 
 async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     """Given a drop_id and save directory, sets up the directory for syncing
