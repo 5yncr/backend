@@ -14,7 +14,6 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import crypto_util
-from syncr_backend.util import drop_util
 from syncr_backend.util import fileio_util
 from syncr_backend.util.log_util import get_logger
 
@@ -51,11 +50,10 @@ async def initialize_drop(directory: str) -> bytes:
     await save_drop_location(drop_m.id, directory)
     logger.info("drop initialized with %s files", len(files_m))
 
-    drop_location = await drop_util.get_drop_location(drop_m.id)
-    scanned_files = await fileio_util.scan_current_files(drop_location)
+    scanned_files = await fileio_util.scan_current_files(directory)
     await fileio_util.write_timestamp_file(
         scanned_files,
-        drop_location,
+        directory,
     )
 
     return crypto_util.b64encode(drop_m.id)

@@ -351,11 +351,10 @@ async def make_new_version(
 
     DropMetadata.read_file.cache_clear()  # type: ignore
 
-    drop_location = await get_drop_location(drop_id)
-    scanned_files = await fileio_util.scan_current_files(drop_location)
+    scanned_files = await fileio_util.scan_current_files(drop_directory)
     await fileio_util.write_timestamp_file(
         scanned_files,
-        drop_location,
+        drop_directory,
     )
 
 
