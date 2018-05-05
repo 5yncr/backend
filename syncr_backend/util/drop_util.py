@@ -421,7 +421,8 @@ async def get_drop_metadata(
 
 
 async def cleanup_drop(
-    drop_id: bytes, old_metadata: DropMetadata, new_metadata: DropMetadata,
+    drop_id: bytes, old_metadata: Optional[DropMetadata],
+    new_metadata: Optional[DropMetadata],
 ) -> None:
     """
     Removes files that were removed with a new version
@@ -431,14 +432,17 @@ async def cleanup_drop(
     :param new_metadata: DropMetadata of new version
     :return: None
     """
+    if old_metadata is None or new_metadata is None:
+        return
+
     old_files = set(old_metadata.files.keys())
     for drop_file in old_files:
         if drop_file in new_metadata.files:
             old_files.remove(drop_file)
 
-    drop_location = get_drop_location(drop_id)
+    drop_location = await get_drop_location(drop_id)
     for old_file in old_files:
-        file_location = os.path.isfile(drop_location, old_file)
+        file_location = os.path.join(drop_location, old_file)
         if os.path.isfile(file_location):
             os.remove(file_location)
 

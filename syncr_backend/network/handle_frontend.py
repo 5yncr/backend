@@ -26,6 +26,7 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INVINPUT
+from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
@@ -241,9 +242,16 @@ async def handle_sync_update(
         new_metadata = await do_metadata_request(
             request['drop_id'], [],
         )
-        if new_metadata.version > drop_metadata.version:
-            sync_drop(request['drop_id'], file_location, new_metadata.version)
-            cleanup_drop(request['drop_id'], drop_metadata, new_metadata)
+        if new_metadata is None or drop_metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_NEXIST,
+            }
+        elif new_metadata.version > drop_metadata.version:
+            await sync_drop(
+                request['drop_id'], file_location, new_metadata.version,
+            )
+            await cleanup_drop(request['drop_id'], drop_metadata, new_metadata)
             response = {
                 'status': 'ok',
                 'result': 'success',
