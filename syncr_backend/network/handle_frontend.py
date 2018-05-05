@@ -44,7 +44,6 @@ from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
 from syncr_backend.util.drop_util import make_new_version
 from syncr_backend.util.drop_util import queue_sync
-from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
 
@@ -222,13 +221,13 @@ async def handle_sync_update(
     :param conn: asyncio StreamWriter connection
     :return: None
     """
-    if request['drop_id'] is None:
+    if request.get('drop_id') is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
         }
     else:
-        drop_id = crypto_util.b64decode(request['drop_id'])
+        drop_id = crypto_util.b64decode(request.get('drop_id'))
         file_location = await get_drop_location(drop_id)
         drop_metadata_location = os.path.join(
             file_location,
@@ -240,7 +239,7 @@ async def handle_sync_update(
         )
 
         new_metadata = await do_metadata_request(
-            request['drop_id'], [],
+            request.get('drop_id'), [],
         )
         if new_metadata is None or drop_metadata is None:
             response = {
@@ -248,10 +247,12 @@ async def handle_sync_update(
                 'error': ERR_NEXIST,
             }
         elif new_metadata.version > drop_metadata.version:
-            await sync_drop(
+            queue_sync(
                 request['drop_id'], file_location, new_metadata.version,
             )
-            await cleanup_drop(request['drop_id'], drop_metadata, new_metadata)
+            await cleanup_drop(
+                request.get('drop_id'), drop_metadata, new_metadata,
+            )
             response = {
                 'status': 'ok',
                 'result': 'success',
@@ -394,7 +395,7 @@ async def handle_get_owned_subscribed_drops(
 
 
 async def handle_input_subscribe_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to subscribe to drop that user specifies.
@@ -407,22 +408,35 @@ async def handle_input_subscribe_drop(
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_id'] is None or request['file_path'] is None:
+    if request.get('drop_id') is None or request.get('directory') is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
         }
     else:
 
-        drop_id = request['drop_id']
-        file_path = request['file_path']
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        file_path = request['directory']
+
+        metadata = await do_metadata_request(drop_id, [])
+
+        if metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+            await send_response(conn, response)
+            return
+
+        name = metadata.name
+        full_path = os.path.join(file_path, name)
 
         try:
-            await queue_sync(drop_id, file_path)
+            await queue_sync(drop_id, full_path)
             response = {
                 'status': 'ok',
                 'result': 'success',
-                'message': 'subscribed to drop ' + request['drop_id'],
+                'message': 'subscribed to drop ' + name,
             }
         except RuntimeError:
             response = {
