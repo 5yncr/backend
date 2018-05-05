@@ -221,13 +221,14 @@ async def handle_sync_update(
     :param conn: asyncio StreamWriter connection
     :return: None
     """
-    if request.get('drop_id') is None:
+    drop_id = request.get('drop_id')
+    if drop_id is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
         }
     else:
-        drop_id = crypto_util.b64decode(request.get('drop_id'))
+        drop_id = crypto_util.b64decode(drop_id)
         file_location = await get_drop_location(drop_id)
         drop_metadata_location = os.path.join(
             file_location,
