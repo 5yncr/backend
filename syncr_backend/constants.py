@@ -90,6 +90,7 @@ class StrEnum(str, Enum):
 # Frontend action types
 # TODO: make an enum
 class FrontendAction(StrEnum):
+    """Frontend action strings"""
     GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
     GET_SELECT_DROP = 'get_selected_drop'
     INITIALIZE_DROP = 'initialize_drop'
