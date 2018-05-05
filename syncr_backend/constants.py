@@ -1,19 +1,23 @@
 """Constants"""
 import os
+from enum import Enum
+from enum import IntEnum
 
 
 NODE_ID_BYTE_SIZE = 32  #: Size of a node id in bytes
 DROP_ID_BYTE_SIZE = 64  #: Size of a drop id in bytes
 
-# Request types for tracker
-# TODO: make an enum
-TRACKER_REQUEST_GET_KEY = 0
-TRACKER_REQUEST_POST_KEY = 1
-TRACKER_REQUEST_GET_PEERS = 2
-TRACKER_REQUEST_POST_PEER = 3
+
+class TrackerRequest(IntEnum):
+    """Tracker request types"""
+    GET_KEY = 0  #: Get a key
+    POST_KEY = 1  #: Add a key
+    GET_PEERS = 2  #: Geet peers
+    POST_PEER = 3  #: Add a peer
+
 
 # Tuple structure for drop availability
-# TODO: make an enum
+# TODO: make a NamedTuple
 TRACKER_DROP_NODE_INDEX = 0
 TRACKER_DROP_IP_INDEX = 1
 TRACKER_DROP_PORT_INDEX = 2
@@ -79,20 +83,25 @@ MAX_CHUNKS_PER_PEER = 8
 MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 
 
+class StrEnum(str, Enum):
+    pass
+
+
 # Frontend action types
 # TODO: make an enum
-ACTION_GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
-ACTION_GET_SELECT_DROP = 'get_selected_drop'
-ACTION_INITIALIZE_DROP = 'initialize_drop'
-ACTION_INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
-ACTION_SHARE_DROP = 'share_drop'
-ACTION_ADD_OWNER = 'add_owner'
-ACTION_REMOVE_OWNER = 'remove_owner'
-ACTION_DELETE_DROP = 'delete_drop'
-ACTION_UNSUBSCRIBE = 'unsubscribe'
-ACTION_NEW_VERSION = 'new_version'
-ACTION_PENDING_CHANGES = 'get_pending_changes'
-ACTION_SYNC_UPDATE = 'sync_update'
+class FrontendAction(StrEnum):
+    GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
+    GET_SELECT_DROP = 'get_selected_drop'
+    INITIALIZE_DROP = 'initialize_drop'
+    INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
+    ADD_OWNER = 'add_owner'
+    REMOVE_OWNER = 'remove_owner'
+    DELETE_DROP = 'delete_drop'
+    UNSUBSCRIBE = 'unsubscribe'
+    NEW_VERSION = 'new_version'
+    PENDING_CHANGES = 'get_pending_changes'
+    SYNC_UPDATE = 'sync_update'
+
 
 # Frontend connection settings
 #: TCP address for frontend communication

@@ -8,8 +8,7 @@ from typing import Tuple
 
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.constants import TRACKER_OK_RESULT
-from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
-from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
+from syncr_backend.constants import TrackerRequest
 from syncr_backend.external_interface.dht_util import \
     get_dht
 from syncr_backend.external_interface.store_exceptions import \
@@ -212,7 +211,7 @@ class TrackerPeerStore(DropPeerStore):
         :return: boolean on success of adding drop peer
         """
         request = {
-            'request_type': TRACKER_REQUEST_POST_PEER,
+            'request_type': TrackerRequest.POST_PEER,
             'drop_id': drop_id,
             'data': [self.node_id, ip, port],
         }
@@ -238,7 +237,7 @@ class TrackerPeerStore(DropPeerStore):
                 [node_id, ip, port]
         """
         request = {
-            'request_type': TRACKER_REQUEST_GET_PEERS,
+            'request_type': TrackerRequest.GET_PEERS,
             'drop_id': drop_id,
         }
 

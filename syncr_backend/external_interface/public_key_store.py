@@ -6,8 +6,7 @@ from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
-from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
-from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
+from syncr_backend.constants import TrackerRequest
 from syncr_backend.external_interface.dht_util import \
     get_dht
 from syncr_backend.external_interface.store_exceptions import (
@@ -161,7 +160,7 @@ class TrackerKeyStore(PublicKeyStore):
         :return: boolean on success of setting key
         """
         request = {
-            'request_type': TRACKER_REQUEST_POST_KEY,
+            'request_type': TrackerRequest.POST_KEY,
             'node_id': self.node_id,
             'data': key,
         }
@@ -188,7 +187,7 @@ class TrackerKeyStore(PublicKeyStore):
                 (if boolean is True)
         """
         request = {
-            'request_type': TRACKER_REQUEST_GET_KEY,
+            'request_type': TrackerRequest.GET_KEY,
             'node_id': request_node_id,
         }
 
