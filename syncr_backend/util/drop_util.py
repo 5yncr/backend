@@ -34,6 +34,8 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -629,10 +631,7 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     """
     logger.info("Checking for local changes in drop: %s", drop_id)
     drop_location = await get_drop_location(drop_id)
-    if not os.path.exists(
-            os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION),
-    ):
-        return fallback_find_changes_in_new_version(drop_id)
+
     if drop_location is None:
         return None
     drop_metadata = await DropMetadata.read_file(
@@ -643,60 +642,64 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     )
     if drop_metadata is None:
         return None
+
+    if not os.path.exists(
+            os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION),
+    ):
+        return await fallback_check_for_changes(
+            drop_id,
+            drop_metadata,
+        )
 
     files = await fileio_util.scan_current_files(drop_location)
 
     return await diff_timestamp_file(files, drop_location)
 
 
-async def fallback_find_changes_in_new_version(
-    drop_id: bytes, new_metadata: DropMetadata,
+async def fallback_check_for_changes(
+    drop_id: bytes,
+    drop_metadata: DropMetadata,
 ) -> Optional[FileUpdateStatus]:
-    """
-    Creates a FileUpdateStatus object for the changes between the current
-    and the most provided version
-    Fallback for default timestamp method
+    """Checks over the local drop and returns what files have local
+    changes if any. Fallback for normal function when no timestamp is found.
 
-    :param drop_id: the drop to look over
-    :param new_metadata: metadata of new version to check against
-    :return: FileUpdateStatus object for the changes
+    :param drop_id: the drop to check
+    :param drop_metadata: drop metadata of drop
+    :return: a set of file names that have local changes
     """
-    logger.info(
-        "Finding changes between current version and newest version",
-        " of drop: ", drop_id,
-    )
+    logger.info("Checking for local changes in drop (fallback): %s", drop_id)
     drop_location = await get_drop_location(drop_id)
-    if drop_location is None:
-        return None
-    drop_metadata = await DropMetadata.read_file(
-        id=drop_id,
-        metadata_location=os.path.join(
-            drop_location, DEFAULT_DROP_METADATA_LOCATION,
-        ),
-    )
 
-    assert drop_id == new_metadata.id, "Matching drop_ids required"
-    if drop_metadata is None:
-        return None
-    assert drop_metadata.version < new_metadata.version, "New version required"
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        rel_name = os.path.relpath(full_name, drop_location)
+        files[rel_name] = await make_file_metadata(
+            full_name, drop_id,
+        )
 
-    added_files = set()
     changed_files = set()
+    removed_files = set()
     unchanged_files = set()
-    removed_files = set(drop_metadata.files.keys())
+    starting_files = set(files.keys())
 
-    for (name, id) in new_metadata.files.items():
-        if name in removed_files:
-            if drop_metadata.files[name] == new_metadata.files[name]:
+    for (name, id) in drop_metadata.files.items():
+        if name in starting_files:
+            temp_metadata = await get_file_metadata_from_drop_id(
+                drop_id, id,
+            )
+            if temp_metadata == files[name]:
                 unchanged_files.add(name)
             else:
                 changed_files.add(name)
-            removed_files.remove(name)
+            starting_files.remove(name)
         else:
-            added_files.add(name)
+            removed_files.add(name)  # Add file that no longer exists
 
     return FileUpdateStatus(
-        added=added_files,
+        added=starting_files,
         removed=removed_files,
         changed=changed_files,
         unchanged=unchanged_files,
