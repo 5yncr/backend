@@ -407,7 +407,7 @@ async def get_drop_metadata(
         id=drop_id, metadata_location=metadata_dir,
     )
 
-    if metadata is None:
+    if metadata is None or metadata.version < version:
         logger.debug("drop metadata not on disk, getting from network")
         metadata = await do_metadata_request(drop_id, peers, version)
         # mypy can't figure out that this won't be None
@@ -418,6 +418,29 @@ async def get_drop_metadata(
         )
 
     return metadata
+
+
+async def cleanup_drop(
+    drop_id: bytes, old_metadata: DropMetadata, new_metadata: DropMetadata,
+) -> None:
+    """
+    Removes files that were removed with a new version
+
+    :param drop_id: Drop ID
+    :param old_metadata: DropMetadata of old version
+    :param new_metadata: DropMetadata of new version
+    :return: None
+    """
+    old_files = set(old_metadata.files.keys())
+    for drop_file in old_files:
+        if drop_file in new_metadata.files:
+            old_files.remove(drop_file)
+
+    drop_location = get_drop_location(drop_id)
+    for old_file in old_files:
+        file_location = os.path.isfile(drop_location, old_file)
+        if os.path.isfile(file_location):
+            os.remove(file_location)
 
 
 async def verify_version(
