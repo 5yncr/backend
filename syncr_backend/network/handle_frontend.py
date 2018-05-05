@@ -357,8 +357,15 @@ async def handle_input_subscribe_drop(
 
         metadata = await do_metadata_request(drop_id, [])
 
-        name = metadata.name
+        if metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+            await send_response(conn, response)
+            return
 
+        name = metadata.name
         full_path = os.path.join(file_path, name)
 
         try:
