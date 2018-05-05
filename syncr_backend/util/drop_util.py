@@ -730,6 +730,7 @@ async def sync_file_contents(
             result_queue.task_done()
         if not added:
             break
+        peers = await get_drop_peers(drop_id)
 
     processor.cancel()
     return needed_chunks
@@ -830,6 +831,7 @@ class PeerStoreError(Exception):
     pass
 
 
+@async_util.async_cache(cache_obj=TTLCache, ttl=5)
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop. Also shuffles the list
