@@ -170,7 +170,7 @@ class PermissionError(Exception):
 
 async def check_for_update(
     drop_id: bytes,
-) -> Tuple[DropMetadata, bool]:
+) -> Tuple[Optional[DropMetadata], bool]:
     """
     Check for drop updates from the network
 
@@ -192,7 +192,11 @@ async def check_for_update(
     else:
         old_v = old_drop_m.version
 
-    peers = await get_drop_peers(drop_id)
+    try:
+        peers = await get_drop_peers(drop_id)
+    except PeerStoreError:
+        return old_drop_m, False
+
     args = {
         'drop_id': drop_id,
         'drop_version': None,
