@@ -422,7 +422,7 @@ async def get_drop_metadata(
 
 async def verify_version(
     drop_metadata: DropMetadata,
-    peers: Optional[List[Tuple[str, int]]]=None,
+    peers: List[Tuple[str, int]]=[],
 ) -> None:
     """Verify the DropMetadata version recursively
 
@@ -439,7 +439,7 @@ async def verify_version(
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
-        if peers is None:
+        if not peers:
             peers = await get_drop_peers(drop_metadata.id)
         dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
         verify_version(dmd, peers)
