@@ -1,6 +1,4 @@
 language: python
-cache:
-  pip: true
 services:
     - docker
 python:
