@@ -38,6 +38,7 @@ async def initialize_drop(directory: str) -> bytes:
         owner=node_id,
     )
     await drop_m.write_file(
+        is_current=True,
         is_latest=True,
         metadata_location=os.path.join(
             directory, DEFAULT_DROP_METADATA_LOCATION,

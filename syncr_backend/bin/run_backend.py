@@ -11,6 +11,7 @@ from syncr_backend.init import node_init
 from syncr_backend.metadata.drop_metadata import send_my_pub_key
 from syncr_backend.network.handle_frontend import setup_frontend_server
 from syncr_backend.network.listen_requests import start_listen_server
+from syncr_backend.network.send_requests import set_my_ip
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 from syncr_backend.util.fileio_util import load_config_file
@@ -75,6 +76,8 @@ def run_backend() -> None:
         ext_port = int(arguments.port[0])
 
     loop = asyncio.get_event_loop()
+
+    set_my_ip(ext_addr)
 
     # initilize dht
     config_file = loop.run_until_complete(load_config_file())

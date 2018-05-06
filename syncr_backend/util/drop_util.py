@@ -1,6 +1,8 @@
 import asyncio
 import os
 import shutil
+import sys
+import traceback
 from collections import defaultdict
 from random import shuffle
 from typing import AsyncIterator
@@ -65,44 +67,59 @@ async def sync_drop(
     :return: a tuple of true if syncing finished and the drop_id
     """
     lock = sync_locks[drop_id]
+    logger.info("trying to get lock")
     await lock.acquire()
+    logger.info("acquiring lock")
 
-    drop_peers = await get_drop_peers(drop_id)
-    await start_drop_from_id(drop_id, save_dir)
-    drop_metadata = await get_drop_metadata(
-        drop_id, drop_peers, save_dir, version,
-    )
-
-    file_results = await async_util.limit_gather(
-        fs=[
-            sync_and_finish_file(
-                drop_id=drop_id,
-                file_name=file_name,
-                file_id=file_id,
-                # callrotate(drop_peers) so each file starts with a new peer
-                peers=rotate(drop_peers),
-                save_dir=save_dir,
-            ) for file_name, file_id in drop_metadata.files.items()
-        ],
-        n=MAX_CONCURRENT_FILE_DOWNLOADS,
-        task_timeout=1,
-    )
-
-    no_exceptions = True
-    for result in file_results:
-        if isinstance(result, BaseException):
-            logger.error("Failed to download a file: %s", result)
-            no_exceptions = False
-
-    if all(file_results) and no_exceptions:
-        drop_location = await get_drop_location(drop_id)
-        scanned_files = await fileio_util.scan_current_files(drop_location)
-        await fileio_util.write_timestamp_file(
-            scanned_files,
-            drop_location,
+    try:
+        drop_peers = await get_drop_peers(drop_id)
+        await start_drop_from_id(drop_id, save_dir)
+        drop_metadata = await get_drop_metadata(
+            drop_id, drop_peers, save_dir, version,
+        )
+        metadata_location = os.path.join(
+            save_dir, DEFAULT_DROP_METADATA_LOCATION,
+        )
+        await DropMetadata.write_current(
+            drop_metadata.id, drop_metadata.version, metadata_location,
         )
 
-    lock.release()
+        file_results = await async_util.limit_gather(
+            fs=[
+                sync_and_finish_file(
+                    drop_id=drop_id,
+                    file_name=file_name,
+                    file_id=file_id,
+                    # rotate(drop_peers) so each file starts with a new peer
+                    peers=rotate(drop_peers),
+                    save_dir=save_dir,
+                ) for file_name, file_id in drop_metadata.files.items()
+            ],
+            n=MAX_CONCURRENT_FILE_DOWNLOADS,
+            task_timeout=1,
+        )
+
+        no_exceptions = True
+        for result in file_results:
+            if isinstance(result, BaseException):
+                logger.error("Failed to download a file: %s", result)
+                no_exceptions = False
+
+        if all(file_results) and no_exceptions:
+            drop_location = await get_drop_location(drop_id)
+            scanned_files = await fileio_util.scan_current_files(drop_location)
+            await fileio_util.write_timestamp_file(
+                scanned_files,
+                drop_location,
+            )
+    except Exception as e:
+        ex_type, ex, tb = sys.exc_info()
+        logger.error("error syncing drop: %s", e)
+        traceback.print_exc()
+        raise
+    finally:
+        logger.info("releasing lock")
+        lock.release()
 
     return all(file_results) and no_exceptions, drop_id
 
@@ -170,7 +187,7 @@ class PermissionError(Exception):
 
 async def check_for_update(
     drop_id: bytes,
-) -> Tuple[DropMetadata, bool]:
+) -> Tuple[Optional[DropMetadata], bool]:
     """
     Check for drop updates from the network
 
@@ -181,27 +198,40 @@ async def check_for_update(
             update
     """
     drop_directory = await get_drop_location(drop_id)
+    metadata_location = os.path.join(
+        drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+    )
     old_drop_m = await DropMetadata.read_file(
         id=drop_id,
-        metadata_location=os.path.join(
-            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
-        ),
+        metadata_location=metadata_location,
     )
     if old_drop_m is None:
         old_v = DropVersion(0, 0)
     else:
         old_v = old_drop_m.version
 
-    peers = await get_drop_peers(drop_id)
-    args = {
-        'drop_id': drop_id,
-        'drop_version': None,
-    }
-    metadata = await send_requests.do_request(
-        request_fun=send_requests.send_drop_metadata_request,
-        peers=peers,
-        fun_args=args,
+    maybe_new_drop_m = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=metadata_location,
+        get_latest=True,
     )
+    if maybe_new_drop_m is not None and maybe_new_drop_m.version > old_v:
+        metadata = maybe_new_drop_m
+    else:
+        try:
+            peers = await get_drop_peers(drop_id)
+        except PeerStoreError:
+            return old_drop_m, False
+
+        args = {
+            'drop_id': drop_id,
+            'drop_version': None,
+        }
+        metadata = await send_requests.do_request(
+            request_fun=send_requests.send_drop_metadata_request,
+            peers=peers,
+            fun_args=args,
+        )
     new_v = metadata.version
 
     if old_v == new_v:
@@ -216,6 +246,13 @@ async def check_for_update(
         )
 
     if new_v > old_v:
+        await metadata.write_file(
+            metadata_location=os.path.join(
+                drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+            ),
+            is_current=False,
+            is_latest=True,
+        )
         return (metadata, True)
 
     # TODO: else send a new version exists request
@@ -261,7 +298,7 @@ async def process_sync_queue() -> None:
         while True:
             out = await sync_out_queue.get()
             if isinstance(out, BaseException):
-                logger.error("Faied to sync a drop, can't try again", out)
+                logger.error("Faied to sync a drop, can't try again: %s", out)
                 continue
 
             done, drop_id = out
@@ -339,6 +376,7 @@ async def make_new_version(
     )
 
     await new_drop_m.write_file(
+        is_current=True,
         is_latest=True,
         metadata_location=os.path.join(
             drop_directory, DEFAULT_DROP_METADATA_LOCATION,
@@ -430,7 +468,7 @@ async def get_drop_metadata(
         metadata = cast(DropMetadata, metadata)
 
         await metadata.write_file(
-            is_latest=True, metadata_location=metadata_dir,
+            is_current=False, metadata_location=metadata_dir, is_latest=True,
         )
 
     return metadata
@@ -615,8 +653,8 @@ async def find_changes_in_new_version(
     :return: FileUpdateStatus object for the changes
     """
     logger.info(
-        "Finding changes between current version and newest version",
-        " of drop: ", drop_id,
+        "Finding changes between current version and newest version"
+        " of drop: %s", drop_id,
     )
     drop_location = await get_drop_location(drop_id)
     if drop_location is None:
@@ -973,7 +1011,10 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
         encoded_id = crypto_util.b64encode(drop_id)
         raise PeerStoreError("No peers found for drop %s" % encoded_id)
 
-    peers = [(ip, int(port)) for peer_name, ip, port in drop_peers]
+    peers = [
+        (ip, int(port)) for peer_name, ip, port in drop_peers
+        if ip != send_requests.get_my_ip()
+    ]
 
     shuffle(peers)
 
@@ -992,7 +1033,7 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
 
     for f in files:
         full_name = os.path.join(metadata_dir, f)
-        if os.path.isfile(full_name) and f.endswith("_LATEST"):
+        if os.path.isfile(full_name) and f.endswith("_CURRENT"):
             b = f.split("_")[0]
             return crypto_util.b64decode(b.encode('utf-8'))
 
