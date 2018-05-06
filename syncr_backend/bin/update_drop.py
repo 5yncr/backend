@@ -47,7 +47,7 @@ def main() -> None:
     md, update_avail = loop.run_until_complete(
         drop_util.check_for_update(drop_id),
     )
-    if not update_avail:
+    if not update_avail or md is None:
         print("No update available, exiting")
         exit(0)
 

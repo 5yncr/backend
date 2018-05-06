@@ -38,6 +38,7 @@ async def initialize_drop(directory: str) -> bytes:
         owner=node_id,
     )
     await drop_m.write_file(
+        is_current=True,
         is_latest=True,
         metadata_location=os.path.join(
             directory, DEFAULT_DROP_METADATA_LOCATION,
@@ -49,6 +50,12 @@ async def initialize_drop(directory: str) -> bytes:
         )
     await save_drop_location(drop_m.id, directory)
     logger.info("drop initialized with %s files", len(files_m))
+
+    scanned_files = await fileio_util.scan_current_files(directory)
+    await fileio_util.write_timestamp_file(
+        scanned_files,
+        directory,
+    )
 
     return crypto_util.b64encode(drop_m.id)
 
