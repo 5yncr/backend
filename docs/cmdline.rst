@@ -57,6 +57,16 @@ Command line
 .. autoprogram:: syncr_backend.bin.update_drop:parser()
     :prog: update_drop
 
+.. _new_version:
+
+.. autoprogram:: syncr_backend.bin.new_version:parser()
+    :prog: new_version
+
+.. _check_for_updates:
+
+.. autoprogram:: syncr_backend.bin.check_for_updates:parser()
+    :prog: check_for_updates
+
 .. note::
-    Specifying ``--save-dir`` and ``--drop_id`` may have unexpected results if
-    they do not match
+    Specifying ``--save-dir`` and ``--drop_id`` in the three previous commands
+    may have unexpected results if they do not match
