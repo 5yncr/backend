@@ -28,6 +28,7 @@ from syncr_backend.util.crypto_util import VerificationException
 from syncr_backend.util.log_util import get_logger
 
 
+CURRENT = "CURRENT"
 LATEST = "LATEST"
 
 logger = get_logger(__name__)
@@ -239,12 +240,13 @@ class DropMetadata(object):
         )
 
     async def write_file(
-        self, metadata_location: str, is_latest: bool=True,
+        self, metadata_location: str, is_current: bool=True,
+        is_latest: bool=False,
     ) -> None:
         """Write the representation of this objec to disk
 
         :param metadata_location: where to write to disk
-        :param is_latest: whether to also write the LATEST file
+        :param is_current: whether to also write the CURRENT file
         :return: None
         """
         self.log.debug("writing file")
@@ -255,21 +257,42 @@ class DropMetadata(object):
             os.path.join(metadata_location, file_name), 'wb',
         ) as f:
             await f.write(await self.encode())
+        if is_current:
+            await DropMetadata.write_current(
+                self.id, self.version, metadata_location,
+            )
         if is_latest:
             await DropMetadata.write_latest(
                 self.id, self.version, metadata_location,
             )
 
     @staticmethod
-    async def write_latest(
+    async def write_current(
         id: bytes, version: DropVersion,
         metadata_location: str,
+    ) -> None:
+        """Write the current version to disk
+
+        :param id: the drop id
+        :param version: the current version
+        :param metadata_location: where to write it
+        """
+        file_name = DropMetadata.make_filename(id, CURRENT)
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'w',
+        ) as f:
+            to_write = DropMetadata.make_filename(id, version)
+            await f.write(to_write)
+
+    @staticmethod
+    async def write_latest(
+        id: bytes, version: DropVersion, metadata_location: str,
     ) -> None:
         """Write the latest version to disk
 
         :param id: the drop id
         :param version: the latest version
-        :para metadata_location: where to write it
+        :param metadata_locatin: where to write it
         """
         file_name = DropMetadata.make_filename(id, LATEST)
         async with aiofiles.open(
@@ -277,6 +300,29 @@ class DropMetadata(object):
         ) as f:
             to_write = DropMetadata.make_filename(id, version)
             await f.write(to_write)
+
+    @staticmethod
+    async def read_current(
+        id: bytes, metadata_location: str,
+    ) -> Optional[str]:
+        """Read the current drop version
+
+        :param id: the drop id
+        :param metadata_location: where to find it
+        :return: The current version, or none if not found
+        """
+        file_name = DropMetadata.make_filename(id, CURRENT)
+        logger.debug(
+            "trying to read file %s from %s", file_name, metadata_location,
+        )
+        if not os.path.isfile(os.path.join(metadata_location, file_name)):
+            logger.debug("File not found")
+            return None
+        async with aiofiles.open(
+            os.path.join(metadata_location, file_name), 'r',
+        ) as f:
+            logger.debug("Reading file")
+            return await f.readline()
 
     @staticmethod
     async def read_latest(
@@ -305,6 +351,7 @@ class DropMetadata(object):
     @async_cache()
     async def read_file(
         id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
+        get_latest: bool=False,
     ) -> Optional['DropMetadata']:
         """Read a drop metadata file from disk
 
@@ -318,15 +365,20 @@ class DropMetadata(object):
             logger.debug(
                 "Version is None, looking it up in %s", metadata_location,
             )
-            file_name = await DropMetadata.read_latest(
-                id, metadata_location,
-            )
+            if get_latest:
+                file_name = await DropMetadata.read_latest(
+                    id, metadata_location,
+                )
+            else:
+                file_name = await DropMetadata.read_current(
+                    id, metadata_location,
+                )
         else:
             logger.debug("Getting version %s", version)
             file_name = DropMetadata.make_filename(id, version)
         if file_name is None:
             logger.warning(
-                "latest drop metadata not found for %s",
+                "current drop metadata not found for %s",
                 crypto_util.b64encode(id),
             )
             return None

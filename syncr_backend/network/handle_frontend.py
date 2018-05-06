@@ -11,24 +11,13 @@ from typing import List  # noqa
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import ACTION_ADD_OWNER
-from syncr_backend.constants import ACTION_DELETE_DROP
-from syncr_backend.constants import ACTION_GET_OWNED_SUBSCRIBED_DROPS
-from syncr_backend.constants import ACTION_GET_SELECT_DROP
-from syncr_backend.constants import ACTION_INITIALIZE_DROP
-from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
-from syncr_backend.constants import ACTION_NEW_VERSION
-from syncr_backend.constants import ACTION_PENDING_CHANGES
-from syncr_backend.constants import ACTION_REMOVE_OWNER
-from syncr_backend.constants import ACTION_SHARE_DROP
-from syncr_backend.constants import ACTION_SYNC_UPDATE
-from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
+from syncr_backend.constants import FrontendAction
 from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
@@ -61,18 +50,19 @@ async def handle_frontend_request(
     :param conn: The StreamWriter to write the response to
     """
     function_map = {
-        ACTION_ADD_OWNER: handle_add_owner,
-        ACTION_DELETE_DROP: handle_delete_drop,
-        ACTION_GET_OWNED_SUBSCRIBED_DROPS: handle_get_owned_subscribed_drops,
-        ACTION_GET_SELECT_DROP: handle_get_selected_drop,
-        ACTION_INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
-        ACTION_INITIALIZE_DROP: handle_initialize_drop,
-        ACTION_REMOVE_OWNER: handle_remove_owner,
-        ACTION_SHARE_DROP: handle_share_drop,
-        ACTION_UNSUBSCRIBE: handle_unsubscribe,
-        ACTION_NEW_VERSION: handle_make_new_version,
-        ACTION_PENDING_CHANGES: handle_pending_changes,
-        ACTION_SYNC_UPDATE: handle_sync_update,
+        FrontendAction.ADD_OWNER: handle_add_owner,
+        FrontendAction.DELETE_DROP: handle_delete_drop,
+        FrontendAction.GET_OWNED_SUBSCRIBED_DROPS:
+            handle_get_owned_subscribed_drops,
+        FrontendAction.GET_SELECT_DROP: handle_get_selected_drop,
+        FrontendAction.INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
+        FrontendAction.INITIALIZE_DROP: handle_initialize_drop,
+        FrontendAction.REMOVE_OWNER: handle_remove_owner,
+        FrontendAction.SHARE_DROP: handle_share_drop,
+        FrontendAction.UNSUBSCRIBE: handle_unsubscribe,
+        FrontendAction.NEW_VERSION: handle_make_new_version,
+        FrontendAction.PENDING_CHANGES: handle_pending_changes,
+        FrontendAction.SYNC_UPDATE: handle_sync_update,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -237,10 +227,13 @@ async def handle_sync_update(
         drop_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=drop_metadata_location,
+            get_latest=False,
         )
 
-        new_metadata = await do_metadata_request(
-            drop_id, [],
+        new_metadata = await DropMetadata.read_file(
+            id=drop_id,
+            metadata_location=drop_metadata_location,
+            get_latest=True,
         )
         if new_metadata is None or drop_metadata is None:
             response = {
@@ -248,6 +241,7 @@ async def handle_sync_update(
                 'error': ERR_NEXIST,
             }
         elif new_metadata.version > drop_metadata.version:
+            logger.info("queuing sync")
             await queue_sync(
                 drop_id, file_location, new_metadata.version,
             )
@@ -257,7 +251,7 @@ async def handle_sync_update(
             response = {
                 'status': 'ok',
                 'result': 'success',
-                'message': 'drop successfully deleted',
+                'message': 'drop successfully updated',
             }
         else:
             response = {
@@ -351,6 +345,7 @@ async def _handle_selected_drop(
                 },
             }
 
+    print(response)
     await send_response(conn, response)
 
 
