@@ -1,4 +1,13 @@
 language: python
+cache:
+  pip: true
+  directories:
+    - .tox/
+    - $HOME/.cache/pip-faster/
+    - $HOME/.cache/pre-commit/
+before_cache:
+    - rm -rf .tox/*/log .tox/log .tox/*/local/log
+    - rm -rf .tox/manpages
 services:
     - docker
 python:
