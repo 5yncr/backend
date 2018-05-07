@@ -222,6 +222,8 @@ async def check_for_update(
             peers = await get_drop_peers(drop_id)
         except PeerStoreError:
             return old_drop_m, False
+        if not peers:
+            return old_drop_m, False
 
         args = {
             'drop_id': drop_id,
