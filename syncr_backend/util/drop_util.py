@@ -222,8 +222,6 @@ async def check_for_update(
             peers = await get_drop_peers(drop_id)
         except PeerStoreError:
             return old_drop_m, False
-        if not peers:
-            return old_drop_m, False
 
         args = {
             'drop_id': drop_id,
@@ -1017,6 +1015,10 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
         (ip, int(port)) for peer_name, ip, port in drop_peers
         if ip != send_requests.get_my_ip()
     ]
+
+    if not peers:
+        encoded_id = crypto_util.b64encode(drop_id)
+        raise PeerStoreError("No peers found for drop %s" % encoded_id)
 
     shuffle(peers)
 
