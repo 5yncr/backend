@@ -195,6 +195,15 @@ class DropMetadata(object):
         await crypto_util.verify_signed_dictionary(
             key, self.sig, (await self.unsigned_header),
         )
+        if self.version.version == 1:
+            if self.id[:32] != self.owner:
+                raise VerificationException(
+                    "first version does not match owner",
+                )
+        if self.version.version < 1:
+            raise VerificationException(
+                "versions less than 1 are not allowed",
+            )
 
     def get_file_name_from_id(self, file_hash: bytes) -> str:
         """Get the file name of a file id

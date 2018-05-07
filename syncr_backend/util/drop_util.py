@@ -481,6 +481,7 @@ async def get_drop_metadata(
             is_current=False, metadata_location=metadata_dir, is_latest=True,
         )
 
+    await verify_version(metadata)
     return metadata
 
 
@@ -529,10 +530,16 @@ async def verify_version(
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
+        if not version < drop_metadata.version:
+            raise VerificationException(
+                "new version not more than previous; new %s, old %s" % (
+                    drop_metadata.version, version,
+                ),
+            )
         if not peers:
             peers = await get_drop_peers(drop_metadata.id)
         dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
-        verify_version(dmd, peers)
+        await verify_version(dmd, peers)
 
         if drop_metadata.signed_by == dmd.owner:
             logger.debug(
@@ -552,7 +559,7 @@ async def verify_version(
                 drop_metadata.signed_by,
                 drop_metadata.id,
             )
-            raise VerificationException()
+            raise VerificationException("signature not from owner")
         else:
             await drop_metadata.verify_header()
     else:
@@ -562,6 +569,8 @@ async def verify_version(
         if primary_owner != drop_metadata.signed_by:
             raise VerificationException()
         for version in drop_metadata.previous_versions:
+            if not version < drop_metadata.version:
+                raise VerificationException("version not more than previous")
             if peers is None:
                 peers = await get_drop_peers(drop_metadata.id)
             dmd = await get_drop_metadata(
@@ -569,7 +578,9 @@ async def verify_version(
             )
             await verify_version(dmd, peers)
             if primary_owner != dmd.owner:
-                raise VerificationException()
+                raise VerificationException(
+                    "merge branch not signed by primary owner",
+                )
 
 
 async def get_owned_subscribed_drops_metadata(

@@ -90,7 +90,7 @@ async def handle_frontend_request(
 
 
 async def handle_add_owner(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to an owner to a drop
@@ -103,7 +103,7 @@ async def handle_add_owner(
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_id'] is None or request['owner_id'] is None:
+    if request.get('drop_id') is None or request.get('owner_id') is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
