@@ -228,6 +228,7 @@ async def handle_request_chunk(
     )
     request_drop_metadata = await DropMetadata.read_file(
         id=request['drop_id'], metadata_location=drop_metadata_location,
+        version=None,
     )
 
     if request_file_metadata is None or request_drop_metadata is None:

@@ -66,6 +66,9 @@ class DropVersion(object):
             raise TypeError(other)
         return self.version <= other.version
 
+    def __hash__(self) -> int:
+        return hash((self.version, self.nonce))
+
 
 class DropMetadata(object):
     """Representation of a drop's metadata file"""
@@ -366,10 +369,12 @@ class DropMetadata(object):
                 "Version is None, looking it up in %s", metadata_location,
             )
             if get_latest:
+                logger.info("reading latest")
                 file_name = await DropMetadata.read_latest(
                     id, metadata_location,
                 )
             else:
+                logger.info("reading current")
                 file_name = await DropMetadata.read_current(
                     id, metadata_location,
                 )

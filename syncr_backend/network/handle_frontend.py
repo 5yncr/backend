@@ -181,6 +181,7 @@ async def handle_delete_drop(
         drop_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=file_location,
+            version=None,
         )
         if drop_metadata is None:
             response = {
@@ -212,6 +213,7 @@ async def handle_sync_update(
     :return: None
     """
     drop_id = request.get('drop_id')
+    logger.info("trying to update %s", request.get('drop_id'))
     if drop_id is None:
         response = {
             'status': 'error',
@@ -228,12 +230,14 @@ async def handle_sync_update(
             id=drop_id,
             metadata_location=drop_metadata_location,
             get_latest=False,
+            version=None,
         )
 
         new_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=drop_metadata_location,
             get_latest=True,
+            version=None,
         )
         if new_metadata is None or drop_metadata is None:
             response = {
@@ -241,6 +245,8 @@ async def handle_sync_update(
                 'error': ERR_NEXIST,
             }
         elif new_metadata.version > drop_metadata.version:
+            logger.info("current: %s", drop_metadata.version)
+            logger.info("latest: %s", new_metadata.version)
             logger.info("queuing sync")
             await queue_sync(
                 drop_id, file_location, new_metadata.version,
@@ -596,6 +602,7 @@ async def handle_unsubscribe(
         drop_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=file_location,
+            version=None,
         )
         if drop_metadata is None:
             response = {

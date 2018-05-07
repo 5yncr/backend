@@ -73,7 +73,9 @@ async def sync_drop(
 
     try:
         drop_peers = await get_drop_peers(drop_id)
+        logger.info("peers: %s", drop_peers)
         await start_drop_from_id(drop_id, save_dir)
+        logger.info("version: %s", version)
         drop_metadata = await get_drop_metadata(
             drop_id, drop_peers, save_dir, version,
         )
@@ -120,6 +122,8 @@ async def sync_drop(
     finally:
         logger.info("releasing lock")
         lock.release()
+
+    DropMetadata.read_file.cache_clear()  # type: ignore
 
     return all(file_results) and no_exceptions, drop_id
 
@@ -204,6 +208,7 @@ async def check_for_update(
     old_drop_m = await DropMetadata.read_file(
         id=drop_id,
         metadata_location=metadata_location,
+        version=None,
     )
     if old_drop_m is None:
         old_v = DropVersion(0, 0)
@@ -214,6 +219,7 @@ async def check_for_update(
         id=drop_id,
         metadata_location=metadata_location,
         get_latest=True,
+        version=None,
     )
     if maybe_new_drop_m is not None and maybe_new_drop_m.version > old_v:
         metadata = maybe_new_drop_m
@@ -253,6 +259,8 @@ async def check_for_update(
             is_current=False,
             is_latest=True,
         )
+
+        DropMetadata.read_file.cache_clear()  # type: ignore
         return (metadata, True)
 
     # TODO: else send a new version exists request
@@ -332,6 +340,7 @@ async def make_new_version(
         metadata_location=os.path.join(
             drop_directory, DEFAULT_DROP_METADATA_LOCATION,
         ),
+        version=None,
     )
 
     if old_drop_m is None:
@@ -458,6 +467,7 @@ async def get_drop_metadata(
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
     metadata = await DropMetadata.read_file(
         id=drop_id, metadata_location=metadata_dir,
+        version=version,
     )
 
     if metadata is None or \
@@ -1013,7 +1023,7 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
 
     peers = [
         (ip, int(port)) for peer_name, ip, port in drop_peers
-        if ip != send_requests.get_my_ip()
+        if ip != send_requests.get_my_ip()[0]
     ]
 
     if not peers:

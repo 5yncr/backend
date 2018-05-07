@@ -52,6 +52,7 @@ async def a_main() -> None:
     )
     metadata = await DropMetadata.read_file(
         id=drop_id, metadata_location=metadata_dir,
+        version=None,
     )
 
     if metadata is None:
