@@ -29,16 +29,18 @@ R = TypeVar('R')
 logger = get_logger(__name__)
 
 my_ip = ""
+my_port = 0
 
 
-def set_my_ip(ip: str) -> None:
-    global my_ip
+def set_my_ip(ip: str, port: int) -> None:
+    global my_ip, my_port
     my_ip = ip
+    my_port = port
 
 
-def get_my_ip() -> str:
-    global my_ip
-    return my_ip
+def get_my_ip() -> Tuple[str, int]:
+    global my_ip, my_port
+    return my_ip, my_port
 
 
 async def do_request(
