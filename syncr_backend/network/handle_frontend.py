@@ -54,7 +54,7 @@ async def handle_frontend_request(
         FrontendAction.DELETE_DROP: handle_delete_drop,
         FrontendAction.GET_OWNED_SUBSCRIBED_DROPS:
             handle_get_owned_subscribed_drops,
-        FrontendAction.GET_SELECT_DROP: handle_get_selected_drop,
+        FrontendAction.GET_SELECTED_DROP: handle_get_selected_drop,
         FrontendAction.INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
         FrontendAction.INITIALIZE_DROP: handle_initialize_drop,
         FrontendAction.REMOVE_OWNER: handle_remove_owner,
