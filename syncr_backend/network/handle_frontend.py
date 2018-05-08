@@ -67,7 +67,7 @@ async def handle_frontend_request(
         FrontendAction.NEW_VERSION: handle_make_new_version,
         FrontendAction.PENDING_CHANGES: handle_pending_changes,
         FrontendAction.SYNC_UPDATE: handle_sync_update,
-        FrontendAction.GET_PRIVATE_KEY: handle_get_private_key,
+        FrontendAction.GET_PUBLIC_KEY: handle_get_public_key,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -626,11 +626,11 @@ async def handle_unsubscribe(
     await send_response(conn, response)
 
 
-async def handle_get_private_key(
+async def handle_get_public_key(
         request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
-    Handling function to provide private key to frontend
+    Handling function to provide public key to frontend
     :param request: { \
     "action": string, \
     }
