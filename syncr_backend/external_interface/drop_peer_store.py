@@ -4,6 +4,7 @@ import threading
 from abc import ABC
 from abc import abstractmethod
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
@@ -45,15 +46,35 @@ async def send_drops_to_dps(
     dps = await get_drop_peer_store(this_node_id)
 
     while not shutdown_flag.is_set():
-        drops = list_drops()
-        logger.info("Sending drops to dps")
-        for drop in drops:
-            logger.debug("Sending drop %s", crypto_util.b64encode(drop))
-
-            await dps.add_drop_peer(drop, ip, port)
+        await send_drops_once(ip, port, dps)
         sleep_time = TRACKER_DROP_AVAILABILITY_TTL / 2 - 1
         logger.debug("Sleeping for %s", sleep_time)
         await asyncio.sleep(sleep_time)
+
+
+async def send_drops_once(
+    ip: str,
+    port: int,
+    dps: Optional['DropPeerStore']=None,
+) -> None:
+    """For each drop tell the dps our ip and port, then exit
+
+    :param ip: ip/address to tell the dps
+    :param port: port to tell the dps
+    :param dps: if provided, use this dps, else get it from config
+    """
+    if dps is None:
+        this_node_id = await node_id_from_private_key(
+            await load_private_key_from_disk(),
+        )
+        dps = await get_drop_peer_store(this_node_id)
+
+    drops = list_drops()
+    logger.info("Sending drops to dps")
+    for drop in drops:
+        logger.debug("Sending drop %s", crypto_util.b64encode(drop))
+
+        await dps.add_drop_peer(drop, ip, port)
 
 
 async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":

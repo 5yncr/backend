@@ -73,7 +73,9 @@ async def sync_drop(
 
     try:
         drop_peers = await get_drop_peers(drop_id)
+        logger.info("peers: %s", drop_peers)
         await start_drop_from_id(drop_id, save_dir)
+        logger.info("version: %s", version)
         drop_metadata = await get_drop_metadata(
             drop_id, drop_peers, save_dir, version,
         )
@@ -120,6 +122,8 @@ async def sync_drop(
     finally:
         logger.info("releasing lock")
         lock.release()
+
+    DropMetadata.read_file.cache_clear()  # type: ignore
 
     return all(file_results) and no_exceptions, drop_id
 
@@ -204,6 +208,7 @@ async def check_for_update(
     old_drop_m = await DropMetadata.read_file(
         id=drop_id,
         metadata_location=metadata_location,
+        version=None,
     )
     if old_drop_m is None:
         old_v = DropVersion(0, 0)
@@ -214,6 +219,7 @@ async def check_for_update(
         id=drop_id,
         metadata_location=metadata_location,
         get_latest=True,
+        version=None,
     )
     if maybe_new_drop_m is not None and maybe_new_drop_m.version > old_v:
         metadata = maybe_new_drop_m
@@ -247,12 +253,12 @@ async def check_for_update(
 
     if new_v > old_v:
         await metadata.write_file(
-            metadata_location=os.path.join(
-                drop_directory, DEFAULT_DROP_METADATA_LOCATION,
-            ),
+            metadata_location=metadata_location,
             is_current=False,
             is_latest=True,
         )
+
+        DropMetadata.read_file.cache_clear()  # type: ignore
         return (metadata, True)
 
     # TODO: else send a new version exists request
@@ -332,6 +338,7 @@ async def make_new_version(
         metadata_location=os.path.join(
             drop_directory, DEFAULT_DROP_METADATA_LOCATION,
         ),
+        version=None,
     )
 
     if old_drop_m is None:
@@ -440,7 +447,7 @@ async def do_metadata_request(
 
 async def get_drop_metadata(
     drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
-    version: Optional[DropVersion]=None,
+    version: Optional[DropVersion]=None, do_verification: bool=True,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -458,6 +465,7 @@ async def get_drop_metadata(
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
     metadata = await DropMetadata.read_file(
         id=drop_id, metadata_location=metadata_dir,
+        version=version,
     )
 
     if metadata is None or \
@@ -471,6 +479,8 @@ async def get_drop_metadata(
             is_current=False, metadata_location=metadata_dir, is_latest=True,
         )
 
+    if do_verification:
+        await verify_version(metadata)
     return metadata
 
 
@@ -519,10 +529,18 @@ async def verify_version(
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
+        if not version < drop_metadata.version:
+            raise VerificationException(
+                "new version not more than previous; new %s, old %s" % (
+                    drop_metadata.version, version,
+                ),
+            )
         if not peers:
             peers = await get_drop_peers(drop_metadata.id)
-        dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
-        verify_version(dmd, peers)
+        dmd = await get_drop_metadata(
+            drop_metadata.id, peers, version=version, do_verification=False,
+        )
+        await verify_version(dmd, peers)
 
         if drop_metadata.signed_by == dmd.owner:
             logger.debug(
@@ -542,7 +560,7 @@ async def verify_version(
                 drop_metadata.signed_by,
                 drop_metadata.id,
             )
-            raise VerificationException()
+            raise VerificationException("signature not from owner")
         else:
             await drop_metadata.verify_header()
     else:
@@ -552,14 +570,19 @@ async def verify_version(
         if primary_owner != drop_metadata.signed_by:
             raise VerificationException()
         for version in drop_metadata.previous_versions:
+            if not version < drop_metadata.version:
+                raise VerificationException("version not more than previous")
             if peers is None:
                 peers = await get_drop_peers(drop_metadata.id)
             dmd = await get_drop_metadata(
                 drop_metadata.id, peers, version=version,
+                do_verification=False,
             )
             await verify_version(dmd, peers)
             if primary_owner != dmd.owner:
-                raise VerificationException()
+                raise VerificationException(
+                    "merge branch not signed by primary owner",
+                )
 
 
 async def get_owned_subscribed_drops_metadata(
@@ -1013,8 +1036,12 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
 
     peers = [
         (ip, int(port)) for peer_name, ip, port in drop_peers
-        if ip != send_requests.get_my_ip()
+        if ip != send_requests.get_my_ip()[0]
     ]
+
+    if not peers:
+        encoded_id = crypto_util.b64encode(drop_id)
+        raise PeerStoreError("No peers found for drop %s" % encoded_id)
 
     shuffle(peers)
 

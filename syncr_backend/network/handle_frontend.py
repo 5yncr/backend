@@ -18,10 +18,12 @@ from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.constants import FrontendAction
+from syncr_backend.external_interface.drop_peer_store import send_drops_once
 from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.network.send_requests import get_my_ip
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import check_for_update
@@ -41,7 +43,7 @@ logger = get_logger(__name__)
 
 
 async def handle_frontend_request(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handle a request from the frontend
@@ -54,7 +56,7 @@ async def handle_frontend_request(
         FrontendAction.DELETE_DROP: handle_delete_drop,
         FrontendAction.GET_OWNED_SUBSCRIBED_DROPS:
             handle_get_owned_subscribed_drops,
-        FrontendAction.GET_SELECT_DROP: handle_get_selected_drop,
+        FrontendAction.GET_SELECTED_DROP: handle_get_selected_drop,
         FrontendAction.INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
         FrontendAction.INITIALIZE_DROP: handle_initialize_drop,
         FrontendAction.REMOVE_OWNER: handle_remove_owner,
@@ -90,7 +92,7 @@ async def handle_frontend_request(
 
 
 async def handle_add_owner(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to an owner to a drop
@@ -103,7 +105,7 @@ async def handle_add_owner(
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_id'] is None or request['owner_id'] is None:
+    if request.get('drop_id') is None or request.get('owner_id') is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
@@ -181,6 +183,7 @@ async def handle_delete_drop(
         drop_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=file_location,
+            version=None,
         )
         if drop_metadata is None:
             response = {
@@ -212,6 +215,7 @@ async def handle_sync_update(
     :return: None
     """
     drop_id = request.get('drop_id')
+    logger.info("trying to update %s", request.get('drop_id'))
     if drop_id is None:
         response = {
             'status': 'error',
@@ -228,12 +232,14 @@ async def handle_sync_update(
             id=drop_id,
             metadata_location=drop_metadata_location,
             get_latest=False,
+            version=None,
         )
 
         new_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=drop_metadata_location,
             get_latest=True,
+            version=None,
         )
         if new_metadata is None or drop_metadata is None:
             response = {
@@ -241,6 +247,8 @@ async def handle_sync_update(
                 'error': ERR_NEXIST,
             }
         elif new_metadata.version > drop_metadata.version:
+            logger.info("current: %s", drop_metadata.version)
+            logger.info("latest: %s", new_metadata.version)
             logger.info("queuing sync")
             await queue_sync(
                 drop_id, file_location, new_metadata.version,
@@ -445,7 +453,7 @@ async def handle_input_subscribe_drop(
 
 
 async def handle_initialize_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to create drop whose name is specified by user.
@@ -486,6 +494,7 @@ async def handle_initialize_drop(
             status = 'ok'
             result = 'success'
             message = 'Drop ' + drop_name + 'created'
+            await send_drops_once(*(get_my_ip()))
 
     response = {
         'status': status,
@@ -497,7 +506,7 @@ async def handle_initialize_drop(
 
 
 async def handle_remove_owner(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to remove an owner from a drop
@@ -540,7 +549,7 @@ async def handle_remove_owner(
 
 
 async def handle_share_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve id that can be shared with other nodes.
@@ -596,6 +605,7 @@ async def handle_unsubscribe(
         drop_metadata = await DropMetadata.read_file(
             id=drop_id,
             metadata_location=file_location,
+            version=None,
         )
         if drop_metadata is None:
             response = {

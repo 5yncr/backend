@@ -77,7 +77,7 @@ def run_backend() -> None:
 
     loop = asyncio.get_event_loop()
 
-    set_my_ip(ext_addr)
+    set_my_ip(ext_addr, ext_port)
 
     # initilize dht
     config_file = loop.run_until_complete(load_config_file())

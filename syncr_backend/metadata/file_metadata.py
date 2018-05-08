@@ -161,6 +161,7 @@ class FileMetadata(object):
             metadata_location=os.path.join(
                 (await self.save_dir), DEFAULT_DROP_METADATA_LOCATION,
             ),
+            version=None,
         )
         if dm is None:
             return set()

@@ -95,7 +95,7 @@ class StrEnum(str, Enum):
 class FrontendAction(StrEnum):
     """Frontend action strings"""
     GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
-    GET_SELECT_DROP = 'get_selected_drop'
+    GET_SELECTED_DROP = 'get_selected_drop'
     INITIALIZE_DROP = 'initialize_drop'
     INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
     ADD_OWNER = 'add_owner'
