@@ -627,10 +627,11 @@ async def handle_unsubscribe(
 
 
 async def handle_get_public_key(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to provide public key to frontend
+
     :param request: { \
     "action": string, \
     }
