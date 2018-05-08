@@ -107,6 +107,7 @@ class FrontendAction(StrEnum):
     SYNC_UPDATE = 'sync_update'
     SHARE_DROP = 'share_drop'
     GET_PENDING_CHANGES = 'get_pending_changes'
+    GET_PRIVATE_KEY = 'get_private_key'
 
     def __str__(self) -> str:
         return(self.value)
