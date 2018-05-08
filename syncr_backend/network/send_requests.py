@@ -72,7 +72,10 @@ async def do_request(
             continue
         try:
             result = await request_fun(ip, port, **fun_args)
-        except (TimeoutError, network_util.SyncrNetworkException) as e:
+        except (
+            TimeoutError, network_util.SyncrNetworkException,
+            ConnectionError, OSError,
+        ) as e:
             last_err = e
             pass
         else:
