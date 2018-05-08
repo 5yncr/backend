@@ -253,9 +253,7 @@ async def check_for_update(
 
     if new_v > old_v:
         await metadata.write_file(
-            metadata_location=os.path.join(
-                drop_directory, DEFAULT_DROP_METADATA_LOCATION,
-            ),
+            metadata_location=metadata_location,
             is_current=False,
             is_latest=True,
         )
@@ -449,7 +447,7 @@ async def do_metadata_request(
 
 async def get_drop_metadata(
     drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
-    version: Optional[DropVersion]=None,
+    version: Optional[DropVersion]=None, do_verification: bool=True,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
@@ -481,7 +479,8 @@ async def get_drop_metadata(
             is_current=False, metadata_location=metadata_dir, is_latest=True,
         )
 
-    await verify_version(metadata)
+    if do_verification:
+        await verify_version(metadata)
     return metadata
 
 
@@ -538,7 +537,9 @@ async def verify_version(
             )
         if not peers:
             peers = await get_drop_peers(drop_metadata.id)
-        dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
+        dmd = await get_drop_metadata(
+            drop_metadata.id, peers, version=version, do_verification=False,
+        )
         await verify_version(dmd, peers)
 
         if drop_metadata.signed_by == dmd.owner:
@@ -575,6 +576,7 @@ async def verify_version(
                 peers = await get_drop_peers(drop_metadata.id)
             dmd = await get_drop_metadata(
                 drop_metadata.id, peers, version=version,
+                do_verification=False,
             )
             await verify_version(dmd, peers)
             if primary_owner != dmd.owner:

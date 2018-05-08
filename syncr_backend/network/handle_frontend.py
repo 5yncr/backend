@@ -18,10 +18,12 @@ from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.constants import FrontendAction
+from syncr_backend.external_interface.drop_peer_store import send_drops_once
 from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.network.send_requests import get_my_ip
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import check_for_update
@@ -41,7 +43,7 @@ logger = get_logger(__name__)
 
 
 async def handle_frontend_request(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handle a request from the frontend
@@ -451,7 +453,7 @@ async def handle_input_subscribe_drop(
 
 
 async def handle_initialize_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to create drop whose name is specified by user.
@@ -492,6 +494,7 @@ async def handle_initialize_drop(
             status = 'ok'
             result = 'success'
             message = 'Drop ' + drop_name + 'created'
+            await send_drops_once(*(get_my_ip()))
 
     response = {
         'status': status,
@@ -503,7 +506,7 @@ async def handle_initialize_drop(
 
 
 async def handle_remove_owner(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to remove an owner from a drop
@@ -546,7 +549,7 @@ async def handle_remove_owner(
 
 
 async def handle_share_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to retrieve id that can be shared with other nodes.

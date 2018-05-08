@@ -7,14 +7,12 @@ from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
-from syncr_backend.external_interface.drop_peer_store import send_drops_once
 from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata import file_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
-from syncr_backend.network.send_requests import get_my_ip
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
 from syncr_backend.util.log_util import get_logger
@@ -58,8 +56,6 @@ async def initialize_drop(directory: str) -> bytes:
         scanned_files,
         directory,
     )
-
-    await send_drops_once(*(get_my_ip()))
 
     return crypto_util.b64encode(drop_m.id)
 
