@@ -21,10 +21,12 @@ from syncr_backend.constants import FrontendAction
 from syncr_backend.external_interface.drop_peer_store import send_drops_once
 from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.network.send_requests import get_my_ip
 from syncr_backend.util import crypto_util
+from syncr_backend.util.crypto_util import node_id_from_private_key
 from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import check_for_update
 from syncr_backend.util.drop_util import cleanup_drop
@@ -65,6 +67,7 @@ async def handle_frontend_request(
         FrontendAction.NEW_VERSION: handle_make_new_version,
         FrontendAction.PENDING_CHANGES: handle_pending_changes,
         FrontendAction.SYNC_UPDATE: handle_sync_update,
+        FrontendAction.GET_PUBLIC_KEY: handle_get_public_key,
     }  # type: Dict[str, Callable[[Dict[str, Any], asyncio.StreamWriter], Awaitable[None]]]  # noqa
 
     action = request['action']
@@ -493,7 +496,7 @@ async def handle_initialize_drop(
         else:
             status = 'ok'
             result = 'success'
-            message = 'Drop ' + drop_name + 'created'
+            message = 'Drop ' + drop_name + ' created'
             await send_drops_once(*(get_my_ip()))
 
     response = {
@@ -619,6 +622,37 @@ async def handle_unsubscribe(
                 'result': 'success',
                 'message': 'unsubscribed from drop ' + request['drop_id'],
             }
+
+    await send_response(conn, response)
+
+
+async def handle_get_public_key(
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
+) -> None:
+    """
+    Handling function to provide public key to frontend
+
+    :param request: { \
+    "action": string, \
+    }
+    :param conn: socket.accept() connection
+    :return: None
+    """
+    this_node_id = await node_id_from_private_key(
+        await load_private_key_from_disk(),
+    )
+    if this_node_id is None:
+        response = {
+            'status': 'error',
+            'error': 'Unable to retrieve node id',
+        }
+    else:
+        public_key = crypto_util.b64encode(this_node_id)
+        response = {
+            'status': 'ok',
+            'result': 'success',
+            'message': public_key,
+        }
 
     await send_response(conn, response)
 
