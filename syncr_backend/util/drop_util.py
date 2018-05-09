@@ -332,6 +332,7 @@ async def make_new_version(
     :param remove_secondary_owner: secondary owner to remove from a drop
     :raises PermissionError: If this node id is not an owner
     """
+    logger.info("making new version for %s", drop_id)
     drop_directory = await get_drop_location(drop_id)
     old_drop_m = await DropMetadata.read_file(
         id=drop_id,
@@ -536,7 +537,10 @@ async def verify_version(
                 ),
             )
         if not peers:
-            peers = await get_drop_peers(drop_metadata.id)
+            try:
+                peers = await get_drop_peers(drop_metadata.id)
+            except PeerStoreError:
+                peers = []
         dmd = await get_drop_metadata(
             drop_metadata.id, peers, version=version, do_verification=False,
         )
