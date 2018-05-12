@@ -105,11 +105,7 @@ async def handle_add_owner(
     """
     Handle adding an owner to a drop.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        "owner_id": string,
-        }
+    :param request: {"action": string, "drop_id": string, "owner_id": string}
     :param conn: the streamwriter to respond with
     """
     if request.get('drop_id') is None or request.get('owner_id') is None:
@@ -147,10 +143,7 @@ async def handle_make_new_version(
 
     Tries to make a new version and returns the result.
 
-    :param request:  {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: The streamwriter
     """
     if request['drop_id'] is None:
@@ -178,10 +171,7 @@ async def handle_delete_drop(
     """
     Delete a drop.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: the streamwriter
     """
     if request['drop_id'] is None:
@@ -223,10 +213,7 @@ async def handle_sync_update(
     """
     Update a drop to a newer versions.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: asyncio StreamWriter connection
     """
     drop_id = request.get('drop_id')
@@ -324,10 +311,7 @@ async def _handle_selected_drop(
 
     :param get_pending_changes: whether to check to filesystem and network
         for local or remote changes
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: the streamwriter
     """
     if request['drop_id'] is None:
@@ -396,9 +380,7 @@ async def handle_get_owned_subscribed_drops(
     """
     Retrieve drops that user owns and is subscribed to.
 
-    :param request: {
-        'action': string,
-        }
+    :param request: {"action": string}
     :param conn: the streamwriter
     """
     md_tup = await get_owned_subscribed_drops_metadata()
@@ -435,11 +417,7 @@ async def handle_input_subscribe_drop(
     """
     Subscribe to drop that user specifies.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        "file_path": string,
-        }
+    :param request: {"action": string, "drop_id": string, "file_path": string}
     :param conn: the streamwriter
     """
     if request.get('drop_id') is None or request.get('directory') is None:
@@ -488,10 +466,7 @@ async def handle_initialize_drop(
     """
     Create drop whose name is specified by user.
 
-    :param request: {
-        "action": string,
-        "drop_name": string,
-        }
+    :param request: {"action": string, "drop_name": string}
     :param conn: the streamwriter
     """
     directory = request['directory']
@@ -530,11 +505,7 @@ async def handle_remove_owner(
     """
     Remove an owner from a drop.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        "owner_id": string,
-        }
+    :param request: {"action": string, "drop_id": string, "owner_id": string}
     :param conn: the streamwriter
     """
     if request['drop_id'] is None or request['owner_id'] is None:
@@ -571,10 +542,7 @@ async def handle_share_drop(
     """
     Retrieve id that can be shared with other nodes.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: the streamwriter
     """
     if request['drop_id'] is None:
@@ -600,10 +568,7 @@ async def handle_unsubscribe(
     """
     Unsubscribe from a subscribed drop request.
 
-    :param request: {
-        "action": string,
-        "drop_id": string,
-        }
+    :param request: {"action": string, "drop_id": string}
     :param conn: the streamwriter
     """
     if request['drop_id'] is None:
@@ -644,9 +609,7 @@ async def handle_get_public_key(
     """
     Handle request for public key (where public key is actually the node id).
 
-    :param request: {
-        "action": string,
-        }
+    :param request: {"action": string}
     :param conn: the streamwriter
     """
     this_node_id = await node_id_from_private_key(
