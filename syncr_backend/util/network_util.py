@@ -1,4 +1,4 @@
-"""Helper functions for communicating with other peers"""
+"""Helper functions for communicating with other peers."""
 import asyncio
 import socket
 from socket import SHUT_WR
@@ -20,7 +20,7 @@ async def send_response(
     writer: asyncio.StreamWriter, response: Dict[Any, Any],
 ) -> None:
     """
-    Sends a response to a connection and then closes writing to that connection
+    Send a response to a connection and then closes writing to that connection.
 
     :param writer: StreamWriter to write to
     :param response: Dict[Any, Any] response
@@ -33,7 +33,7 @@ async def send_response(
 
 def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
     """
-    Syncronous version of send_response, using old style sockets
+    Syncronous version of send_response, using old style sockets.
 
     :param conn: socket.accept() connection
     :param reponse: Dict[Any, Any] response
@@ -44,34 +44,42 @@ def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
 
 
 class SyncrNetworkException(Exception):
-    """Base exception for network errors"""
+    """Base exception for network errors."""
+
     pass
 
 
 class NotExistException(SyncrNetworkException):
-    """Requested object does not exist"""
+    """Requested object does not exist."""
+
     pass
 
 
 class IncompatibleProtocolVersionException(SyncrNetworkException):
-    """Version number of the protocol not compatible with request"""
+    """Version number of the protocol not compatible with request."""
+
     pass
 
 
 class UnhandledExceptionException(SyncrNetworkException):
-    """Other end experienced an unhandled exception"""
+    """Other end experienced an unhandled exception."""
+
     pass
 
 
 class NoPeersException(SyncrNetworkException):
-    """No peers found or provided to a request function"""
+    """No peers found or provided to a request function."""
+
     pass
 
 
 def raise_network_error(
     errno: int,
 ) -> None:
-    """Raises an error based on the errno"""
+    """Raise an error based on the errno.
+
+    :param errno: The error number
+    """
     logger.debug("Raising exception %s", errno)
     exceptionmap = {
         ERR_NEXIST: NotExistException,
@@ -82,6 +90,11 @@ def raise_network_error(
 
 
 def close_socket_thread(ip: str, port: int) -> None:
+    """Close a socket forcefully.
+
+    :param ip: The socket addr
+    :param port: The socket port
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((ip, port))

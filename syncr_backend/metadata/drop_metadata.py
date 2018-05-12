@@ -1,4 +1,4 @@
-"The drop metadata object and related functions"""
+"""The drop metadata object and related functions."""
 import logging
 import os
 import shutil
@@ -35,43 +35,85 @@ logger = get_logger(__name__)
 
 
 class DropVersion(object):
-    """A drop version"""
+    """A drop version."""
 
     def __init__(self, version: int, nonce: int) -> None:
+        """Initialize a version.
+
+        :param version: The version
+        :param nonce: The version nonce
+        """
         self.version = version
         self.nonce = nonce
 
     def __iter__(self) -> Iterator[Tuple[str, Union['DropVersion', int]]]:
-        """Used for calling dict() on this object, so it becomes
-        {'version': version, 'nonce': nonce}
+        """Allow for calling dict() on this object.
+
+        It becomes {'version': version, 'nonce': nonce}
+
+        :return: An iterator over (key, value) for this object
         """
         yield 'version', self.version
         yield 'nonce', self.nonce
 
     def __str__(self) -> str:
+        """Get the string representation of a drop version.
+
+        :return: version_nonce, a string representation
+        """
         return "%s_%s" % (self.version, self.nonce)
 
     def __eq__(self, other: object) -> bool:
+        """Check for equality vs other.
+
+        Returns True if the versions and nonces match.
+        Requires other to be an instance of DropVersion.
+
+        :param other: An object to check against
+        :return: Whether the versions and nonces match
+        """
         if isinstance(other, DropVersion):
             return self.version == other.version and self.nonce == other.nonce
         return False
 
     def __lt__(self, other: object) -> bool:
+        """Check if this object is less than other.
+
+        Only matches against version, ignoring nonce.
+
+        :param other: Another object
+        :raises TypeError: if other is not an instance of DropVersion
+        :return: Whether self is less or equal to other
+        """
         if not isinstance(other, DropVersion):
             raise TypeError(other)
         return self.version < other.version
 
     def __le__(self, other: object) -> bool:
+        """Check if this object is less or equal to other.
+
+        Only checks against version, ignoring nonce.
+
+        :param other: Another object
+        :raises TypeError: if other is not an instance of DropVersion
+        :return: Whether self is less or equal to other
+        """
         if not isinstance(other, DropVersion):
             raise TypeError(other)
         return self.version <= other.version
 
     def __hash__(self) -> int:
+        """Hash the object.
+
+        This is so drop version can be used as dict keys and in sets.
+
+        :return: A hash int
+        """
         return hash((self.version, self.nonce))
 
 
 class DropMetadata(object):
-    """Representation of a drop's metadata file"""
+    """Representation of a drop's metadata file."""
 
     def __init__(
         self, drop_id: bytes, name: str, version: DropVersion,
@@ -81,6 +123,23 @@ class DropMetadata(object):
         files_hash: Optional[bytes]=None, sig: Optional[bytes]=None,
         protocol_version: int=1,
     ) -> None:
+        """Initialize a drop metadata object.
+
+        :param drop_id: The drop id
+        :param name: The drop name
+        :param version: A DropVersion object of the version
+        :param previous_versions: A list of DropVersion of previous versions
+        :param primary_owner: The primary owner id
+        :param other_owners: Other owners of the drop, dict value is currently
+            unused
+        :param signed_by: The node id that produced this version, who signed it
+        :param files: Dict from file name to file id
+        :param files_hash: Hash of the files list, if None it will be
+            calculated
+        :param sig: The signature, if not provided will be calculated, which
+            requires access to the private key for signed_by
+        :param protocol_version: The protocol version, probably don't change
+        """
         self.id = drop_id
         self.name = name
         self.version = version
@@ -97,7 +156,7 @@ class DropMetadata(object):
     @property
     def log(self) -> logging.Logger:
         """
-        A logger for this object
+        Get a logger for this object.
 
         :return: a logger object for this class
         """
@@ -112,7 +171,7 @@ class DropMetadata(object):
 
     @property
     async def files_hash(self) -> bytes:
-        """Generate the hash of the files dictionary
+        """Generate the hash of the files dictionary.
 
         :return: The hash of the bencoded files dict
         """
@@ -127,10 +186,11 @@ class DropMetadata(object):
         return await crypto_util.hash_dict(self.files)
 
     async def verify_files_hash(self) -> None:
-        """Verify the file hash in this object
+        """Verify the file hash in this object.
 
         Returns None if the hash is OK, throwns a VerificationException if the
-        hash is not good or has not been set
+        hash is not good or has not been set.
+
         :raises VerificationException: If the files hash is not found or wrong
         """
         if self._files_hash is None:
@@ -144,8 +204,9 @@ class DropMetadata(object):
 
     @property
     async def unsigned_header(self) -> Dict[str, Any]:
-        """Get the unsigned version of the header
-        The signature is set to b"", and the files list is {}
+        """Get the unsigned version of the header.
+
+        The signature is set to b"", and the files list is {}.
 
         :return: A dict that is the drop metadata header, without a signature
         """
@@ -167,7 +228,8 @@ class DropMetadata(object):
 
     @property
     async def header(self) -> Dict[str, Any]:
-        """Get the full header, including signature
+        """Get the full header, including signature.
+
         If there is not signature already, will generate it, which requires
         to the private key of signed_by
 
@@ -182,10 +244,11 @@ class DropMetadata(object):
         return h
 
     async def verify_header(self) -> None:
-        """Verify the signature in the header
+        """Verify the signature in the header.
 
         If the signature is OK, returns none, if the signature is None or is
         invalid throws a VerificationException
+
         :raises VerificationException: If the header signature doesn't match
         """
         if self.sig is None:
@@ -206,7 +269,7 @@ class DropMetadata(object):
             )
 
     def get_file_name_from_id(self, file_hash: bytes) -> str:
-        """Get the file name of a file id
+        """Get the file name of a file id.
 
         :param file_hash: the file id
         :raises FileNotFoundError: If the file was not found in the metadata
@@ -220,8 +283,9 @@ class DropMetadata(object):
         raise FileNotFoundError()
 
     def unsubscribe(self) -> None:
-        """Removes the refrence in the .5yncr folder therefore preventing
-        future updates
+        """Remove the refrence in the .5yncr folder.
+
+        Therefore preventing future updates.
 
         :return: None
         """
@@ -232,7 +296,7 @@ class DropMetadata(object):
         os.remove(drop_loc_file)
 
     async def delete(self) -> None:
-        """Deletes the drop from the local system and unsubscribes
+        """Delete the drop from the local system and unsubscribes.
 
         :return: None
         """
@@ -246,7 +310,7 @@ class DropMetadata(object):
     def make_filename(
         id: bytes, version: Union[str, DropVersion],
     ) -> str:
-        """Make the filename for a drop metadata"""
+        """Make the filename for a drop metadata."""
         return "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
@@ -255,7 +319,7 @@ class DropMetadata(object):
         self, metadata_location: str, is_current: bool=True,
         is_latest: bool=False,
     ) -> None:
-        """Write the representation of this objec to disk
+        """Write the representation of this object to disk.
 
         :param metadata_location: where to write to disk
         :param is_current: whether to also write the CURRENT file
@@ -283,7 +347,7 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str,
     ) -> None:
-        """Write the current version to disk
+        """Write the current version to disk.
 
         :param id: the drop id
         :param version: the current version
@@ -300,7 +364,7 @@ class DropMetadata(object):
     async def write_latest(
         id: bytes, version: DropVersion, metadata_location: str,
     ) -> None:
-        """Write the latest version to disk
+        """Write the latest version to disk.
 
         :param id: the drop id
         :param version: the latest version
@@ -317,7 +381,7 @@ class DropMetadata(object):
     async def read_current(
         id: bytes, metadata_location: str,
     ) -> Optional[str]:
-        """Read the current drop version
+        """Read the current drop version.
 
         :param id: the drop id
         :param metadata_location: where to find it
@@ -340,7 +404,7 @@ class DropMetadata(object):
     async def read_latest(
         id: bytes, metadata_location: str,
     ) -> Optional[str]:
-        """Read the latest drop version
+        """Read the latest drop version.
 
         :param id: the drop id
         :param metadata_location: where to find it
@@ -365,7 +429,7 @@ class DropMetadata(object):
         id: bytes, metadata_location: str, version: Optional[DropVersion]=None,
         get_latest: bool=False,
     ) -> Optional['DropMetadata']:
-        """Read a drop metadata file from disk
+        """Read a drop metadata file from disk.
 
         :param id: the drop id
         :param metadata_location: where to look for the file
@@ -416,7 +480,7 @@ class DropMetadata(object):
             return await DropMetadata.decode(b)
 
     async def encode(self) -> bytes:
-        """Encode the full drop metadata file, including files, to bytes
+        """Encode the full drop metadata file, including files, to bytes.
 
         :return: The bencoded full metadata file
         """
@@ -426,9 +490,10 @@ class DropMetadata(object):
 
     @staticmethod
     async def decode(b: bytes) -> 'DropMetadata':
-        """Decodes a bencoded drop metadata file to a DropMetadata object
+        """Decode a bencoded drop metadata file to a DropMetadata object.
+
         Also verifies the files hash and header signature, and throws an
-        exception if they're not OK
+        exception if they're not OK.
 
         :param b: The bencoded file
         :return: A DropMetadata object from b
@@ -458,7 +523,7 @@ class DropMetadata(object):
 
 
 async def save_drop_location(drop_id: bytes, location: str) -> None:
-    """Save a drop's location in the central data dir
+    """Save a drop's location in the central data dir.
 
     :param drop_id: The unencoded drop id
     :param location: Where the drop is located on disk
@@ -477,7 +542,7 @@ async def save_drop_location(drop_id: bytes, location: str) -> None:
 
 
 async def get_drop_location(drop_id: bytes) -> str:
-    """Get a drop's location from the central data dir
+    """Get a drop's location from the central data dir.
 
     :param drop_id: The drop id to look up
     :return: The drops save dir
@@ -494,7 +559,7 @@ async def get_drop_location(drop_id: bytes) -> str:
 
 def list_drops() -> List[bytes]:
     """
-    List the drops on this node
+    List the drops on this node.
 
     :return: List of drop IDs
     """
@@ -514,8 +579,7 @@ def _get_save_path() -> str:
 
 async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     """
-    Gets the public key from disk if possible otherwise request it from
-    PublicKeyStore
+    Get the public key from disk or request it from PublicKeyStore.
 
     :param node_id: bytes for the node you want public key of
     :raises VerificationException: If the pub key cannot be retrieved
@@ -551,7 +615,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 
 async def send_my_pub_key() -> None:
-    """Send the pub key for this node the the Key Store"""
+    """Send the pub key for this node the the Key Store."""
     this_node_id = await node_id_from_private_key(
         await load_private_key_from_disk(),
     )
@@ -567,7 +631,7 @@ async def send_my_pub_key() -> None:
 
 async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
     """
-    Saves the public key to the specified location
+    Save the public key to the specified location.
 
     :param key_path: absolute path to location of public key
     :param pub_key: bytes to be saved
@@ -578,7 +642,7 @@ async def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
 
 def gen_drop_id(first_owner: bytes) -> bytes:
     """
-    Geterate a drop id
+    Geterate a drop id.
 
     :param first_owner: The initial primary owner
     :return: A drop id, which is the first owner's ID plus random bytes

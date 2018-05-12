@@ -1,1 +1,1 @@
-"""The backend for 5yncr"""
+"""The backend for 5yncr."""

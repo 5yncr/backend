@@ -1,4 +1,4 @@
-"""Log util functions"""
+"""Log util functions."""
 import logging
 import os
 from typing import Dict  # noqa
@@ -8,7 +8,7 @@ loggers = {}  # type: Dict[str, logging.Logger]
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Get a logger with name ``name``
+    """Get a logger with name ``name``.
 
     Normally called as ``logger = get_logger(__name__)`` at the top of a file,
     and then used throughout the file, but ``name`` can be anything, for

@@ -1,4 +1,4 @@
-"""Constants"""
+"""Constants."""
 import os
 from enum import Enum
 from enum import IntEnum
@@ -9,13 +9,15 @@ DROP_ID_BYTE_SIZE = 64  #: Size of a drop id in bytes
 
 
 class TrackerRequest(IntEnum):
-    """Tracker request types"""
+    """Tracker request types."""
+
     GET_KEY = 0  #: Get a key
     POST_KEY = 1  #: Add a key
     GET_PEERS = 2  #: Geet peers
     POST_PEER = 3  #: Add a peer
 
     def __str__(self) -> str:
+        """Get the string representation of a tracker request."""
         return str(self.name)
 
 
@@ -87,13 +89,16 @@ MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 
 
 class StrEnum(str, Enum):
+    """Enum comparable as strings."""
+
     pass
 
 
 # Frontend action types
 # TODO: make an enum
 class FrontendAction(StrEnum):
-    """Frontend action strings"""
+    """Frontend action strings."""
+
     GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
     GET_SELECTED_DROP = 'get_selected_drop'
     INITIALIZE_DROP = 'initialize_drop'
@@ -110,6 +115,7 @@ class FrontendAction(StrEnum):
     GET_PUBLIC_KEY = 'get_public_key'
 
     def __str__(self) -> str:
+        """Get the string representation of a frontend action."""
         return(self.value)
 
 

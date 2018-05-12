@@ -2,6 +2,10 @@ repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks.git
     sha: v0.9.2
     hooks:
+    -   id: check-ast
+    -   id: flake8
+    -   id: check-case-conflict
+    -   id: check-added-large-files
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
         exclude: docs/generated/
@@ -46,3 +50,13 @@ repos:
         entry: except:$
         language: pygrep
         files: \.py$
+    -   id: no-dorp
+        name: Prevent misspelling of drop
+        entry: dorp
+        language: pygrep
+        files: \.(py|pyi|rst|md)$
+-   repo: git://github.com/matthewbentley/pre-commit-mirrors-pep257
+    sha: 'acc6d81940b8d38563929e7fde70696cea42da30'
+    hooks:
+    -   id: pydocstyle
+        exclude: (syncr_backend/bin/|syncr_backend/contrib/|docs/|tests/)

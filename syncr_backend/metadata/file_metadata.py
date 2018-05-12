@@ -1,4 +1,4 @@
-"""The file metadata object and related functions"""
+"""The file metadata object and related functions."""
 import hashlib
 import logging
 import os
@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 
 class FileMetadata(object):
-    """A representation of a file metadata file"""
+    """A representation of a file metadata file."""
 
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
@@ -33,6 +33,16 @@ class FileMetadata(object):
         drop_id: bytes, file_name: Optional[str]=None,
         chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ) -> None:
+        """Initialize the file metadata.
+
+        :param hashes: List of chunk hashes
+        :param file_id: The file id, aka the hash of the whole file
+        :param file_length: The length of the file, in bytes
+        :param drop_id: The drop this file belongs to
+        :param file_name: Optionally the file name
+        :param chunk_size: The chunk size, probably don't change this
+        :param protocol_version: The protocol version, probably don't change
+        """
         self.hashes = hashes
         self.file_id = file_id
         self.file_length = file_length
@@ -48,7 +58,7 @@ class FileMetadata(object):
     @property
     def log(self) -> logging.Logger:
         """
-        A logger for this object
+        Get a logger for this object.
 
         :return: a logger object for this class
         """
@@ -62,7 +72,9 @@ class FileMetadata(object):
         return self._log
 
     def encode(self) -> bytes:
-        """Make the bencoded file that will be transfered on the wire
+        """Make the bencoded file.
+
+        This can be sent over wire or written to disk.
 
         :return: bytes that is the file
         """
@@ -79,7 +91,7 @@ class FileMetadata(object):
     async def write_file(
         self, metadata_location: str,
     ) -> None:
-        """Write this file metadata to a file
+        """Write this file metadata to a file.
 
         :param metadata_location: where to save it
         """
@@ -99,7 +111,7 @@ class FileMetadata(object):
         metadata_location: str,
         file_name: str,
     ) -> Optional['FileMetadata']:
-        """Read a file metadata file and return FileMetadata
+        """Read a file metadata file and return FileMetadata.
 
         :param file_id: The hash of the file to read
         :param metadata_location: drop location with default metadata location
@@ -123,7 +135,7 @@ class FileMetadata(object):
 
     @staticmethod
     def decode(data: bytes) -> 'FileMetadata':
-        """Decode a bencoded byte array into a FileMetadata object
+        """Decode a bencoded byte array into a FileMetadata object.
 
         :param data: bencoded byte array of file metadata
         :return: FileMetadata object
@@ -138,7 +150,7 @@ class FileMetadata(object):
 
     @property
     async def save_dir(self) -> str:
-        """Get the save dir
+        """Get the save dir.
 
         :return: Where the drop is saved
         """
@@ -149,8 +161,9 @@ class FileMetadata(object):
         return self._save_dir
 
     async def _calculate_downloaded_chunks(self) -> Set[int]:
-        """Figure out what chunks are complete, similar to "hashing" in some
-        bittorrent clients
+        """Figure out what chunks are complete.
+
+        Similar to "hashing" in some bittorrent clients.
 
         :return: A set of chunk ids already downloaded
         """
@@ -187,8 +200,9 @@ class FileMetadata(object):
 
     @property
     async def downloaded_chunks(self) -> Set[int]:
-        """Property of which chunks are downloaded
-        Note: does not automatically update, call `finish_chunk` to do that
+        """Property of which chunks are downloaded.
+
+        Note: does not automatically update, call `finish_chunk` to do that.
 
         :return: A set of chunk ids that are downloaded
         """
@@ -198,7 +212,7 @@ class FileMetadata(object):
 
     @property
     async def needed_chunks(self) -> Set[int]:
-        """The oposite of downloaded chunks, what chunks are needed
+        """Oposite of downloaded chunks: what chunks are needed.
 
         :return: A set of chunk ids that are needed
         """
@@ -208,7 +222,7 @@ class FileMetadata(object):
     @property
     async def percent_done(self) -> float:
         """
-        How done the file is, in range [0,1]
+        Get how done the file is, in range [0,1].
 
         :return: The percent done, in range [0,1]
         """
@@ -217,7 +231,7 @@ class FileMetadata(object):
         return len(await self.downloaded_chunks) / self.num_chunks
 
     async def finish_chunk(self, chunk_id: int) -> None:
-        """Mark chunk finished
+        """Mark chunk finished.
 
         :param chunk_id: The chunk that's done
         """
@@ -226,8 +240,7 @@ class FileMetadata(object):
 
     def __eq__(self, other: object) -> bool:
         """
-        Overwriting equals method so that it returns True if they have
-        the same hash and size and filename
+        Override eq, True if they have the same hash and size and filename.
 
         :param self: FileMetadata of a given file
         :param other: another object
@@ -249,8 +262,10 @@ async def file_hashes(
     f: aiofiles.threadpool.AsyncBufferedReader,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> List[bytes]:
-    """Given an open file in mode 'rb', hash its chunks and return a list of
-    the hashes
+    """Get a list of hashes for a file.
+
+    Given an open file in mode 'rb', hash its chunks and return a list of
+    the hashes.
 
     :param f: open file
     :param chunk_size: the chunk size to use, probably don't change this
@@ -270,7 +285,7 @@ async def file_hashes(
 async def hash_file(
     f: aiofiles.threadpool.AsyncBufferedReader,
 ) -> bytes:
-    """Hash a file
+    """Hash a file.
 
     :param f: An open file, seeked to 0
     :return: The hash bytes
@@ -285,7 +300,7 @@ async def hash_file(
 
 
 async def make_file_metadata(filename: str, drop_id: bytes) -> FileMetadata:
-    """Given a file name, return a FileMetadata object
+    """Given a file name, get a FileMetadata object.
 
     :param filename: The name of the file to open and read
     :return: FileMetadata object
@@ -304,7 +319,7 @@ async def get_file_metadata_from_drop_id(
     drop_id: bytes, file_id: bytes,
 ) -> Optional[FileMetadata]:
     """
-    Gets the file metadata of a file in a drop
+    Get the file metadata of a file in a drop.
 
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name

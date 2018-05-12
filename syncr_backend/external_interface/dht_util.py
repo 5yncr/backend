@@ -1,3 +1,4 @@
+"""Utils for the DHT, used as a DPS and Key Store."""
 import asyncio
 import time
 from typing import Any
@@ -20,7 +21,7 @@ _node_instance = None
 
 def get_dht() -> Server:
     """
-    returns the node_instance of the dht
+    Get the node_instance of the dht.
 
     :raises TypeError: when the DHT has not been initialized
     :return: The DHT Server
@@ -36,11 +37,12 @@ def initialize_dht(
     listen_port: int,
 ) -> None:
     """
-    connects to the distributed hash table
-    if no bootstrap ip port pair list is given, it starts a new dht
+    Connect to the distributed hash table.
 
-    :param bootstrap_ip_port_pair_list: list of ip port tuples to connect to \
-            the dht
+    If no bootstrap ip port pair list is given, it starts a new dht.
+
+    :param bootstrap_ip_port_pair_list: list of ip port tuples to connect to
+        the dht
     :param listen_port: port to listen on
     :return: instance of server
     """
@@ -61,22 +63,24 @@ def initialize_dht(
 
 class DropPeerDHTStorage(ForgetfulStorage):
     """
-    Extension of the default kademlia storage module
+    Extension of the default kademlia storage module.
 
     It is different in that when given a list of bytes, it checks to see if
     it is an encoded set. If it is, it unions it with the rest of the
-    sets
+    sets.
     """
 
     def __init__(self) -> None:
+        """Set up the DPS DHT Storage."""
         self.timeouts = {}  # type: Dict[Tuple[int, Tuple[Any, int, str]], int]
 
         super().__init__()
 
     def cull_peerlist(self, key: Any) -> None:
         """
-        Cull peerlist at key of out of date entries
-        If entry at key is not a peerlist, do nothing
+        Cull peerlist at key of out of date entries.
+
+        If entry at key is not a peerlist, do nothing.
 
         :param key: key of peerlist
         """
@@ -109,9 +113,9 @@ class DropPeerDHTStorage(ForgetfulStorage):
 
     def __getitem__(self, key: Any) -> Any:
         """
-        Gets item from storage
+        Get item from storage.
 
-        If item is an encoded peerlist, it culls outdated values
+        If item is an encoded peerlist, it culls outdated values.
 
         :param key: key to access value in dht
         """
@@ -120,6 +124,8 @@ class DropPeerDHTStorage(ForgetfulStorage):
 
     def __setitem__(self, key: Any, value: Any) -> None:
         """
+        Get item in storage.
+
         :param key: key to look up in dht
         :param value: value to put in dht under key
         """

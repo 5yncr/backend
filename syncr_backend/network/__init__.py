@@ -1,1 +1,1 @@
-"""Network communications"""
+"""Network communications."""
