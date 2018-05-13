@@ -74,10 +74,11 @@ async def make_drop_metadata(
     Make drop metadata and file metadatas from a directory.
 
     :param path: The directory to make metadata from
-    :param name: The name of the drop to create
+    :param drop_name: The name of the drop to create
     :param drop_id: The drop id of the drop metadata, must match the owner
     :param owner: The owner, must match the drop id
     :param other_owners: Other owners, may be empty
+    :param ignore: Patterns to ignore when looking for files
     :return: A tuple of the drop metadata, and a dict from file names to file
         metadata
     """

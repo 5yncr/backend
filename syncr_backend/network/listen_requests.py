@@ -36,7 +36,6 @@ async def request_dispatcher(
 
     :param request: dict containing request data
     :param writer: StreamWriter to pass to the handle function
-    :return: None
     """
     function_map = {
         REQUEST_TYPE_DROP_METADATA: handle_request_drop_metadata,
@@ -85,8 +84,7 @@ async def handle_request_drop_metadata(
     """
     Handle a drop metadata request.
 
-    :param request:
-        {
+    :param request: {
         "protocol_version": int,
         "request_type": DROP_METADATA (int),
         "drop_id": string,
@@ -94,7 +92,6 @@ async def handle_request_drop_metadata(
         "nonce": string (optional)
         }
     :param writer: StreamWriter
-    :return: None
     """
     file_location = await get_drop_location(request['drop_id'])
     file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
@@ -132,15 +129,13 @@ async def handle_request_file_metadata(
     """
     Handle a request for a file metadata.
 
-    :param request:
-        {
+    :param request: {
         "protocol_version": int,
         "request_type": FILE_METADATA (int),
         "file_id": string,
         'drop_id": string
         }
     :param writer: StreamWriter
-    :return: None
     """
     request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
@@ -169,15 +164,13 @@ async def handle_request_chunk_list(
     """
     Handle a request for a file chunk list avaiable on this node.
 
-    :param request:
-        {
+    :param request: {
         "protocol_version": int,
         "request_type": CHUNK_LIST (int),
         'drop_id": string,
         "file_id": string
         }
     :param writer: StreamWriter
-    :return: None
     """
     request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
@@ -207,8 +200,7 @@ async def handle_request_chunk(
     """
     Handle a request for a chunk that is avaliable on this chunk.
 
-    :param request:
-        {
+    :param request: {
         "protocol_version": int,
         "request_type": CHUNK (int),
         "file_id": string,
@@ -216,7 +208,6 @@ async def handle_request_chunk(
         "index": string,
         }
     :param writer: StreamWriter
-    :return: None
     """
     request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
@@ -262,15 +253,13 @@ async def handle_request_new_drop_metadata(
     """
     NOT IMPLEMENTED: handle a new version request.
 
-    :param request:
-        {
+    :param request: {
         "protocol_version": int,
         "request_type": NEW_DROP_METADATA (int),
         "latest_version_id": int,
         "latest_version_nonce": int
         }
     :param writer: StreamWriter
-    :return: None
     """
     logger.warning("tried and failed to accept a new_drop_metadata request")
     pass
@@ -298,7 +287,13 @@ def listen_requests(
     loop: AbstractEventLoop,
     shutdown_flag: threading.Event,
 ) -> None:
-    """Run the request server until closing."""
+    """Run the request server until closing.
+
+    :param tcp_ip: The ip to listen on
+    :param tcp_port: The port to listen on
+    :param loop: The event loop to use
+    :param shutdown_flag: If this is set, shut down the server
+    """
     coro = asyncio.start_server(
         async_handle_request, tcp_ip, int(tcp_port), loop=loop,
     )

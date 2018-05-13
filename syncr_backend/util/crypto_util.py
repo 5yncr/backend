@@ -49,6 +49,11 @@ async def hash(b: bytes) -> bytes:
 
 
 def _hash(b: bytes) -> bytes:
+    """Hash some bytes, internal version.
+
+    :param b: bytes to hash
+    :return: hashed bytes
+    """
     return hashlib.sha256(b).digest()
 
 
@@ -61,7 +66,7 @@ async def hash_dict(d: Dict[str, Any]) -> bytes:
     >>> b64encode(loop.run_until_complete(hash_dict({'key': b"foo"})))
     b'gqcj3O1NwwlHhSJFHUi3eiJ5++9Pom-aIqN1QRPdLRo='
 
-    :param b: The dictionary to hash
+    :param d: The dictionary to hash
     :return: The hash of bencode(b)
     """
     logger.debug("hashing dict of len %s", len(d))
@@ -140,7 +145,7 @@ def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
 def random_bytes() -> bytes:
     """Generate 32 random bytes.
 
-    :returns: 32 random bytes
+    :return: 32 random bytes
     """
     return os.urandom(32)
 
@@ -152,7 +157,7 @@ def random_int() -> int:
     >>> random_int()  # doctest: +SKIP
     11520214175276372604
 
-    :returns: a random 64 bit int
+    :return: a random 64 bit int
     """
     return int.from_bytes(os.urandom(8), 'big')
 
@@ -228,6 +233,10 @@ async def generate_private_key() -> rsa.RSAPrivateKey:
 
 
 def _generate_private_key() -> rsa.RSAPrivateKey:
+    """Generate private key, internal version.
+
+    :return: A private key
+    """
     return rsa.generate_private_key(
         public_exponent=65537,
         key_size=4048,
@@ -272,7 +281,6 @@ async def verify_signed_dictionary(
     :param signature: the signature of the dictionary
     :param dictionary: the actual dictionary
     :raises VerificationException: If the verification fails
-    :return: None
     """
     verifier = public_key.verifier(
         signature,
@@ -290,12 +298,21 @@ async def verify_signed_dictionary(
 
 
 async def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
-    """Get the node id from the private key."""
+    """Get the node id from the private key.
+
+    :param key: A private key
+    :return: The bytes of the node id
+    """
     return await node_id_from_public_key(key.public_key())
 
 
 async def verify_node_id(key: rsa.RSAPublicKey, node_id: bytes) -> bool:
-    """Verify a node id from a public key."""
+    """Verify a node id from a public key.
+
+    :param key: A public key
+    :param node_id: The node id
+    :return: Whether the public key matches the node id
+    """
     # TODO: BUG: use something better than == here (something constant time
     #  and secure)
     return await node_id_from_public_key(key) == node_id

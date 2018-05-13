@@ -58,6 +58,7 @@ async def scan_current_files(
     """
     Scan the drop_location and collects files found into a dictionary.
 
+    :param drop_location: The location of the drop to scan
     :return: dictionary of filepath,timestamp
     """
     files = {}
@@ -126,7 +127,6 @@ async def write_chunk(
         the position in the file
     :raises crypto_util.VerificationException: When the hash of the provided
         bytes does not match the provided hash
-    :return: None
     """
     if is_complete(filepath):
         logger.info("file %s already done, not writing", filepath)
@@ -203,8 +203,7 @@ async def create_file(
     gets moved to filepath + incomplete_ext.
 
     :param filepath: where to create the file
-    :param size: the size to allocate
-    :return: None
+    :param size_bytes: the size to allocate
     """
     new_path = filepath + DEFAULT_INCOMPLETE_EXT
     try:

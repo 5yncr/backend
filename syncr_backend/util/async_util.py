@@ -152,6 +152,7 @@ def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
     :param maxsize: The maximum cache size
     :param cache_obj: Override the default LRU cache
     :param cache_none: Set to True to cache `None` results
+    :param kwargs: Args to pass the the cache obj
     :return: A decorator for a function
     """
     def decorator(fn):

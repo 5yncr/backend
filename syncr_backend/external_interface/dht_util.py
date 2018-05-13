@@ -44,7 +44,6 @@ def initialize_dht(
     :param bootstrap_ip_port_pair_list: list of ip port tuples to connect to
         the dht
     :param listen_port: port to listen on
-    :return: instance of server
     """
     global _node_instance
 

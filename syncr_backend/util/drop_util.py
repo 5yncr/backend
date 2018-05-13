@@ -469,6 +469,8 @@ async def get_drop_metadata(
     :param drop_id: the drop id
     :param peers: where to look on the network for data
     :param save_dir: where the drop is saved
+    :param version: version to download, or none to get latest
+    :param do_verification: set False to skip verification
     :return: A drop metadata object
     """
     logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
@@ -508,7 +510,6 @@ async def cleanup_drop(
     :param drop_id: Drop ID
     :param old_metadata: DropMetadata of old version
     :param new_metadata: DropMetadata of new version
-    :return: None
     """
     if old_metadata is None or new_metadata is None:
         return
@@ -646,6 +647,7 @@ async def get_file_metadata(
 
     :param drop_id: the drop id
     :param file_id: the file id
+    :param file_name: the name of the file
     :param save_dir: where the drop is saved
     :param peers: where to look on the network for data
     :return: A file metadata object
@@ -826,6 +828,7 @@ async def diff_timestamp_file(
     Read the timestamp file and compares it to the current files.
 
     :param current_files: Dictionary that stores filepath and timestamp
+    :param drop_location: Location of the drop on the filesystem
     :return: FileUpdateStatus constructed from the difference of the
         current_files Dictionary and the loaded Dictionary from the timestamp
         file
@@ -864,6 +867,7 @@ async def sync_file_contents(
 
     :param drop_id: the drop the file is in
     :param file_id: the file to download
+    :param file_name: The name of the file to sync
     :param save_dir: where the drop is saved
     :param peers: where to look for chunks
     :return: A set of chunk ids NOT downloaded

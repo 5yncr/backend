@@ -86,6 +86,7 @@ def get_full_init_directory(init_directory: Optional[str]=None) -> str:
 
     If init_directory is None, else just returns init_directory.
 
+    :param init_directory: override the init directory
     :return: The joined directory
     """
     if init_directory is None:
@@ -99,6 +100,7 @@ def write_private_key_to_disk(
     """
     Write Private Key (and public key attached) to file.
 
+    :param key: The private key
     :param init_directory: directory where node files are stored,
         init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :raises FileExistsError: If a private key already exists

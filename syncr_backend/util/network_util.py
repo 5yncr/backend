@@ -24,7 +24,6 @@ async def send_response(
 
     :param writer: StreamWriter to write to
     :param response: Dict[Any, Any] response
-    :return: None
     """
     writer.write(bencode.encode(response))
     writer.write_eof()
@@ -36,8 +35,7 @@ def sync_send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
     Syncronous version of send_response, using old style sockets.
 
     :param conn: socket.accept() connection
-    :param reponse: Dict[Any, Any] response
-    :return: None
+    :param response: Dict[Any, Any] response
     """
     conn.send(bencode.encode(response))
     conn.shutdown(SHUT_WR)

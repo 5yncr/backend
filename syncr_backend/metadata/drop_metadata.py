@@ -570,6 +570,10 @@ def list_drops() -> List[bytes]:
 
 
 def _get_save_path() -> str:
+    """Get the save path for saving drop locations.
+
+    :return: the save path
+    """
     node_info_path = node_init.get_full_init_directory()
     save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
     if not os.path.exists(save_path):

@@ -33,7 +33,11 @@ my_port = 0
 
 
 def set_my_ip(ip: str, port: int) -> None:
-    """Set this node's IP, for later retrieval."""
+    """Set this node's IP, for later retrieval.
+
+    :param ip: The IP
+    :param port: the port
+    """
     # TODO: error if this is called more than once?
     global my_ip, my_port
     my_ip = ip
@@ -41,7 +45,10 @@ def set_my_ip(ip: str, port: int) -> None:
 
 
 def get_my_ip() -> Tuple[str, int]:
-    """Get this node's IP."""
+    """Get this node's IP.
+
+    :return: Tuple of this node's IP and port
+    """
     global my_ip, my_port
     return my_ip, my_port
 

@@ -55,6 +55,12 @@ repos:
         entry: dorp
         language: pygrep
         files: \.(py|pyi|rst|md)$
+    -   id: validatedoc
+        name: validatedoc
+        entry: python -m validatedoc.validatedoc
+        language: system
+        types: [python]
+        exclude: (syncr_backend/bin/|syncr_backend/contrib/|docs/|tests/)
 -   repo: git://github.com/matthewbentley/pre-commit-mirrors-pep257
     sha: 'acc6d81940b8d38563929e7fde70696cea42da30'
     hooks:

@@ -303,6 +303,7 @@ async def make_file_metadata(filename: str, drop_id: bytes) -> FileMetadata:
     """Given a file name, get a FileMetadata object.
 
     :param filename: The name of the file to open and read
+    :param drop_id: The id of the drop the file is in
     :return: FileMetadata object
     """
     size = os.path.getsize(filename)
