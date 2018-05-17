@@ -3,6 +3,9 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[requires]
+python_version = "3.6"
+
 [packages]
 aiofiles = "*"
 "bencode.py" = "*"
@@ -25,3 +28,5 @@ sphinxcontrib-websupport = "*"
 tox = "*"
 validatedoc = "*"
 pre-commit = "*"
+sphinx-rtd-theme = "*"
+pipenv = "*"
