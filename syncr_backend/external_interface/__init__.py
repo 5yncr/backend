@@ -1,1 +1,1 @@
-"""The interface with the tracker"""
+"""The interface with the tracker."""

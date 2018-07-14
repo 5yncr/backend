@@ -1,4 +1,4 @@
-"""Functionality to get public keys from a public key store"""
+"""Functionality to get public keys from a public key store."""
 from abc import ABC
 from abc import abstractmethod
 from typing import List
@@ -27,13 +27,12 @@ logger = get_logger(__name__)
 
 async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     """
-    Provides a PublicKeyStore either by means of DHT or tracker depending
-    on config file
+    Provide a PublicKeyStore either by DHT or tracker depending on config file.
 
     :param node_id: This node's node id
     :raises UnsupportedOptionError: If the config specifies an unknown DPS type
-    :raises IncompleteConfigError: If the config does not have the necessary \
-            values
+    :raises IncompleteConfigError: If the config does not have the necessary
+        values
     :return: PublicKeyStore
     """
     config_file = await load_config_file()
@@ -63,12 +62,12 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
 
 
 class PublicKeyStore(ABC):
-    """Abstract base class for storage and retrieval of public keys"""
+    """Abstract base class for storage and retrieval of public keys."""
 
     @abstractmethod
     async def set_key(self, key: bytes) -> bool:
         """
-        Add a key to the PKS
+        Add a key to the PKS.
 
         :param key: The key
         :return: bool of whether it was successful
@@ -80,7 +79,7 @@ class PublicKeyStore(ABC):
         self, request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
         """
-        Request a key from the PKS
+        Request a key from the PKS.
 
         :param request_node_id: The node id to look up
         :return: A tuple of success and a key string
@@ -89,13 +88,15 @@ class PublicKeyStore(ABC):
 
 
 class DHTKeyStore(PublicKeyStore):
+    """DHT implementation of the Public Key Store."""
+
     def __init__(
         self,
         node_id: bytes, bootstrap_list: List[Tuple[str, int]],
         listen_port: int,
     ) -> None:
         """
-        Sets up tracker key store
+        Set up tracker key store.
 
         :param node_id: node id and SHA256 hash
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
@@ -105,7 +106,7 @@ class DHTKeyStore(PublicKeyStore):
 
     async def set_key(self, key: bytes) -> bool:
         """
-        Sets the public key of the this node on the DHT
+        Set the public key of the this node on the DHT.
 
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
@@ -121,14 +122,12 @@ class DHTKeyStore(PublicKeyStore):
         request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
         """
-        Asks DHT for the public key of a given node for sake of signature
-        verification
+        Ask the DHT for the public key of a given node.
 
         :param request_node_id: SHA256 hash
-        :return: boolean (success of getting key), 2048 RSA public key \
-                (if boolean is True)
+        :return: boolean (success of getting key), 2048 RSA public key
+            (if boolean is True)
         """
-
         result = str(await self.node_instance.get(request_node_id), 'utf-8')
         if result is not None:
             return True, result
@@ -137,12 +136,13 @@ class DHTKeyStore(PublicKeyStore):
 
 
 class TrackerKeyStore(PublicKeyStore):
-    """Tracker based implementation of the public key store"""
+    """Tracker based implementation of the public key store."""
 
     def __init__(self, node_id: bytes, ip: str, port: int) -> None:
         """
-        Sets up a TrackerKeyStore with the trackers ip and port and the id of
-        the given node
+        Set up a TrackerKeyStore.
+
+        Needs the trackers ip and port and the id of the given node.
 
         :param node_id: SHA256 hash
         :param ip: string of ipv4 or ipv6
@@ -154,7 +154,7 @@ class TrackerKeyStore(PublicKeyStore):
 
     async def set_key(self, key: bytes) -> bool:
         """
-        Sets the public key of the this node on the tracker
+        Set the public key of the this node on the tracker.
 
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
@@ -179,12 +179,11 @@ class TrackerKeyStore(PublicKeyStore):
         self, request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
         """
-        Asks tracker for the public key of a given node for sake of signature
-        verification
+        Ask tracker for the public key of a given node.
 
         :param request_node_id: SHA256 hash
-        :return: boolean (success of getting key), 2048 RSA public key \
-                (if boolean is True)
+        :return: boolean (success of getting key), 2048 RSA public key
+            (if boolean is True)
         """
         request = {
             'request_type': int(TrackerRequest.GET_KEY),

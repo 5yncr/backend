@@ -1,4 +1,4 @@
-"""Functions for initializing a new node"""
+"""Functions for initializing a new node."""
 import asyncio
 import os
 import shutil
@@ -17,11 +17,10 @@ logger = get_logger(__name__)
 
 def force_initialize_node(init_directory: Optional[str]=None) -> None:
     """
-    Initialize new node in .node directory
-    and overwrite existing .node dir
+    Initialize new node in .node directory and overwrite existing .node dir.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param init_directory: directory where node files are stored
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     logger.warning("forcing node initialization of %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
@@ -34,10 +33,10 @@ def force_initialize_node(init_directory: Optional[str]=None) -> None:
 
 def delete_node_directory(init_directory: Optional[str]=None) -> None:
     """
-    Deletes the .node (or passed in) directory and all of its contents
+    Delete the .node (or passed in) directory and all of its contents.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param init_directory: directory where node files are stored
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     full_directory = get_full_init_directory(init_directory)
     logger.info("deleting node directory %s", full_directory)
@@ -48,10 +47,10 @@ def delete_node_directory(init_directory: Optional[str]=None) -> None:
 
 def is_node_initialized(init_directory: Optional[str]=None) -> bool:
     """
-    Checks if node is node is initialized
+    Check if this node is initialized.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param init_directory: directory where node files are stored
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :return: whether a node directory exists
     """
     full_directory = get_full_init_directory(init_directory)
@@ -60,11 +59,10 @@ def is_node_initialized(init_directory: Optional[str]=None) -> bool:
 
 def initialize_node(init_directory: Optional[str]=None) -> None:
     """
-    Initialize new node in .node directory
-    Create the private key file
+    Initialize new node in .node directory and create the private key file.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param init_directory: directory where node files are stored,
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :raises FileExistsError: If the init directory already exists
     """
     full_directory = get_full_init_directory(init_directory)
@@ -84,9 +82,11 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
 
 def get_full_init_directory(init_directory: Optional[str]=None) -> str:
     """
-    Joins the init_directory with the default home directory if init_directory
-    is None, else just returns
+    Join the init_directory with the default home directory.
 
+    If init_directory is None, else just returns init_directory.
+
+    :param init_directory: override the init directory
     :return: The joined directory
     """
     if init_directory is None:
@@ -98,10 +98,11 @@ def write_private_key_to_disk(
     key: crypto_util.rsa.RSAPrivateKey, init_directory: Optional[str]=None,
 ) -> None:
     """
-    Write Private Key (and public key attached) to file
+    Write Private Key (and public key attached) to file.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param key: The private key
+    :param init_directory: directory where node files are stored,
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :raises FileExistsError: If a private key already exists
     """
     logger.debug("writing private key")
@@ -122,10 +123,10 @@ async def load_private_key_from_disk(
     init_directory: Optional[str]=None,
 ) -> crypto_util.rsa.RSAPrivateKey:
     """
-    Load Private Key (and public key) from file
+    Load Private Key (and public key) from file.
 
-    :param init_directory: directory where node files are stored \
-    init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :param init_directory: directory where node files are stored,
+        init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :return: A private key
     """
     logger.debug("reading private key")

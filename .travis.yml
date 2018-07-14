@@ -17,5 +17,6 @@ env:
     - TOXENV=itests_simple
     - TOXENV=itests_complex
     - TOXENV=itests_dht
+install: pip install tox
 script:
     - tox

@@ -1,1 +1,1 @@
-"""Initialization functions"""
+"""Initialization functions."""

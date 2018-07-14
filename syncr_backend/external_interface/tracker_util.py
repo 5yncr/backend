@@ -1,4 +1,4 @@
-"""Helper functions for sending tracker requests"""
+"""Helper functions for sending tracker requests."""
 import asyncio
 from typing import Any
 from typing import Dict
@@ -15,13 +15,12 @@ async def send_request_to_tracker(
     request: Dict[str, Any], ip: str, port: int,
 ) -> Dict[str, Any]:
     """
-    Creates a connection with the tracker and sends a given request to the
-    tracker and returns the response
+    Create a connection with the tracker and sends a given request.
 
     :param port: port where tracker is serving
     :param ip: ip of tracker
     :param request: ['POST'/'GET', node_id|drop_id, data]
-    :return: tracker response
+    :return: the tracker response
     """
     reader, writer = await asyncio.open_connection(ip, port)
 

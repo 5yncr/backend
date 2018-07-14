@@ -1,4 +1,4 @@
-"""Helper functions for reading from and writing to the filesystem"""
+"""Helper functions for reading from and writing to the filesystem."""
 import asyncio
 import fnmatch
 import json
@@ -34,7 +34,7 @@ write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
 
 async def load_config_file() -> Dict[str, Any]:
     """
-    Read and parse the Drop Peer Store config
+    Read and parse the Drop Peer Store config.
 
     :raises MissingConfigError: If the dps config cannot be found
     :return: Parsed dict of config file contents
@@ -56,8 +56,9 @@ async def scan_current_files(
     drop_location: str,
 ) -> Dict[str, int]:
     """
-    Scans the drop_location and collects files found into a dictionary
+    Scan the drop_location and collects files found into a dictionary.
 
+    :param drop_location: The location of the drop to scan
     :return: dictionary of filepath,timestamp
     """
     files = {}
@@ -72,11 +73,11 @@ async def scan_current_files(
 
 async def read_timestamp_file(drop_location: str) -> Dict[str, int]:
     """
-    Reads the timestamp file and returns it as a dict
+    Read the timestamp file and returns it as a dict.
 
+    :param drop_location: the location of the drop on disk
     :return: dictionary of filepath and timestamp
     """
-
     timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
     await write_locks[timestamp_dir].acquire()
     async with aiofiles.open(timestamp_dir, 'rb') as f:
@@ -90,9 +91,10 @@ async def write_timestamp_file(
     drop_location: str,
 ) -> None:
     """
-    Write the timestamp file as the passed in dict
+    Write the timestamp file as the passed in dict.
 
     :param current_files: Dictionary of filepath and timestamp
+    :param drop_location: Location of the drop on disk
     """
     filedata = bencode.encode(current_files)
     timestamp_dir = os.path.join(drop_location, DEFAULT_TIMESTAMP_LOCATION)
@@ -108,6 +110,8 @@ async def write_chunk(
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
     """
+    Write a chunk to a file.
+
     Takes a filepath, position, contents, and contents hash and writes it to
     a file correctly.  Assumes the file has been created.  Will check the hash,
     and raise a VerificationException if the provided chunk_hash doesn't match.
@@ -119,11 +123,10 @@ async def write_chunk(
     :param position: the posiiton in the file to write to
     :param contents: the contents to write
     :param chunk_hash: the expected hash of contents
-    :param chunk_size: (optional) override the chunk size, used to calculate \
-    the position in the file
-    :raises crypto_util.VerificationException: When the hash of the provided \
-            bytes does not match the provided hash
-    :return: None
+    :param chunk_size: (optional) override the chunk size, used to calculate
+        the position in the file
+    :raises crypto_util.VerificationException: When the hash of the provided
+        bytes does not match the provided hash
     """
     if is_complete(filepath):
         logger.info("file %s already done, not writing", filepath)
@@ -156,17 +159,18 @@ async def read_chunk(
     filepath: str, position: int, file_hash: Optional[bytes]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> Tuple[bytes, bytes]:
-    """Reads a chunk for a file, returning the contents and its hash.  May
-    raise relevant IO exceptions
+    """Read a chunk for a file, returning the contents and its hash.
 
-    If file_hash is provided, will check the chunk that is read
+    May raise relevant IO exceptions.
+
+    If file_hash is provided, will check the chunk that is read.
 
     :param filepath: the path of the file to read from
     :param position: where to read from
     :param file_hash: if provided, will check the file hash
     :param chunk_size: (optional) override the chunk size
-    :raises crypto_util.VerificationException: If the hash of the bytes read \
-            does not match the provided hash
+    :raises crypto_util.VerificationException: If the hash of the bytes read
+        does not match the provided hash
     :return: a double of (contents, hash), both bytes
     """
     if not is_complete(filepath):
@@ -191,15 +195,15 @@ async def read_chunk(
 async def create_file(
     filepath: str, size_bytes: int,
 ) -> None:
-    """Create a file at filepath of the correct size. May raise relevant IO
-    exceptions
+    """Create a file at filepath of the correct size.
+
+    May raise relevant IO exceptions.
 
     If filepath exists, calling this indicates there are updates, and filepath
-    gets moved to filepath + incomplete_ext
+    gets moved to filepath + incomplete_ext.
 
     :param filepath: where to create the file
-    :param size: the size to allocate
-    :return: None
+    :param size_bytes: the size to allocate
     """
     new_path = filepath + DEFAULT_INCOMPLETE_EXT
     try:
@@ -219,13 +223,11 @@ async def create_file(
 
 
 def mark_file_complete(filepath: str) -> None:
-    """Marks a file as completed by renaming it to remove the
-    DEFAULT_INCOMPLETE_EXT
+    """Mark a file as completed by removing the DEFAULT_INCOMPLETE_EXT.
 
-    May fail on some systems if the destination exists
+    May fail on some systems if the destination exists.
 
     :param filepath: The path of the file, without the extension
-    :return: None
     """
     logger.debug("marking %s done", filepath)
     if is_complete(filepath):
@@ -237,10 +239,10 @@ def mark_file_complete(filepath: str) -> None:
 
 
 def is_complete(filepath: str) -> bool:
-    """Tests if file is complete, based on its extension
+    """Test if file is complete, based on its extension.
 
-    True if filepath exists, False if filepath + incomplete_ext exists
-    Raises FileNotFoundError if neither exists
+    True if filepath exists, False if filepath + incomplete_ext exists.
+    Raises FileNotFoundError if neither exists.
 
     :param filepath: The path to check for completion
     :raises FileNotFoundError: If neither the file nor .part file is found
@@ -260,9 +262,10 @@ def is_complete(filepath: str) -> bool:
 def walk_with_ignore(
     path: str, ignore: List[str],
 ) -> Iterator[Tuple[str, str]]:
-    """Walks the files in a directory, while filtering anything that should be
-    ignored.  Implemented on top of os.walk, but instead returns an iterator
-    over (dirpath, filename)
+    """Walk the files in a directory.
+
+    Filters anything that should be ignored.  Implemented on top of os.walk,
+    but instead returns an iterator over (dirpath, filename).
 
     :param path: The path to walk
     :param ignore: Patterns to ignore

@@ -1,1 +1,1 @@
-"""Metadata objects and related functions"""
+"""Metadata objects and related functions."""

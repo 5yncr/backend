@@ -1,0 +1,32 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[requires]
+python_version = "3.6"
+
+[packages]
+aiofiles = "*"
+"bencode.py" = "*"
+cachetools = "*"
+cryptography = "*"
+kademlia = "*"
+
+[dev-packages]
+coverage = "*"
+docutils = "*"
+flake8 = "*"
+mypy = "*"
+pycodestyle = "*"
+pydocstyle = "*"
+pytest = "*"
+rinohtype = "*"
+Sphinx = "*"
+sphinxcontrib-autoprogram = "*"
+sphinxcontrib-websupport = "*"
+tox = "*"
+validatedoc = "*"
+pre-commit = "*"
+sphinx-rtd-theme = "*"
+pipenv = "*"

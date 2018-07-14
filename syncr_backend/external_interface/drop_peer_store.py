@@ -1,4 +1,4 @@
-"""Functionality to get peers from a peer store"""
+"""Functionality to get peers from a peer store."""
 import asyncio
 import threading
 from abc import ABC
@@ -34,7 +34,9 @@ async def send_drops_to_dps(
     port: int,
     shutdown_flag: threading.Event,
 ) -> None:
-    """For each drop tell the dps that ip/port has that drop
+    """For each drop tell the dps that ip/port has that drop.
+
+    Then wait 2.5 minutes, and do it again.
 
     :param ip: The ip/address to tell the dps
     :param port: The port to tell the dps
@@ -57,7 +59,7 @@ async def send_drops_once(
     port: int,
     dps: Optional['DropPeerStore']=None,
 ) -> None:
-    """For each drop tell the dps our ip and port, then exit
+    """For each drop tell the dps our ip and port, then exit.
 
     :param ip: ip/address to tell the dps
     :param port: port to tell the dps
@@ -79,13 +81,12 @@ async def send_drops_once(
 
 async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     """
-    Provides a DropPeerStore either by means of DHT or tracker depending
-    on config file
+    Get a DropPeerStore either from DHT or tracker depending on config file.
 
     :param node_id: bytes of the node id for this node
     :raises UnsupportedOptionError: If the config specifies an unknown DPS type
-    :raises IncompleteConfigError: If the config does not have the necessary \
-            values
+    :raises IncompleteConfigError: If the config does not have the necessary
+        values
     :return: DropPeerStore
     """
     config_file = await load_config_file()
@@ -114,12 +115,12 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
 
 
 class DropPeerStore(ABC):
-    """Abstract base class for communication to send/get peer lists"""
+    """Abstract base class for communication to send/get peer lists."""
 
     @abstractmethod
     async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
-        Add a drop/node mapping the the DPS
+        Add a drop/node mapping the the DPS.
 
         :param drop_id: Drop to send
         :param ip: IP of this node
@@ -133,7 +134,7 @@ class DropPeerStore(ABC):
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
-        Get the peers associated with a drop
+        Get the peers associated with a drop.
 
         :param drop_id: Drop to get peers for
         :return: Tuple of whether the action was succesful, and a list of peers
@@ -142,6 +143,8 @@ class DropPeerStore(ABC):
 
 
 class DHTPeerStore(DropPeerStore):
+    """DHT implementation of the Drop Peer Store."""
+
     def __init__(
         self,
         node_id: bytes,
@@ -149,7 +152,7 @@ class DHTPeerStore(DropPeerStore):
         listen_port: int,
     ) -> None:
         """
-        Sets up DHT peer store
+        Set up DHT peer store.
 
         :param node_id: node_id of this node
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
@@ -160,7 +163,7 @@ class DHTPeerStore(DropPeerStore):
 
     async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
-        Add entry to dht
+        Add entry to dht.
 
         :param drop_id: drop_id entry to update
         :param ip: ip to recieve requests regarging drop on
@@ -182,7 +185,7 @@ class DHTPeerStore(DropPeerStore):
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
-        Get an entry from the dht
+        Get an entry from the dht.
 
         :param drop_id: The drop to look up
         :return: A tuple of success and list of peers
@@ -206,12 +209,11 @@ class DHTPeerStore(DropPeerStore):
 
 
 class TrackerPeerStore(DropPeerStore):
-    """Implementation of Peer Store communication using a tracker"""
+    """Implementation of Peer Store communication using a tracker."""
 
     def __init__(self, node_id: bytes, ip: str, port: int) -> None:
         """
-        Sets up a TrackerPeerStore with the trackers ip and port and the id of
-        the given node
+        Set up a TrackerPeerStore with the trackers ip and port and node id.
 
         :param node_id: SHA256 hash
         :param ip: string of ipv4 or ipv6
@@ -223,8 +225,7 @@ class TrackerPeerStore(DropPeerStore):
 
     async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
-        Adds their node_id, ip, and port to a list of where a given drop is
-        available
+        Add node_id, ip, and port to a list of where a given drop is available.
 
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
         :param ip: string of ipv4 or ipv6
@@ -251,11 +252,11 @@ class TrackerPeerStore(DropPeerStore):
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
-        Asks tracker for the nodes and their ip ports for a specified drop
+        Ask tracker for the nodes and their ip ports for a specified drop.
 
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
-        :return: boolean (success on receiving peers), list of \
-                [node_id, ip, port]
+        :return: boolean (success on receiving peers), list of
+            [node_id, ip, port]
         """
         request = {
             'request_type': int(TrackerRequest.GET_PEERS),

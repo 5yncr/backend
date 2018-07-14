@@ -1,3 +1,4 @@
+"""Utilities to deal with drops."""
 import asyncio
 import os
 import shutil
@@ -58,12 +59,12 @@ async def sync_drop(
     drop_id: bytes, save_dir: str, version: Optional[DropVersion]=None,
 ) -> Tuple[bool, bytes]:
     """
-    Syncs a drop id from remote peers
+    Sync a drop id from remote peers.
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
-    :param version: optional version to sync, otherwise will use the version \
-            on the filesystem or find the most recent one
+    :param version: optional version to sync, otherwise will use the version
+        on the filesystem or find the most recent one
     :return: a tuple of true if syncing finished and the drop_id
     """
     lock = sync_locks[drop_id]
@@ -132,7 +133,7 @@ T = TypeVar('T')
 
 
 def rotate(l: List[T]) -> List[T]:
-    """Puts the first element at the back and return the list
+    """Put the first element at the back and return the list.
 
     >>> from syncr_backend.util.drop_util import rotate
     >>> rotate([1,2,3,4])
@@ -159,12 +160,13 @@ async def sync_and_finish_file(
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> bool:
     """
-    Sync a file from peers, returning whether it finished. If finished, mark it
-    done in the filesystem
+    Sync a file from peers, returning whether it finished.
+
+    If finished, mark it done in the filesystem.
 
     :param drop_id: Drop ID
-    :param file_name: The file name. Both name and ID are needed to account \
-            for identical files
+    :param file_name: The file name. Both name and ID are needed to account
+        for identical files
     :param file_id: The file ID
     :param peers: Peers to ownload from
     :param save_dir: The top level directory of the drop
@@ -185,7 +187,8 @@ async def sync_and_finish_file(
 
 
 class PermissionError(Exception):
-    """Raised if update drop tries to modify a drop it doesn't own"""
+    """Raised if update drop tries to modify a drop it doesn't own."""
+
     pass
 
 
@@ -193,13 +196,13 @@ async def check_for_update(
     drop_id: bytes,
 ) -> Tuple[Optional[DropMetadata], bool]:
     """
-    Check for drop updates from the network
+    Check for drop updates from the network.
 
     :param drop_id: Drop to check
-    :raises VerificationException: If there are multiple conflicting versions \
-            in the network
-    :return: A tuple of the most recent drop metadata and whether there is an \
-            update
+    :raises VerificationException: If there are multiple conflicting versions
+        in the network
+    :return: A tuple of the most recent drop metadata and whether there is an
+        update
     """
     drop_directory = await get_drop_location(drop_id)
     metadata_location = os.path.join(
@@ -273,8 +276,10 @@ async def queue_sync(
     drop_id: bytes, save_dir: str, version: Optional[DropVersion]=None,
 ) -> None:
     """
-    Queue a drop to be synced.  This will just put it in the sync queue that is
-    run by ``process_sync_queue``
+    Queue a drop to be synced.
+
+    This will just put it in the sync queue that is run by
+    ``process_sync_queue``.
 
     :param drop_id: The drop id
     :param save_dir: The drop's save directory
@@ -288,8 +293,10 @@ async def queue_sync(
 
 async def process_sync_queue() -> None:
     """
-    Loop to process the sync queue.  Starts a ``process_queue_with_limit``
-    coroutine, checks the out queue, and re-runs unfinished out queue items
+    Process the sync queue.
+
+    Starts a ``process_queue_with_limit`` coroutine, checks the out queue, and
+    re-runs unfinished out queue items.
     """
     global _sync_in_queue
 
@@ -405,16 +412,14 @@ async def make_new_version(
 
 
 async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
-    """Given a drop_id and save directory, sets up the directory for syncing
-    and adds the info to the global dir
+    """Set up the directory for syncing and adds the info to the global dir.
 
     Should be followed by calls to `get_drop_metadata`, `get_file_metadata` for
-    each file, and `sync_file_contents`
+    each file, and `sync_file_contents`.
 
     :param drop_id: The drop id to add
     :param save_dir: where to download the drop to
     """
-
     logger.info(
         "Adding drop from id %s to %s", crypto_util.b64encode(drop_id),
         save_dir,
@@ -432,6 +437,13 @@ async def do_metadata_request(
     drop_id: bytes, peers: List[Tuple[str, int]],
     version: Optional[DropVersion]=None,
 ) -> Optional[DropMetadata]:
+    """Do a request for drop metadata.
+
+    :param drop_id: The drop id
+    :param peers: A list of peers.  Will be looked up if empty
+    :param version: The version to get.  Will get latest if None
+    :return: A DropMetadata, or None if it couldn't be downloaded
+    """
     if not peers:
         peers = await get_drop_peers(drop_id)
     args = {
@@ -450,12 +462,15 @@ async def get_drop_metadata(
     drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
     version: Optional[DropVersion]=None, do_verification: bool=True,
 ) -> DropMetadata:
-    """Get drop metadata, given a drop id and save dir.  If the drop metadata
-    is not on disk already, attempt to download from peers.
+    """Get drop metadata, given a drop id and save dir.
+
+    If drop metadata is not on disk already, attempt to download from peers.
 
     :param drop_id: the drop id
     :param peers: where to look on the network for data
     :param save_dir: where the drop is saved
+    :param version: version to download, or none to get latest
+    :param do_verification: set False to skip verification
     :return: A drop metadata object
     """
     logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
@@ -490,12 +505,11 @@ async def cleanup_drop(
     new_metadata: Optional[DropMetadata],
 ) -> None:
     """
-    Removes files that were removed with a new version
+    Remove files that were removed with a new version.
 
     :param drop_id: Drop ID
     :param old_metadata: DropMetadata of old version
     :param new_metadata: DropMetadata of new version
-    :return: None
     """
     if old_metadata is None or new_metadata is None:
         return
@@ -515,15 +529,15 @@ async def verify_version(
     drop_metadata: DropMetadata,
     peers: List[Tuple[str, int]]=[],
 ) -> None:
-    """Verify the DropMetadata version recursively
+    """Verify the DropMetadata version recursively.
 
     If this version and all prior versions leading up to it are legitimate
-    returns none, otherwise throws a VerificationException
+    returns none, otherwise throws a VerificationException.
 
     :param drop_metadata: A DropMetadata object
     :param peers: List of peers to download metadata objects from
-    :raises VerificationException: If this version or any parent versions \
-            cannot be verified
+    :raises VerificationException: If this version or any parent versions
+        cannot be verified
     """
     if len(drop_metadata.previous_versions) == 0:
         await drop_metadata.verify_header()
@@ -592,13 +606,12 @@ async def verify_version(
 async def get_owned_subscribed_drops_metadata(
 ) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
-    Gets the list of metadata objects for both subscribed and owned drops.
+    Get the list of metadata objects for both subscribed and owned drops.
 
     format: (Owned drop metadata, Subscribed drop metadata)
 
     :return: Tuple of metadata objects for subscribed and owned drops.
     """
-
     drops = list_drops()
 
     # Get id of current node
@@ -628,11 +641,13 @@ async def get_file_metadata(
     drop_id: bytes, file_id: bytes, save_dir: str, file_name: str,
     peers: List[Tuple[str, int]],
 ) -> FileMetadata:
-    """Get file metadata, given a file id, drop id and save dir.  If the file
-    metadata is not on disk already, attempt to download from peers.
+    """Get file metadata, given a file id, drop id and save dir.
+
+    If the file metadata is not on disk, attempt to download from peers.
 
     :param drop_id: the drop id
     :param file_id: the file id
+    :param file_name: the name of the file
     :param save_dir: where the drop is saved
     :param peers: where to look on the network for data
     :return: A file metadata object
@@ -661,7 +676,8 @@ async def get_file_metadata(
 
 
 class FileUpdateStatus(NamedTuple):
-    """Four sets for keeping track of which files are in what status"""
+    """Four sets for keeping track of which files are in what status."""
+
     added: Set[str]
     removed: Set[str]
     changed: Set[str]
@@ -672,8 +688,7 @@ async def find_changes_in_new_version(
     drop_id: bytes, new_metadata: DropMetadata,
 ) -> Optional[FileUpdateStatus]:
     """
-    Creates a FileUpdateStatus object for the changes between the current
-    and the most provided version
+    Create FileUpdateStatus object for the changes in the most recent version.
 
     :param drop_id: the drop to look over
     :param new_metadata: metadata of new version to check against
@@ -722,8 +737,7 @@ async def find_changes_in_new_version(
 
 
 async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
-    """Checks over the local drop and returns what files have local
-    changes if any
+    """Check over the local drop and returns what files have local changes.
 
     :param drop_id: the drop to check
     :return: a set of file names that have local changes
@@ -759,8 +773,9 @@ async def fallback_check_for_changes(
     drop_id: bytes,
     drop_metadata: DropMetadata,
 ) -> Optional[FileUpdateStatus]:
-    """Checks over the local drop and returns what files have local
-    changes if any. Fallback for normal function when no timestamp is found.
+    """Check over the local drop and returns what files have local changes.
+
+    This is a fallback for normal function when no timestamp is found.
 
     :param drop_id: the drop to check
     :param drop_metadata: drop metadata of drop
@@ -810,13 +825,14 @@ async def diff_timestamp_file(
     drop_location: str,
 ) -> FileUpdateStatus:
     """
-    Reads the timestamp file and compares it to the current files
+    Read the timestamp file and compares it to the current files.
 
     :param current_files: Dictionary that stores filepath and timestamp
-    :return: FileUpdateStatus constructed from the difference of the \
-    current_files Dictionary and the loaded Dictionary from the timestamp file
+    :param drop_location: Location of the drop on the filesystem
+    :return: FileUpdateStatus constructed from the difference of the
+        current_files Dictionary and the loaded Dictionary from the timestamp
+        file
     """
-
     timestamp_files = await fileio_util.read_timestamp_file(drop_location)
     # current is the set of currently existing filepaths
     current = set(current_files.keys())
@@ -847,10 +863,11 @@ async def sync_file_contents(
     drop_id: bytes, file_id: bytes, file_name: str,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> Set[int]:
-    """Download as much of a file as possible
+    """Download as much of a file as possible.
 
     :param drop_id: the drop the file is in
     :param file_id: the file to download
+    :param file_name: The name of the file to sync
     :param save_dir: where the drop is saved
     :param peers: where to look for chunks
     :return: A set of chunk ids NOT downloaded
@@ -929,8 +946,10 @@ async def peers_and_chunks(
     drop_id: bytes, file_id: bytes, chunks_per_peer: int,
 ) -> AsyncIterator[Tuple[Tuple[str, int], Set[int]]]:
     """
+    Make an async iterator that returns tuples of peers and chunks.
+
     For each peer, figure out what chunks it has, then yield the first
-    chunks_per_peer chunks that haven't been reserved for another peer
+    chunks_per_peer chunks that haven't been reserved for another peer.
 
     :param peers: Peer list
     :param needed_chunks: Needed chunks
@@ -957,8 +976,9 @@ async def get_chunk_list(
     ip: str, port: int, drop_id: bytes, file_id: bytes,
 ) -> Set[int]:
     """
-    Get the list of chunks (ip, port) has.  This function exists so the result
-    can be cached.
+    Get the list of chunks the node at (ip, port) has.
+
+    This function exists so the result can be cached.
 
     :param ip: IP to connect to
     :param port: Port to connect to
@@ -978,8 +998,7 @@ async def download_chunk_from_peer(
     ip: str, port: int, drop_id: bytes, file_id: bytes, file_index: int,
     file_metadata: FileMetadata, full_path: str,
 ) -> Optional[int]:
-    """Download a chunk from a peer, and if it succeeds mark that chunk done
-    in the File Metadata
+    """Download a chunk from a peer, and if it succeeds mark that chunk done.
 
     :param ip: Peer ip
     :param port: Peer port
@@ -1015,14 +1034,17 @@ async def download_chunk_from_peer(
 
 
 class PeerStoreError(Exception):
-    """Raised if get_drop_peers fails to get peers"""
+    """Raise if get_drop_peers fails to get peers."""
+
     pass
 
 
 @async_util.async_cache(cache_obj=TTLCache, ttl=5)
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
-    Gets the peers that have a drop. Also shuffles the list
+    Get the peers that have a drop.
+
+    Also shuffles the list.
 
     :param drop_id: id of drop
     :raises PeerStoreError: If peers cannot be found
@@ -1054,7 +1076,7 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
 
 def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
     """
-    Figure out the drop ID from a directory
+    Figure out the drop ID from a directory.
 
     :param save_dir: The directory to check
     :return: The drop ID or none
@@ -1073,7 +1095,7 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
 
 async def get_file_names_percent(drop_id: bytes) -> Dict[str, float]:
     """
-    Get dict from file names to percent done (in range [0,1])
+    Get dict from file names to percent done (in range [0,1]).
 
     :param drop_id: Drop to get files for
     :return: Dict from file name to percent done

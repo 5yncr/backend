@@ -1,4 +1,4 @@
-"""Functions for dealing with hashes/keys/ids in a consistant manner"""
+"""Functions for dealing with hashes/keys/ids in a consistant manner."""
 import asyncio
 import base64
 import hashlib
@@ -26,12 +26,13 @@ B64_ALT_CHARS = b'+-'
 
 
 class VerificationException(Exception):
-    """To be raised when a hash or signature verification fails"""
+    """Raise when a hash or signature verification fails."""
+
     pass
 
 
 async def hash(b: bytes) -> bytes:
-    """Default hash function
+    """Hash some bytes.
 
     >>> from syncr_backend.util.crypto_util import hash, b64encode
     >>> import asyncio
@@ -48,11 +49,16 @@ async def hash(b: bytes) -> bytes:
 
 
 def _hash(b: bytes) -> bytes:
+    """Hash some bytes, internal version.
+
+    :param b: bytes to hash
+    :return: hashed bytes
+    """
     return hashlib.sha256(b).digest()
 
 
 async def hash_dict(d: Dict[str, Any]) -> bytes:
-    """Hash a dictionary, by first bencoding it
+    """Hash a dictionary, by first bencoding it.
 
     >>> from syncr_backend.util.crypto_util import hash_dict, b64encode
     >>> import asyncio
@@ -60,7 +66,7 @@ async def hash_dict(d: Dict[str, Any]) -> bytes:
     >>> b64encode(loop.run_until_complete(hash_dict({'key': b"foo"})))
     b'gqcj3O1NwwlHhSJFHUi3eiJ5++9Pom-aIqN1QRPdLRo='
 
-    :param b: The dictionary to hash
+    :param d: The dictionary to hash
     :return: The hash of bencode(b)
     """
     logger.debug("hashing dict of len %s", len(d))
@@ -68,7 +74,7 @@ async def hash_dict(d: Dict[str, Any]) -> bytes:
 
 
 def b64encode(b: bytes) -> bytes:
-    """Encode a binary sequence for humans to read
+    """Encode a binary sequence for humans to read.
 
     :param b: The sequence to encode
     :return: An encoded sequence
@@ -77,7 +83,7 @@ def b64encode(b: bytes) -> bytes:
 
 
 def b64decode(b: bytes) -> bytes:
-    """Decode a b64 sequence back into binary
+    """Decode a b64 sequence back into binary.
 
     >>> from syncr_backend.util.crypto_util import b64encode, b64decode
     >>> data = b'IamImportantData'
@@ -100,7 +106,7 @@ def encode_peerlist(
     peerlist: List[Tuple[Any, str, int]],
 ) -> bytes:
     """
-    encodes peerlist into bytes to put in dht
+    Encode peerlist into bytes to put in dht.
 
     :param peerlist: list of dht peers
     :return: bytes of encoded peerlist
@@ -110,7 +116,7 @@ def encode_peerlist(
 
 def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
     """
-    decodes peerlist from bytes representation to list
+    Decode peerlist from bytes representation to list.
 
     >>> from syncr_backend.util.crypto_util import encode_peerlist
     >>> from syncr_backend.util.crypto_util import decode_peerlist
@@ -137,27 +143,27 @@ def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
 
 
 def random_bytes() -> bytes:
-    """Generate 32 random bytes
+    """Generate 32 random bytes.
 
-    :returns: 32 random bytes
+    :return: 32 random bytes
     """
     return os.urandom(32)
 
 
 def random_int() -> int:
-    """Generate a random integer
+    """Generate a random integer.
 
     >>> from syncr_backend.util.crypto_util import random_int
     >>> random_int()  # doctest: +SKIP
     11520214175276372604
 
-    :returns: a random 64 bit int
+    :return: a random 64 bit int
     """
     return int.from_bytes(os.urandom(8), 'big')
 
 
 def load_public_key(key: bytes) -> rsa.RSAPublicKey:
-    """Load a public key from bytes
+    """Load a public key from bytes.
 
     :param key: The serialized key
     :return: The RSAPublicKey object of the key
@@ -166,7 +172,7 @@ def load_public_key(key: bytes) -> rsa.RSAPublicKey:
 
 
 def load_private_key(key: bytes) -> rsa.RSAPrivateKey:
-    """Load a private key from bytes
+    """Load a private key from bytes.
 
     :param key: The serialized key
     :return: The RSAPrivateKey object of the key
@@ -179,7 +185,7 @@ def load_private_key(key: bytes) -> rsa.RSAPrivateKey:
 
 
 def dump_public_key(key: rsa.RSAPublicKey) -> bytes:
-    """Dump a public key to PEM format (text)
+    """Dump a public key to PEM format (text).
 
     :param key: An RSAPrivateKey to dump the public key of
     :return: The dumped bytes of the public key, as PEM
@@ -191,7 +197,7 @@ def dump_public_key(key: rsa.RSAPublicKey) -> bytes:
 
 
 def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
-    """Dump a private key to PEM format (text)
+    """Dump a private key to PEM format (text).
 
     :param key: The Private Key objec to dump
     :return: The bytes of the private key, as PEM
@@ -204,8 +210,9 @@ def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
 
 
 async def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
-    """Generate a node id from a public key
-    It uses the default dump, and hashes that
+    """Generate a node id from a public key.
+
+    It uses the default dump, and hashes that.
 
     :param key: The Public key to generate the nodeid from
     :return: The nodeid, as bytes
@@ -215,7 +222,7 @@ async def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
 
 
 async def generate_private_key() -> rsa.RSAPrivateKey:
-    """Generate a public and private key
+    """Generate a public and private key pair.
 
     :return: A new RSAPrivateKey
     """
@@ -226,6 +233,10 @@ async def generate_private_key() -> rsa.RSAPrivateKey:
 
 
 def _generate_private_key() -> rsa.RSAPrivateKey:
+    """Generate private key, internal version.
+
+    :return: A private key
+    """
     return rsa.generate_private_key(
         public_exponent=65537,
         key_size=4048,
@@ -238,7 +249,7 @@ async def sign_dictionary(
     dictionary: Dict[str, Any],
 ) -> bytes:
     """
-    Takes a dict and returns a rsa signature of the hash of the dict
+    Take a dict and return an rsa signature of the hash of the dict.
 
     :param private_key: RSA private_key
     :param dictionary: the dictionary to sign
@@ -262,14 +273,14 @@ async def verify_signed_dictionary(
     dictionary: Dict[str, Any],
 ) -> None:
     """
-    Returns None if success,
-    else throws cryptography.exceptions.InvalidSignature
+    Return None if success, else raise exception.
+
+    If verification fails, throw cryptography.exceptions.InvalidSignature
 
     :param public_key: RSA public_key
     :param signature: the signature of the dictionary
     :param dictionary: the actual dictionary
     :raises VerificationException: If the verification fails
-    :return: None
     """
     verifier = public_key.verifier(
         signature,
@@ -287,12 +298,21 @@ async def verify_signed_dictionary(
 
 
 async def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
-    """Wrapper to get the node id from the private key"""
+    """Get the node id from the private key.
+
+    :param key: A private key
+    :return: The bytes of the node id
+    """
     return await node_id_from_public_key(key.public_key())
 
 
 async def verify_node_id(key: rsa.RSAPublicKey, node_id: bytes) -> bool:
-    """Verify a node id from a public key"""
+    """Verify a node id from a public key.
+
+    :param key: A public key
+    :param node_id: The node id
+    :return: Whether the public key matches the node id
+    """
     # TODO: BUG: use something better than == here (something constant time
     #  and secure)
     return await node_id_from_public_key(key) == node_id

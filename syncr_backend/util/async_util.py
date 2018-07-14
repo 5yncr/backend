@@ -1,3 +1,4 @@
+"""Utils for dealing with python asyncio."""
 import asyncio
 import functools
 from collections import namedtuple
@@ -15,7 +16,8 @@ logger = get_logger(__name__)
 
 async def limit_gather(fs, n, task_timeout=0):
     """
-    Gathers the tasks in fs, but only allows n at a time to be pending.
+    Gather the tasks in fs, but only allows n at a time to be pending.
+
     If task_timeout is greater than 0, allows each task that long to complete
     before trying the next.
 
@@ -67,15 +69,16 @@ async def limit_gather(fs, n, task_timeout=0):
 
 
 async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
-    """
-    Processses up to n tasks from queue at a time, putting the results in
-    done_queue.
+    """Process up to n tasks from queue at a time.
+
+    Tasks come from queue, results go in done_queue.
 
     Otherwise similar to limit_gather.
 
     This function does not return, and should be cancled when queue.join()
     returns, everything from done_queue has been processed, and there is
     nothing left to add.
+
 
     >>> from syncr_backend.util.async_util import process_queue_with_limit
     >>> import asyncio
@@ -106,11 +109,12 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
     >>> processor.cancel()
     True
 
+
     :param queue: The queue of input tasks
     :param n: The max number of pending tasks at a time
     :param done_queue: Queue to add results to
-    :param task_timeout: Allow tasks to take up to this long before running \
-    another
+    :param task_timeout: Allow tasks to take this long before running another
+
     """
     tasks = []
     try:
@@ -143,14 +147,14 @@ CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
     """
-    Make a decorator that caches async function calls
+    Make a decorator that caches async function calls.
 
     :param maxsize: The maximum cache size
     :param cache_obj: Override the default LRU cache
     :param cache_none: Set to True to cache `None` results
+    :param kwargs: Args to pass the the cache obj
     :return: A decorator for a function
     """
-
     def decorator(fn):
         if cache_obj is None:
             cache = LRUCache(maxsize=maxsize, **kwargs)

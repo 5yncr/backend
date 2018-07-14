@@ -1,4 +1,4 @@
-"""The send side of network communications"""
+"""The send side of network communications."""
 import asyncio
 from typing import Any
 from typing import Awaitable
@@ -33,12 +33,22 @@ my_port = 0
 
 
 def set_my_ip(ip: str, port: int) -> None:
+    """Set this node's IP, for later retrieval.
+
+    :param ip: The IP
+    :param port: the port
+    """
+    # TODO: error if this is called more than once?
     global my_ip, my_port
     my_ip = ip
     my_port = port
 
 
 def get_my_ip() -> Tuple[str, int]:
+    """Get this node's IP.
+
+    :return: Tuple of this node's IP and port
+    """
     global my_ip, my_port
     return my_ip, my_port
 
@@ -48,11 +58,13 @@ async def do_request(
     peers: List[Tuple[str, int]],
     fun_args: Dict[str, Any],
 ) -> R:
-    """Helper function for sending a request to many peers.  Will try calling
-    request_fun with fun_args for peers in peers until one succeeds
+    """Send a request to many peers, until one succeeds.
 
-    :param request_fun: The request function.  Must take an ip, port, and \
-    some number of kwargs
+    Will try calling request_fun with fun_args for peers in peers until one
+    succeeds.
+
+    :param request_fun: The request function.  Must take an ip, port, and some
+        number of kwargs
     :param peers: A list of peers to try to talk to
     :param fun_args: The arguments to pass to request_fun for each peer
     :raises network_util.NoPeersException: If no peers are provided
@@ -96,7 +108,7 @@ async def send_drop_metadata_request(
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> DropMetadata:
     """
-    Sends drop metadata request to node at ip and port
+    Send drop metadata request to node at ip and port.
 
     :param ip: ip address of node
     :param port: port of the node
@@ -131,7 +143,7 @@ async def send_file_metadata_request(
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> FileMetadata:
     """
-    Sends file metadata request to node at ip and port
+    Send file metadata request to node at ip and port.
 
     :param ip: ip address of node
     :param port: port of the node
@@ -164,7 +176,7 @@ async def send_chunk_list_request(
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> List[int]:
     """
-    Sends chunk list request to node at ip and port
+    Send chunk list request to node at ip and port.
 
     :param ip: ip address of node
     :param port: port of the node
@@ -198,7 +210,7 @@ async def send_chunk_request(
     protocol_version: Optional[int]=PROTOCOL_VERSION,
 ) -> bytes:
     """
-    Sends chunk request to node at ip and port
+    Send chunk request to node at ip and port.
 
     :param ip: ip address of node
     :param port: port of the node
@@ -232,8 +244,10 @@ async def send_request_to_node(
     request: Dict[str, Any], ip: str, port: int,
 ) -> Any:
     """
-    Creates a connection a node and sends a given request to the
-    node and returns the response
+    Send request to a node.
+
+    Creates a connection to a node, sends a given request to the node, and
+    returns the response.
 
     :param port: port where node is serving
     :param ip: ip of node
